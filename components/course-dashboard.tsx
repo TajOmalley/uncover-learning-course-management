@@ -24,7 +24,7 @@ export function CourseDashboard({ courseData }: CourseDashboardProps) {
       title: "Lesson Plans",
       description: "Generate detailed lesson plans for your course units",
       icon: BookOpen,
-      color: "from-blue-500 to-blue-600",
+      color: "from-[#47624f] to-[#707D7F]",
       count: 12,
     },
     {
@@ -32,7 +32,7 @@ export function CourseDashboard({ courseData }: CourseDashboardProps) {
       title: "Reading Content",
       description: "Create comprehensive reading materials and resources",
       icon: FileText,
-      color: "from-green-500 to-green-600",
+      color: "from-[#C9F2C7] to-[#47624f]",
       count: 8,
     },
     {
@@ -40,7 +40,7 @@ export function CourseDashboard({ courseData }: CourseDashboardProps) {
       title: "Homework Problems",
       description: "Design practice problems and assignments",
       icon: PenTool,
-      color: "from-purple-500 to-purple-600",
+      color: "from-[#B2A29E] to-[#707D7F]",
       count: 15,
     },
     {
@@ -48,7 +48,7 @@ export function CourseDashboard({ courseData }: CourseDashboardProps) {
       title: "Exams",
       description: "Generate comprehensive exams and assessments",
       icon: GraduationCap,
-      color: "from-orange-500 to-orange-600",
+      color: "from-[#000000] to-[#707D7F]",
       count: 4,
     },
   ]
@@ -63,30 +63,38 @@ export function CourseDashboard({ courseData }: CourseDashboardProps) {
   }
 
   return (
-    <div className="min-h-screen">
+    <div className="min-h-screen relative">
+      <button
+        onClick={() => window.location.href = '/'}
+        className="absolute top-20 left-2 z-10 text-white hover:text-[#C9F2C7] transition-colors"
+      >
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+          <path d="m15 18-6-6 6-6"/>
+        </svg>
+      </button>
       {/* Header */}
-      <div className="bg-gradient-to-r from-slate-800 via-slate-700 to-slate-800 text-white">
+      <div className="bg-gradient-to-r from-[#47624f] via-[#707D7F] to-[#47624f] text-white">
         <div className="max-w-7xl mx-auto px-4 py-8">
           <div className="flex items-center justify-between">
             <div>
               <h1 className="text-3xl font-bold">{courseData.courseName}</h1>
-              <p className="text-slate-300 mt-2">
+              <p className="text-[#C9F2C7] mt-2">
                 {courseData.subject} • {courseData.level}
               </p>
               <div className="flex items-center gap-4 mt-4">
-                <Badge variant="secondary" className="bg-white/20 text-white">
+                <Badge variant="secondary" className="bg-[#C9F2C7]/20 text-white">
                   {courseData.startDate} - {courseData.endDate}
                 </Badge>
-                <Badge variant="secondary" className="bg-white/20 text-white">
+                <Badge variant="secondary" className="bg-[#C9F2C7]/20 text-white">
                   {courseData.calendar?.length || 0} Units
                 </Badge>
               </div>
             </div>
             <div className="text-right">
-              <div className="flex items-center gap-2 text-sm text-slate-300">
-                <Sparkles className="w-4 h-4" />
-                AI-Powered Course Management
-              </div>
+                              <div className="flex flex-col items-center text-xl text-white" style={{ fontFamily: 'var(--font-fraunces)' }}>
+                  <div>uncover</div>
+                  <div>learning</div>
+                </div>
             </div>
           </div>
         </div>
@@ -105,11 +113,11 @@ export function CourseDashboard({ courseData }: CourseDashboardProps) {
             <Card>
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
-                  <Sparkles className="w-5 h-5 text-indigo-600" />
-                  AI Content Generation
+                  <Sparkles className="w-5 h-5 text-[#47624f]" />
+                  Build Your Course, Your Way
                 </CardTitle>
                 <CardDescription>
-                  Generate course materials instantly using AI based on your course context
+                  Generate course materials instantly based on your course context
                 </CardDescription>
               </CardHeader>
               <CardContent>
@@ -119,7 +127,7 @@ export function CourseDashboard({ courseData }: CourseDashboardProps) {
                     return (
                       <Card
                         key={type.id}
-                        className="group hover:shadow-lg transition-all duration-200 cursor-pointer border-2 hover:border-indigo-200"
+                        className="group hover:shadow-lg transition-all duration-200 cursor-pointer border-2 hover:border-[#47624f]/20"
                       >
                         <CardContent className="p-6">
                           <div
@@ -127,14 +135,14 @@ export function CourseDashboard({ courseData }: CourseDashboardProps) {
                           >
                             <Icon className="w-6 h-6 text-white" />
                           </div>
-                          <h3 className="font-semibold text-slate-800 mb-2">{type.title}</h3>
-                          <p className="text-sm text-slate-600 mb-4">{type.description}</p>
+                                            <h3 className="font-semibold text-[#000000] mb-2">{type.title}</h3>
+                  <p className="text-sm text-[#707D7F] mb-4">{type.description}</p>
                           <div className="flex items-center justify-between">
                             <Badge variant="secondary">{type.count} items</Badge>
                             <Button
                               size="sm"
                               onClick={() => handleGenerateContent(type.id)}
-                              className="bg-gradient-to-r from-indigo-500 to-purple-600 hover:from-indigo-600 hover:to-purple-700"
+                              className="bg-gradient-to-r from-[#47624f] to-[#707D7F] hover:from-[#000000] hover:to-[#47624f]"
                             >
                               <Plus className="w-4 h-4 mr-1" />
                               Generate
@@ -152,20 +160,20 @@ export function CourseDashboard({ courseData }: CourseDashboardProps) {
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
               <Card className="lg:col-span-2">
                 <CardHeader>
-                  <CardTitle>Course Structure</CardTitle>
-                  <CardDescription>AI-generated course units and timeline</CardDescription>
+                                  <CardTitle>Course Structure</CardTitle>
+                <CardDescription>Course units and timeline</CardDescription>
                 </CardHeader>
                 <CardContent>
                   <div className="space-y-4">
                     {courseData.calendar?.map((unit: any, index: number) => (
                       <div
                         key={unit.id}
-                        className="flex items-center gap-4 p-4 rounded-lg bg-slate-50 hover:bg-slate-100 transition-colors"
+                        className="flex items-center gap-4 p-4 rounded-lg bg-[#C9F2C7]/20 hover:bg-[#C9F2C7]/30 transition-colors"
                       >
                         <div className={`w-3 h-3 rounded-full ${unit.color}`}></div>
                         <div className="flex-1">
-                          <h4 className="font-medium text-slate-800">{unit.title}</h4>
-                          <p className="text-sm text-slate-600">Week {unit.week}</p>
+                                                  <h4 className="font-medium text-[#000000]">{unit.title}</h4>
+                        <p className="text-sm text-[#707D7F]">Week {unit.week}</p>
                         </div>
                         <div className="flex gap-2">
                           <Button size="sm" variant="outline">
@@ -187,19 +195,19 @@ export function CourseDashboard({ courseData }: CourseDashboardProps) {
                 </CardHeader>
                 <CardContent className="space-y-4">
                   <div className="flex justify-between items-center">
-                    <span className="text-slate-600">Total Units</span>
+                    <span className="text-[#707D7F]">Total Units</span>
                     <Badge variant="secondary">{courseData.calendar?.length || 0}</Badge>
                   </div>
                   <div className="flex justify-between items-center">
-                    <span className="text-slate-600">Course Duration</span>
+                    <span className="text-[#707D7F]">Course Duration</span>
                     <Badge variant="secondary">16 weeks</Badge>
                   </div>
                   <div className="flex justify-between items-center">
-                    <span className="text-slate-600">Generated Content</span>
+                    <span className="text-[#707D7F]">Generated Content</span>
                     <Badge variant="secondary">39 items</Badge>
                   </div>
                   <div className="flex justify-between items-center">
-                    <span className="text-slate-600">Last Updated</span>
+                    <span className="text-[#707D7F]">Last Updated</span>
                     <Badge variant="secondary">Today</Badge>
                   </div>
                 </CardContent>
@@ -219,18 +227,18 @@ export function CourseDashboard({ courseData }: CourseDashboardProps) {
                   <Card key={type.id}>
                     <CardHeader>
                       <CardTitle className="flex items-center gap-2">
-                        <Icon className="w-5 h-5" />
+                        <Icon className="w-5 h-5 text-[#47624f]" />
                         {type.title}
                       </CardTitle>
-                      <CardDescription>{type.description}</CardDescription>
+                      <CardDescription className="text-[#707D7F]">{type.description}</CardDescription>
                     </CardHeader>
                     <CardContent>
                       <div className="space-y-3">
                         <div className="flex justify-between items-center">
-                          <span className="text-sm text-slate-600">Generated Items</span>
+                          <span className="text-sm text-[#707D7F]">Generated Items</span>
                           <Badge variant="secondary">{type.count}</Badge>
                         </div>
-                        <Button className="w-full" onClick={() => handleGenerateContent(type.id)}>
+                        <Button className="w-full bg-gradient-to-r from-[#47624f] to-[#707D7F] hover:from-[#000000] hover:to-[#47624f]" onClick={() => handleGenerateContent(type.id)}>
                           <Plus className="w-4 h-4 mr-2" />
                           Generate New
                         </Button>

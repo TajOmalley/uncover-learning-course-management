@@ -216,7 +216,7 @@ Detailed solutions and explanations will be provided during the review session.`
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50">
+    <div className="min-h-screen bg-gradient-to-br from-[#C9F2C7] via-[#B2A29E] to-[#707D7F]">
       <div className="max-w-6xl mx-auto px-4 py-8">
         {/* Header */}
         <div className="flex items-center gap-4 mb-8">
@@ -225,8 +225,8 @@ Detailed solutions and explanations will be provided during the review session.`
             Back to Dashboard
           </Button>
           <div>
-            <h1 className="text-2xl font-bold text-slate-800">{currentType.title}</h1>
-            <p className="text-slate-600">{currentType.description}</p>
+            <h1 className="text-2xl font-bold text-[#000000]">{currentType.title}</h1>
+            <p className="text-[#707D7F]">{currentType.description}</p>
           </div>
         </div>
 
@@ -235,7 +235,7 @@ Detailed solutions and explanations will be provided during the review session.`
           <Card className="lg:col-span-1">
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
-                <Sparkles className="w-5 h-5 text-indigo-600" />
+                <Sparkles className="w-5 h-5 text-[#47624f]" />
                 Generation Settings
               </CardTitle>
               <CardDescription>Configure the AI generation parameters</CardDescription>
@@ -271,7 +271,7 @@ Detailed solutions and explanations will be provided during the review session.`
               <Button
                 onClick={handleGenerate}
                 disabled={!selectedUnit || isGenerating}
-                className="w-full bg-gradient-to-r from-indigo-500 to-purple-600 hover:from-indigo-600 hover:to-purple-700"
+                className="w-full bg-gradient-to-r from-[#47624f] to-[#707D7F] hover:from-[#000000] hover:to-[#47624f]"
               >
                 {isGenerating ? (
                   <>
@@ -311,20 +311,20 @@ Detailed solutions and explanations will be provided during the review session.`
               {isGenerating ? (
                 <div className="flex items-center justify-center py-12">
                   <div className="text-center space-y-4">
-                    <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600 mx-auto"></div>
-                    <h3 className="text-lg font-semibold text-slate-800">Generating Content</h3>
-                    <p className="text-slate-600">AI is creating your {type.replace("-", " ")} content...</p>
+                                      <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#47624f] mx-auto"></div>
+                  <h3 className="text-lg font-semibold text-[#000000]">Generating Content</h3>
+                  <p className="text-[#707D7F]">AI is creating your {type.replace("-", " ")} content...</p>
                   </div>
                 </div>
               ) : generatedContent ? (
                 <div className="prose max-w-none">
-                  <pre className="whitespace-pre-wrap text-sm bg-slate-50 p-4 rounded-lg border">
+                  <pre className="whitespace-pre-wrap text-sm bg-[#C9F2C7]/20 p-4 rounded-lg border">
                     {generatedContent}
                   </pre>
                 </div>
               ) : (
-                <div className="text-center py-12 text-slate-500">
-                  <Sparkles className="w-12 h-12 mx-auto mb-4 text-slate-400" />
+                <div className="text-center py-12 text-[#707D7F]">
+                  <Sparkles className="w-12 h-12 mx-auto mb-4 text-[#B2A29E]" />
                   <p>Select a unit and click "Generate Content" to create AI-powered course materials.</p>
                 </div>
               )}

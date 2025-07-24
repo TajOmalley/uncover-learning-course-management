@@ -1,11 +1,22 @@
 import type { Metadata } from 'next'
 import { GeistSans } from 'geist/font/sans'
 import { GeistMono } from 'geist/font/mono'
+import { Montserrat, Fraunces } from 'next/font/google'
 import './globals.css'
 
+const montserrat = Montserrat({ 
+  subsets: ['latin'],
+  variable: '--font-montserrat',
+})
+
+const fraunces = Fraunces({ 
+  subsets: ['latin'],
+  variable: '--font-fraunces',
+})
+
 export const metadata: Metadata = {
-  title: 'v0 App',
-  description: 'Created with v0',
+  title: 'Uncover Learning - Course Management',
+  description: 'AI-powered course management platform for professors',
   generator: 'v0.dev',
 }
 
@@ -22,10 +33,12 @@ html {
   font-family: ${GeistSans.style.fontFamily};
   --font-sans: ${GeistSans.variable};
   --font-mono: ${GeistMono.variable};
+  --font-montserrat: ${montserrat.variable};
+  --font-fraunces: ${fraunces.variable};
 }
         `}</style>
       </head>
-      <body>{children}</body>
+      <body className={`${montserrat.variable} ${fraunces.variable}`}>{children}</body>
     </html>
   )
 }
