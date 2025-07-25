@@ -77,15 +77,46 @@ export function CourseSetup({ onComplete }: CourseSetupProps) {
 
   const handleSubmit = async () => {
     setIsGenerating(true)
-    // Simulate LLM API call
-    await new Promise((resolve) => setTimeout(resolve, 2000))
+    
+    try {
+      // Call the LLM API to generate course units
+      const response = await fetch('/api/generate-units', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(formData),
+      })
 
-    const courseData = {
-      ...formData,
-      calendar: generateMockCalendar(formData),
+      if (!response.ok) {
+        throw new Error(`API call failed: ${response.status}`)
+      }
+
+      const result = await response.json()
+      
+      if (!result.success) {
+        throw new Error(result.error || 'Failed to generate course units')
+      }
+
+      const courseData = {
+        ...formData,
+        calendar: result.units,
+      }
+
+      onComplete(courseData)
+    } catch (error) {
+      console.error('Error generating course units:', error)
+      
+      // Fallback to mock data if API fails
+      const courseData = {
+        ...formData,
+        calendar: generateMockCalendar(formData),
+      }
+      
+      onComplete(courseData)
+    } finally {
+      setIsGenerating(false)
     }
-
-    onComplete(courseData)
   }
 
       const generateMockCalendar = (data: any) => {
@@ -112,6 +143,9 @@ export function CourseSetup({ onComplete }: CourseSetupProps) {
               <h3 className="text-lg font-semibold text-[#000000]">Generating Your Course Calendar</h3>
               <p className="text-[#707D7F]">
                 Our AI is creating a personalized curriculum structure for your course...
+              </p>
+              <p className="text-sm text-[#707D7F]">
+                This may take a few moments...
               </p>
             </div>
           </CardContent>

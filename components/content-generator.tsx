@@ -7,6 +7,8 @@ import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { ArrowLeft, Sparkles, Download, Copy, RefreshCw } from "lucide-react"
+import ReactMarkdown from 'react-markdown'
+import remarkGfm from 'remark-gfm'
 
 interface ContentGeneratorProps {
   type: string
@@ -19,6 +21,8 @@ export function ContentGenerator({ type, courseData, onBack }: ContentGeneratorP
   const [generatedContent, setGeneratedContent] = useState("")
   const [selectedUnit, setSelectedUnit] = useState("")
   const [customPrompt, setCustomPrompt] = useState("")
+  const [isSaving, setIsSaving] = useState(false)
+  const [savedContent, setSavedContent] = useState<any[]>([])
 
   const contentTypes = {
     "lesson-plan": {
@@ -47,13 +51,92 @@ export function ContentGenerator({ type, courseData, onBack }: ContentGeneratorP
 
   const handleGenerate = async () => {
     setIsGenerating(true)
-    // Simulate LLM API call
-    await new Promise((resolve) => setTimeout(resolve, 3000))
+    
+    try {
+      if (type === "reading") {
+        // Call the reading generation API
+        const selectedUnitData = courseData.calendar?.find((unit: any) => unit.title === selectedUnit)
+        
+        if (!selectedUnitData) {
+          throw new Error('Selected unit not found')
+        }
 
-    // Mock generated content
-    const mockContent = generateMockContent(type, selectedUnit, customPrompt)
-    setGeneratedContent(mockContent)
-    setIsGenerating(false)
+        const response = await fetch('/api/generate-reading', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            courseData: courseData,
+            unit: selectedUnitData
+          }),
+        })
+
+        if (!response.ok) {
+          throw new Error(`API call failed: ${response.status}`)
+        }
+
+        const result = await response.json()
+        
+        if (!result.success) {
+          throw new Error(result.error || 'Failed to generate reading content')
+        }
+
+        setGeneratedContent(result.reading.content)
+      } else {
+        // For other content types, use mock content for now
+        const mockContent = generateMockContent(type, selectedUnit, customPrompt)
+        setGeneratedContent(mockContent)
+      }
+    } catch (error) {
+      console.error('Error generating content:', error)
+      
+      // Fallback to mock content if API fails
+      const mockContent = generateMockContent(type, selectedUnit, customPrompt)
+      setGeneratedContent(mockContent)
+    } finally {
+      setIsGenerating(false)
+    }
+  }
+
+  const handleSave = async () => {
+    if (!generatedContent || !selectedUnit) return
+    
+    setIsSaving(true)
+    
+    try {
+      const selectedUnitData = courseData.calendar?.find((unit: any) => unit.title === selectedUnit)
+      
+      if (!selectedUnitData) {
+        throw new Error('Selected unit not found')
+      }
+
+      const contentToSave = {
+        id: Date.now(),
+        type: type,
+        unitId: selectedUnitData.id,
+        unitTitle: selectedUnitData.title,
+        content: generatedContent,
+        title: `Reading: ${selectedUnitData.title}`,
+        createdAt: new Date().toISOString(),
+        customPrompt: customPrompt
+      }
+
+      // Save to localStorage for persistence
+      const existingContent = JSON.parse(localStorage.getItem('savedReadingContent') || '[]')
+      const updatedContent = [...existingContent, contentToSave]
+      localStorage.setItem('savedReadingContent', JSON.stringify(updatedContent))
+      
+      setSavedContent(updatedContent)
+      
+      // You could also save to a backend API here
+      console.log('Content saved successfully:', contentToSave)
+      
+    } catch (error) {
+      console.error('Error saving content:', error)
+    } finally {
+      setIsSaving(false)
+    }
   }
 
   const generateMockContent = (type: string, unit: string, prompt: string) => {
@@ -285,6 +368,25 @@ Detailed solutions and explanations will be provided during the review session.`
                   </>
                 )}
               </Button>
+
+              <Button
+                onClick={handleSave}
+                disabled={!generatedContent || isSaving}
+                variant="outline"
+                className="w-full border-[#47624f] text-[#47624f] hover:bg-[#47624f] hover:text-white"
+              >
+                {isSaving ? (
+                  <>
+                    <RefreshCw className="w-4 h-4 mr-2 animate-spin" />
+                    Saving...
+                  </>
+                ) : (
+                  <>
+                    <Download className="w-4 h-4 mr-2" />
+                    Save
+                  </>
+                )}
+              </Button>
             </CardContent>
           </Card>
 
@@ -318,9 +420,27 @@ Detailed solutions and explanations will be provided during the review session.`
                 </div>
               ) : generatedContent ? (
                 <div className="prose max-w-none">
-                  <pre className="whitespace-pre-wrap text-sm bg-[#C9F2C7]/20 p-4 rounded-lg border">
-                    {generatedContent}
-                  </pre>
+                  <div className="bg-white rounded-lg border border-[#B2A29E]/20 p-6 shadow-sm">
+                    <ReactMarkdown 
+                      remarkPlugins={[remarkGfm]}
+                      components={{
+                        h1: ({children}) => <h1 className="text-3xl font-bold text-[#000000] mb-6 mt-0 border-b-2 border-[#47624f] pb-2">{children}</h1>,
+                        h2: ({children}) => <h2 className="text-2xl font-semibold text-[#47624f] mb-4 mt-8">{children}</h2>,
+                        h3: ({children}) => <h3 className="text-xl font-medium text-[#707D7F] mb-3 mt-6">{children}</h3>,
+                        p: ({children}) => <p className="text-[#000000] leading-relaxed mb-4 text-base">{children}</p>,
+                        ul: ({children}) => <ul className="list-disc list-inside mb-4 space-y-1 text-[#000000]">{children}</ul>,
+                        ol: ({children}) => <ol className="list-decimal list-inside mb-4 space-y-1 text-[#000000]">{children}</ol>,
+                        li: ({children}) => <li className="text-[#000000] leading-relaxed">{children}</li>,
+                        strong: ({children}) => <strong className="font-semibold text-[#000000]">{children}</strong>,
+                        em: ({children}) => <em className="italic text-[#707D7F]">{children}</em>,
+                        blockquote: ({children}) => <blockquote className="border-l-4 border-[#47624f] pl-4 italic text-[#707D7F] mb-4">{children}</blockquote>,
+                        code: ({children}) => <code className="bg-[#C9F2C7]/30 px-2 py-1 rounded text-sm font-mono text-[#47624f]">{children}</code>,
+                        pre: ({children}) => <pre className="bg-[#C9F2C7]/20 p-4 rounded-lg border overflow-x-auto text-sm">{children}</pre>,
+                      }}
+                    >
+                      {generatedContent}
+                    </ReactMarkdown>
+                  </div>
                 </div>
               ) : (
                 <div className="text-center py-12 text-[#707D7F]">

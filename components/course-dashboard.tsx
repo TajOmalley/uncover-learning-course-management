@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
@@ -17,6 +17,14 @@ export function CourseDashboard({ courseData }: CourseDashboardProps) {
   const [activeTab, setActiveTab] = useState("overview")
   const [showGenerator, setShowGenerator] = useState(false)
   const [generatorType, setGeneratorType] = useState("")
+  const [expandedUnits, setExpandedUnits] = useState<Set<number>>(new Set())
+  const [savedReadingContent, setSavedReadingContent] = useState<any[]>([])
+
+  // Load saved reading content from localStorage
+  useEffect(() => {
+    const savedContent = JSON.parse(localStorage.getItem('savedReadingContent') || '[]')
+    setSavedReadingContent(savedContent)
+  }, [])
 
   const contentTypes = [
     {
@@ -165,26 +173,76 @@ export function CourseDashboard({ courseData }: CourseDashboardProps) {
                 </CardHeader>
                 <CardContent>
                   <div className="space-y-4">
-                    {courseData.calendar?.map((unit: any, index: number) => (
-                      <div
-                        key={unit.id}
-                        className="flex items-center gap-4 p-4 rounded-lg bg-[#C9F2C7]/20 hover:bg-[#C9F2C7]/30 transition-colors"
-                      >
-                        <div className={`w-3 h-3 rounded-full ${unit.color}`}></div>
-                        <div className="flex-1">
-                                                  <h4 className="font-medium text-[#000000]">{unit.title}</h4>
-                        <p className="text-sm text-[#707D7F]">Week {unit.week}</p>
+                    {courseData.calendar?.map((unit: any, index: number) => {
+                      const unitReadingContent = savedReadingContent.filter(content => content.unitId === unit.id)
+                      const isExpanded = expandedUnits.has(unit.id)
+                      
+                      return (
+                        <div
+                          key={unit.id}
+                          className="rounded-lg bg-[#C9F2C7]/20 hover:bg-[#C9F2C7]/30 transition-colors"
+                        >
+                          <div className="flex items-center gap-4 p-4">
+                            <div className={`w-3 h-3 rounded-full ${unit.color}`}></div>
+                            <div className="flex-1">
+                              <h4 className="font-medium text-[#000000]">{unit.title}</h4>
+                              <p className="text-sm text-[#707D7F]">Week {unit.week}</p>
+                            </div>
+                            <div className="flex gap-2">
+                              <Button 
+                                size="sm" 
+                                variant="outline"
+                                onClick={() => {
+                                  const newExpanded = new Set(expandedUnits)
+                                  if (isExpanded) {
+                                    newExpanded.delete(unit.id)
+                                  } else {
+                                    newExpanded.add(unit.id)
+                                  }
+                                  setExpandedUnits(newExpanded)
+                                }}
+                              >
+                                {isExpanded ? '−' : '+'}
+                              </Button>
+                              <Button size="sm" variant="outline">
+                                <Eye className="w-4 h-4" />
+                              </Button>
+                              <Button size="sm" variant="outline">
+                                <Edit className="w-4 h-4" />
+                              </Button>
+                            </div>
+                          </div>
+                          
+                          {/* Expandable content section */}
+                          {isExpanded && (
+                            <div className="px-4 pb-4 border-t border-[#B2A29E]/20">
+                              <div className="pt-4 space-y-3">
+                                <h5 className="font-medium text-[#000000] text-sm">Reading Content</h5>
+                                {unitReadingContent.length > 0 ? (
+                                  <div className="space-y-2">
+                                    {unitReadingContent.map((content) => (
+                                      <div key={content.id} className="flex items-center justify-between p-2 bg-white rounded border border-[#B2A29E]/20">
+                                        <div>
+                                          <p className="text-sm font-medium text-[#000000]">{content.title}</p>
+                                          <p className="text-xs text-[#707D7F]">
+                                            Created: {new Date(content.createdAt).toLocaleDateString()}
+                                          </p>
+                                        </div>
+                                        <Button size="sm" variant="outline">
+                                          <Eye className="w-3 h-3" />
+                                        </Button>
+                                      </div>
+                                    ))}
+                                  </div>
+                                ) : (
+                                  <p className="text-sm text-[#707D7F] italic">No reading content generated yet</p>
+                                )}
+                              </div>
+                            </div>
+                          )}
                         </div>
-                        <div className="flex gap-2">
-                          <Button size="sm" variant="outline">
-                            <Eye className="w-4 h-4" />
-                          </Button>
-                          <Button size="sm" variant="outline">
-                            <Edit className="w-4 h-4" />
-                          </Button>
-                        </div>
-                      </div>
-                    ))}
+                      )
+                    })}
                   </div>
                 </CardContent>
               </Card>
