@@ -23,6 +23,18 @@ export function ContentGenerator({ type, courseData, onBack }: ContentGeneratorP
   const [customPrompt, setCustomPrompt] = useState("")
   const [isSaving, setIsSaving] = useState(false)
   const [savedContent, setSavedContent] = useState<any[]>([])
+  
+  // Homework problem specifications
+  const [totalProblems, setTotalProblems] = useState(5)
+  const [wordProblems, setWordProblems] = useState(3)
+    const [multipleChoiceProblems, setMultipleChoiceProblems] = useState(2)
+  
+  // Exam specifications
+  const [examSpecs, setExamSpecs] = useState({
+    wordProblems: { count: 2, timePerQuestion: 15 },
+    essayProblems: { count: 1, timePerQuestion: 30 },
+    multipleChoice: { count: 10, timePerQuestion: 2 }
+  })
 
   const contentTypes = {
     "lesson-plan": {
@@ -83,6 +95,120 @@ export function ContentGenerator({ type, courseData, onBack }: ContentGeneratorP
         }
 
         setGeneratedContent(result.reading.content)
+      } else if (type === "homework") {
+        // Call the homework generation API
+        const selectedUnitData = courseData.calendar?.find((unit: any) => unit.title === selectedUnit)
+        
+        if (!selectedUnitData) {
+          throw new Error('Selected unit not found')
+        }
+
+        const response = await fetch('/api/generate-homework', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            courseData: courseData,
+            unit: selectedUnitData,
+            problemSpecs: {
+              totalProblems: totalProblems,
+              wordProblems: wordProblems,
+              multipleChoiceProblems: multipleChoiceProblems
+            }
+          }),
+        })
+
+        if (!response.ok) {
+          throw new Error(`API call failed: ${response.status}`)
+        }
+
+        const result = await response.json()
+        
+        if (!result.success) {
+          throw new Error(result.error || 'Failed to generate homework content')
+        }
+
+        setGeneratedContent(result.homework.content)
+      } else if (type === "lesson-plan") {
+        // Call the lesson plan generation API
+        const selectedUnitData = courseData.calendar?.find((unit: any) => unit.title === selectedUnit)
+        
+        if (!selectedUnitData) {
+          throw new Error('Selected unit not found')
+        }
+
+        // Get the lecture length from the course data based on the unit's week
+        // For now, use the first available lecture duration, or default to 90 minutes
+        const lectureDurations = Object.values(courseData.lectureSchedule || {}) as string[]
+        const defaultLectureLength = lectureDurations.length > 0 ? 
+          parseInt(lectureDurations[0].replace(/\D/g, '')) || 90 : 90
+
+        const response = await fetch('/api/generate-lesson-plan', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            courseData: courseData,
+            unit: selectedUnitData,
+            lectureLength: defaultLectureLength
+          }),
+        })
+
+        if (!response.ok) {
+          throw new Error(`API call failed: ${response.status}`)
+        }
+
+        const result = await response.json()
+        
+        if (!result.success) {
+          throw new Error(result.error || 'Failed to generate lesson plan content')
+        }
+
+        setGeneratedContent(result.lessonPlan.content)
+      } else if (type === "exam") {
+        // Call the exam generation API
+        const selectedUnitData = courseData.calendar?.find((unit: any) => unit.title === selectedUnit)
+        
+        if (!selectedUnitData) {
+          throw new Error('Selected unit not found')
+        }
+
+        // Get the lecture length from the course data for exam duration
+        const lectureDurations = Object.values(courseData.lectureSchedule || {}) as string[]
+        const lectureLength = lectureDurations.length > 0 ? 
+          parseInt(lectureDurations[0].replace(/\D/g, '')) || 90 : 90
+
+        // Calculate total exam time based on lecture length
+        const totalExamTime = lectureLength
+
+        const response = await fetch('/api/generate-exam', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            courseData: courseData,
+            unit: selectedUnitData,
+            examSpecs: {
+              ...examSpecs,
+              totalExamTime: totalExamTime
+            }
+          }),
+        })
+
+        if (!response.ok) {
+          throw new Error(`API call failed: ${response.status}`)
+        }
+
+        const result = await response.json()
+        
+        if (!result.success) {
+          throw new Error(result.error || 'Failed to generate exam content')
+        }
+
+        setGeneratedContent(result.exam.content)
       } else {
         // For other content types, use mock content for now
         const mockContent = generateMockContent(type, selectedUnit, customPrompt)
@@ -111,21 +237,54 @@ export function ContentGenerator({ type, courseData, onBack }: ContentGeneratorP
         throw new Error('Selected unit not found')
       }
 
+      // Calculate lecture length for lesson plans
+      const lectureDurations = Object.values(courseData.lectureSchedule || {}) as string[]
+      const defaultLectureLength = lectureDurations.length > 0 ? 
+        parseInt(lectureDurations[0].replace(/\D/g, '')) || 90 : 90
+
       const contentToSave = {
         id: Date.now(),
         type: type,
         unitId: selectedUnitData.id,
         unitTitle: selectedUnitData.title,
         content: generatedContent,
-        title: `Reading: ${selectedUnitData.title}`,
+        title: type === "homework" ? `Homework: ${selectedUnitData.title}` : 
+               type === "lesson-plan" ? `Lesson Plan: ${selectedUnitData.title}` : 
+               type === "exam" ? `Exam: ${selectedUnitData.title}` : 
+               `Reading: ${selectedUnitData.title}`,
         createdAt: new Date().toISOString(),
-        customPrompt: customPrompt
+        customPrompt: customPrompt,
+        ...(type === "homework" && {
+          problemSpecs: {
+            totalProblems: totalProblems,
+            wordProblems: wordProblems,
+            multipleChoiceProblems: multipleChoiceProblems
+          }
+        }),
+        ...(type === "lesson-plan" && {
+          lectureLength: defaultLectureLength
+        }),
+        ...(type === "exam" && {
+          examSpecs: {
+            ...examSpecs,
+            totalExamTime: (() => {
+              const lectureDurations = Object.values(courseData.lectureSchedule || {}) as string[]
+              const lectureLength = lectureDurations.length > 0 ? 
+                parseInt(lectureDurations[0].replace(/\D/g, '')) || 90 : 90
+              return lectureLength
+            })()
+          }
+        })
       }
 
       // Save to localStorage for persistence
-      const existingContent = JSON.parse(localStorage.getItem('savedReadingContent') || '[]')
+      const storageKey = type === "homework" ? 'savedHomeworkContent' : 
+                        type === "lesson-plan" ? 'savedLessonPlanContent' : 
+                        type === "exam" ? 'savedExamContent' : 
+                        'savedReadingContent'
+      const existingContent = JSON.parse(localStorage.getItem(storageKey) || '[]')
       const updatedContent = [...existingContent, contentToSave]
-      localStorage.setItem('savedReadingContent', JSON.stringify(updatedContent))
+      localStorage.setItem(storageKey, JSON.stringify(updatedContent))
       
       setSavedContent(updatedContent)
       
@@ -351,9 +510,263 @@ Detailed solutions and explanations will be provided during the review session.`
                 />
               </div>
 
+              {/* Homework Problem Specifications */}
+              {type === "homework" && (
+                <div className="space-y-4">
+                  <div>
+                    <Label htmlFor="totalProblems">Total Problems</Label>
+                    <input
+                      id="totalProblems"
+                      type="number"
+                      min="1"
+                      max="20"
+                      value={totalProblems}
+                      onChange={(e) => {
+                        const total = parseInt(e.target.value) || 0
+                        setTotalProblems(total)
+                        // Auto-adjust other values to maintain consistency
+                        if (total < wordProblems + multipleChoiceProblems) {
+                          setWordProblems(Math.max(1, Math.floor(total / 2)))
+                          setMultipleChoiceProblems(total - Math.max(1, Math.floor(total / 2)))
+                        }
+                      }}
+                      className="w-full px-3 py-2 border border-[#B2A29E] rounded-md focus:outline-none focus:ring-2 focus:ring-[#47624f]"
+                    />
+                  </div>
+                  
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <Label htmlFor="wordProblems">Word Problems</Label>
+                      <input
+                        id="wordProblems"
+                        type="number"
+                        min="0"
+                        max={totalProblems}
+                        value={wordProblems}
+                        onChange={(e) => {
+                          const word = parseInt(e.target.value) || 0
+                          setWordProblems(word)
+                          setMultipleChoiceProblems(totalProblems - word)
+                        }}
+                        className="w-full px-3 py-2 border border-[#B2A29E] rounded-md focus:outline-none focus:ring-2 focus:ring-[#47624f]"
+                      />
+                    </div>
+                    
+                    <div>
+                      <Label htmlFor="multipleChoiceProblems">Multiple Choice</Label>
+                      <input
+                        id="multipleChoiceProblems"
+                        type="number"
+                        min="0"
+                        max={totalProblems}
+                        value={multipleChoiceProblems}
+                        onChange={(e) => {
+                          const mc = parseInt(e.target.value) || 0
+                          setMultipleChoiceProblems(mc)
+                          setWordProblems(totalProblems - mc)
+                        }}
+                        className="w-full px-3 py-2 border border-[#B2A29E] rounded-md focus:outline-none focus:ring-2 focus:ring-[#47624f]"
+                      />
+                    </div>
+                  </div>
+                  
+                  {wordProblems + multipleChoiceProblems !== totalProblems && (
+                    <p className="text-sm text-red-600">
+                      Word problems + Multiple choice must equal total problems
+                    </p>
+                  )}
+                </div>
+              )}
+
+              {/* Exam Specifications */}
+              {type === "exam" && (
+                <div className="space-y-4">
+                  <div className="p-3 bg-[#C9F2C7]/20 rounded-lg border border-[#B2A29E]/20">
+                    <p className="text-sm text-[#707D7F]">
+                      <strong>Exam Duration:</strong> Based on your lecture schedule ({(() => {
+                        const lectureDurations = Object.values(courseData.lectureSchedule || {}) as string[]
+                        const lectureLength = lectureDurations.length > 0 ? 
+                          parseInt(lectureDurations[0].replace(/\D/g, '')) || 90 : 90
+                        return lectureLength
+                      })()} minutes)
+                    </p>
+                  </div>
+
+                  <div className="grid grid-cols-1 gap-4">
+                    <div>
+                      <Label htmlFor="wordProblems">Word Problems</Label>
+                      <div className="grid grid-cols-2 gap-2">
+                        <div>
+                          <Label htmlFor="wordProblemsCount" className="text-xs text-[#707D7F]">Number of Questions</Label>
+                          <input
+                            id="wordProblemsCount"
+                            type="number"
+                            min="0"
+                            max="20"
+                            placeholder="Count"
+                            value={examSpecs.wordProblems.count}
+                            onChange={(e) => {
+                              const count = parseInt(e.target.value) || 0
+                              setExamSpecs(prev => ({
+                                ...prev,
+                                wordProblems: { ...prev.wordProblems, count }
+                              }))
+                            }}
+                            className="w-full px-3 py-2 border border-[#B2A29E] rounded-md focus:outline-none focus:ring-2 focus:ring-[#47624f]"
+                          />
+                        </div>
+                        <div>
+                          <Label htmlFor="wordProblemsTime" className="text-xs text-[#707D7F]">Minutes per Question</Label>
+                          <input
+                            id="wordProblemsTime"
+                            type="number"
+                            min="1"
+                            max="60"
+                            placeholder="Minutes each"
+                            value={examSpecs.wordProblems.timePerQuestion}
+                            onChange={(e) => {
+                              const time = parseInt(e.target.value) || 15
+                              setExamSpecs(prev => ({
+                                ...prev,
+                                wordProblems: { ...prev.wordProblems, timePerQuestion: time }
+                              }))
+                            }}
+                            className="w-full px-3 py-2 border border-[#B2A29E] rounded-md focus:outline-none focus:ring-2 focus:ring-[#47624f]"
+                          />
+                        </div>
+                      </div>
+                    </div>
+
+                    <div>
+                      <Label htmlFor="essayProblems">Essay Problems</Label>
+                      <div className="grid grid-cols-2 gap-2">
+                        <div>
+                          <Label htmlFor="essayProblemsCount" className="text-xs text-[#707D7F]">Number of Questions</Label>
+                          <input
+                            id="essayProblemsCount"
+                            type="number"
+                            min="0"
+                            max="10"
+                            placeholder="Count"
+                            value={examSpecs.essayProblems.count}
+                            onChange={(e) => {
+                              const count = parseInt(e.target.value) || 0
+                              setExamSpecs(prev => ({
+                                ...prev,
+                                essayProblems: { ...prev.essayProblems, count }
+                              }))
+                            }}
+                            className="w-full px-3 py-2 border border-[#B2A29E] rounded-md focus:outline-none focus:ring-2 focus:ring-[#47624f]"
+                          />
+                        </div>
+                        <div>
+                          <Label htmlFor="essayProblemsTime" className="text-xs text-[#707D7F]">Minutes per Question</Label>
+                          <input
+                            id="essayProblemsTime"
+                            type="number"
+                            min="5"
+                            max="60"
+                            placeholder="Minutes each"
+                            value={examSpecs.essayProblems.timePerQuestion}
+                            onChange={(e) => {
+                              const time = parseInt(e.target.value) || 30
+                              setExamSpecs(prev => ({
+                                ...prev,
+                                essayProblems: { ...prev.essayProblems, timePerQuestion: time }
+                              }))
+                            }}
+                            className="w-full px-3 py-2 border border-[#B2A29E] rounded-md focus:outline-none focus:ring-2 focus:ring-[#47624f]"
+                          />
+                        </div>
+                      </div>
+                    </div>
+
+                    <div>
+                      <Label htmlFor="multipleChoice">Multiple Choice</Label>
+                      <div className="grid grid-cols-2 gap-2">
+                        <div>
+                          <Label htmlFor="multipleChoiceCount" className="text-xs text-[#707D7F]">Number of Questions</Label>
+                          <input
+                            id="multipleChoiceCount"
+                            type="number"
+                            min="0"
+                            max="50"
+                            placeholder="Count"
+                            value={examSpecs.multipleChoice.count}
+                            onChange={(e) => {
+                              const count = parseInt(e.target.value) || 0
+                              setExamSpecs(prev => ({
+                                ...prev,
+                                multipleChoice: { ...prev.multipleChoice, count }
+                              }))
+                            }}
+                            className="w-full px-3 py-2 border border-[#B2A29E] rounded-md focus:outline-none focus:ring-2 focus:ring-[#47624f]"
+                          />
+                        </div>
+                        <div>
+                          <Label htmlFor="multipleChoiceTime" className="text-xs text-[#707D7F]">Minutes per Question</Label>
+                          <input
+                            id="multipleChoiceTime"
+                            type="number"
+                            min="1"
+                            max="10"
+                            placeholder="Minutes each"
+                            value={examSpecs.multipleChoice.timePerQuestion}
+                            onChange={(e) => {
+                              const time = parseInt(e.target.value) || 2
+                              setExamSpecs(prev => ({
+                                ...prev,
+                                multipleChoice: { ...prev.multipleChoice, timePerQuestion: time }
+                              }))
+                            }}
+                            className="w-full px-3 py-2 border border-[#B2A29E] rounded-md focus:outline-none focus:ring-2 focus:ring-[#47624f]"
+                          />
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Time validation */}
+                  {(() => {
+                    const lectureDurations = Object.values(courseData.lectureSchedule || {}) as string[]
+                    const lectureLength = lectureDurations.length > 0 ? 
+                      parseInt(lectureDurations[0].replace(/\D/g, '')) || 90 : 90
+                    
+                    const calculatedTime = (examSpecs.wordProblems.count * examSpecs.wordProblems.timePerQuestion) +
+                                          (examSpecs.essayProblems.count * examSpecs.essayProblems.timePerQuestion) +
+                                          (examSpecs.multipleChoice.count * examSpecs.multipleChoice.timePerQuestion)
+                    const difference = Math.abs(calculatedTime - lectureLength)
+                    
+                    return difference > 5 ? (
+                      <p className="text-sm text-red-600">
+                        Calculated time ({calculatedTime} min) doesn't match exam duration ({lectureLength} min)
+                      </p>
+                    ) : (
+                      <p className="text-sm text-green-600">
+                        Time allocation: {calculatedTime} minutes
+                      </p>
+                    )
+                  })()}
+                </div>
+              )}
+
+
+
               <Button
                 onClick={handleGenerate}
-                disabled={!selectedUnit || isGenerating}
+                disabled={!selectedUnit || isGenerating || 
+                  (type === "homework" && wordProblems + multipleChoiceProblems !== totalProblems) ||
+                  (type === "exam" && (() => {
+                    const lectureDurations = Object.values(courseData.lectureSchedule || {}) as string[]
+                    const lectureLength = lectureDurations.length > 0 ? 
+                      parseInt(lectureDurations[0].replace(/\D/g, '')) || 90 : 90
+                    
+                    const calculatedTime = (examSpecs.wordProblems.count * examSpecs.wordProblems.timePerQuestion) +
+                                          (examSpecs.essayProblems.count * examSpecs.essayProblems.timePerQuestion) +
+                                          (examSpecs.multipleChoice.count * examSpecs.multipleChoice.timePerQuestion)
+                    return Math.abs(calculatedTime - lectureLength) > 5
+                  })())
+                }
                 className="w-full bg-gradient-to-r from-[#47624f] to-[#707D7F] hover:from-[#000000] hover:to-[#47624f]"
               >
                 {isGenerating ? (

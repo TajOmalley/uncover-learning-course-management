@@ -19,11 +19,20 @@ export function CourseDashboard({ courseData }: CourseDashboardProps) {
   const [generatorType, setGeneratorType] = useState("")
   const [expandedUnits, setExpandedUnits] = useState<Set<number>>(new Set())
   const [savedReadingContent, setSavedReadingContent] = useState<any[]>([])
+  const [savedHomeworkContent, setSavedHomeworkContent] = useState<any[]>([])
+  const [savedLessonPlanContent, setSavedLessonPlanContent] = useState<any[]>([])
+  const [savedExamContent, setSavedExamContent] = useState<any[]>([])
 
-  // Load saved reading content from localStorage
+  // Load saved content from localStorage
   useEffect(() => {
-    const savedContent = JSON.parse(localStorage.getItem('savedReadingContent') || '[]')
-    setSavedReadingContent(savedContent)
+    const savedReading = JSON.parse(localStorage.getItem('savedReadingContent') || '[]')
+    const savedHomework = JSON.parse(localStorage.getItem('savedHomeworkContent') || '[]')
+    const savedLessonPlans = JSON.parse(localStorage.getItem('savedLessonPlanContent') || '[]')
+    const savedExams = JSON.parse(localStorage.getItem('savedExamContent') || '[]')
+    setSavedReadingContent(savedReading)
+    setSavedHomeworkContent(savedHomework)
+    setSavedLessonPlanContent(savedLessonPlans)
+    setSavedExamContent(savedExams)
   }, [])
 
   const contentTypes = [
@@ -175,6 +184,9 @@ export function CourseDashboard({ courseData }: CourseDashboardProps) {
                   <div className="space-y-4">
                     {courseData.calendar?.map((unit: any, index: number) => {
                       const unitReadingContent = savedReadingContent.filter(content => content.unitId === unit.id)
+                      const unitHomeworkContent = savedHomeworkContent.filter(content => content.unitId === unit.id)
+                      const unitLessonPlanContent = savedLessonPlanContent.filter(content => content.unitId === unit.id)
+                      const unitExamContent = savedExamContent.filter(content => content.unitId === unit.id)
                       const isExpanded = expandedUnits.has(unit.id)
                       
                       return (
@@ -216,27 +228,117 @@ export function CourseDashboard({ courseData }: CourseDashboardProps) {
                           {/* Expandable content section */}
                           {isExpanded && (
                             <div className="px-4 pb-4 border-t border-[#B2A29E]/20">
-                              <div className="pt-4 space-y-3">
-                                <h5 className="font-medium text-[#000000] text-sm">Reading Content</h5>
-                                {unitReadingContent.length > 0 ? (
-                                  <div className="space-y-2">
-                                    {unitReadingContent.map((content) => (
-                                      <div key={content.id} className="flex items-center justify-between p-2 bg-white rounded border border-[#B2A29E]/20">
-                                        <div>
-                                          <p className="text-sm font-medium text-[#000000]">{content.title}</p>
-                                          <p className="text-xs text-[#707D7F]">
-                                            Created: {new Date(content.createdAt).toLocaleDateString()}
-                                          </p>
+                              <div className="pt-4 space-y-4">
+                                {/* Reading Content Section */}
+                                <div className="space-y-3">
+                                  <h5 className="font-medium text-[#000000] text-sm">Reading Content</h5>
+                                  {unitReadingContent.length > 0 ? (
+                                    <div className="space-y-2">
+                                      {unitReadingContent.map((content) => (
+                                        <div key={content.id} className="flex items-center justify-between p-2 bg-white rounded border border-[#B2A29E]/20">
+                                          <div>
+                                            <p className="text-sm font-medium text-[#000000]">{content.title}</p>
+                                            <p className="text-xs text-[#707D7F]">
+                                              Created: {new Date(content.createdAt).toLocaleDateString()}
+                                            </p>
+                                          </div>
+                                          <Button size="sm" variant="outline">
+                                            <Eye className="w-3 h-3" />
+                                          </Button>
                                         </div>
-                                        <Button size="sm" variant="outline">
-                                          <Eye className="w-3 h-3" />
-                                        </Button>
-                                      </div>
-                                    ))}
-                                  </div>
-                                ) : (
-                                  <p className="text-sm text-[#707D7F] italic">No reading content generated yet</p>
-                                )}
+                                      ))}
+                                    </div>
+                                  ) : (
+                                    <p className="text-sm text-[#707D7F] italic">No reading content generated yet</p>
+                                  )}
+                                </div>
+
+                                {/* Homework Content Section */}
+                                <div className="space-y-3">
+                                  <h5 className="font-medium text-[#000000] text-sm">Homework Problems</h5>
+                                  {unitHomeworkContent.length > 0 ? (
+                                    <div className="space-y-2">
+                                      {unitHomeworkContent.map((content) => (
+                                        <div key={content.id} className="flex items-center justify-between p-2 bg-white rounded border border-[#B2A29E]/20">
+                                          <div>
+                                            <p className="text-sm font-medium text-[#000000]">{content.title}</p>
+                                            <p className="text-xs text-[#707D7F]">
+                                              Created: {new Date(content.createdAt).toLocaleDateString()}
+                                              {content.problemSpecs && (
+                                                <span className="ml-2">
+                                                  ({content.problemSpecs.totalProblems} problems: {content.problemSpecs.wordProblems} word, {content.problemSpecs.multipleChoiceProblems} multiple choice)
+                                                </span>
+                                              )}
+                                            </p>
+                                          </div>
+                                          <Button size="sm" variant="outline">
+                                            <Eye className="w-3 h-3" />
+                                          </Button>
+                                        </div>
+                                      ))}
+                                    </div>
+                                  ) : (
+                                    <p className="text-sm text-[#707D7F] italic">No homework problems generated yet</p>
+                                  )}
+                                </div>
+
+                                {/* Lesson Plan Content Section */}
+                                <div className="space-y-3">
+                                  <h5 className="font-medium text-[#000000] text-sm">Lesson Plans</h5>
+                                  {unitLessonPlanContent.length > 0 ? (
+                                    <div className="space-y-2">
+                                      {unitLessonPlanContent.map((content) => (
+                                        <div key={content.id} className="flex items-center justify-between p-2 bg-white rounded border border-[#B2A29E]/20">
+                                          <div>
+                                            <p className="text-sm font-medium text-[#000000]">{content.title}</p>
+                                            <p className="text-xs text-[#707D7F]">
+                                              Created: {new Date(content.createdAt).toLocaleDateString()}
+                                              {content.lectureLength && (
+                                                <span className="ml-2">
+                                                  ({content.lectureLength} minutes)
+                                                </span>
+                                              )}
+                                            </p>
+                                          </div>
+                                          <Button size="sm" variant="outline">
+                                            <Eye className="w-3 h-3" />
+                                          </Button>
+                                        </div>
+                                      ))}
+                                    </div>
+                                  ) : (
+                                    <p className="text-sm text-[#707D7F] italic">No lesson plans generated yet</p>
+                                  )}
+                                </div>
+
+                                {/* Exam Content Section */}
+                                <div className="space-y-3">
+                                  <h5 className="font-medium text-[#000000] text-sm">Exams</h5>
+                                  {unitExamContent.length > 0 ? (
+                                    <div className="space-y-2">
+                                      {unitExamContent.map((content) => (
+                                        <div key={content.id} className="flex items-center justify-between p-2 bg-white rounded border border-[#B2A29E]/20">
+                                          <div>
+                                            <p className="text-sm font-medium text-[#000000]">{content.title}</p>
+                                            <p className="text-xs text-[#707D7F]">
+                                              Created: {new Date(content.createdAt).toLocaleDateString()}
+                                              {content.examSpecs && (
+                                                <span className="ml-2">
+                                                  ({content.examSpecs.totalExamTime} min: {content.examSpecs.wordProblems.count} word, {content.examSpecs.essayProblems.count} essay, {content.examSpecs.multipleChoice.count} multiple choice)
+                                                </span>
+                                              )}
+                                            </p>
+                                          </div>
+                                          <Button size="sm" variant="outline">
+                                            <Eye className="w-3 h-3" />
+                                          </Button>
+                                        </div>
+                                      ))}
+                                    </div>
+                                  ) : (
+                                    <p className="text-sm text-[#707D7F] italic">No exams generated yet</p>
+                                  )}
+                                </div>
                               </div>
                             </div>
                           )}
