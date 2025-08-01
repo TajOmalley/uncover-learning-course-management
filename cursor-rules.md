@@ -11,7 +11,6 @@ Phase 1: Frontend - Outline
 2. Change Website Style to be more uniform, clean, minimalist
 3. Impove content visuals
 4. Improve calender visuals
-5. Add chat window for fully customized expierence and Q and A.
 
 For each prompt I give you, I will confirm which phase and step we are in. In all of your responses to my prompts, you will confirm this phase and step, then explain my prompt to me, to confirm you understand. After you do this, you will read the entire code base, then explain how you will implement the change requested in my prompt. Then you will send me your response and I will confirm if it is what I want or not. If I say "Confirm" then you can begin editing code as explained. If I say "Deny" I will follow that with a reason why. Then you will reread the code base, and rexplain what you will change with my reason why in mind. Then I will once again confirm or deny the plan. 
 
