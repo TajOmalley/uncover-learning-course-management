@@ -2,7 +2,8 @@ import { NextRequest, NextResponse } from "next/server"
 import { PrismaClient } from "@prisma/client"
 import bcrypt from "bcryptjs"
 
-const prisma = new PrismaClient()
+// Only create Prisma client if DATABASE_URL is available
+const prisma = process.env.DATABASE_URL ? new PrismaClient() : null
 
 export async function POST(request: NextRequest) {
   try {
@@ -13,6 +14,13 @@ export async function POST(request: NextRequest) {
       return NextResponse.json(
         { error: "Email and password are required" },
         { status: 400 }
+      )
+    }
+
+    if (!prisma) {
+      return NextResponse.json(
+        { error: "Database not available" },
+        { status: 500 }
       )
     }
 

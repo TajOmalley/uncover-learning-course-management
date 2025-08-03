@@ -4,10 +4,11 @@ import { PrismaAdapter } from "@auth/prisma-adapter"
 import { PrismaClient } from "@prisma/client"
 import bcrypt from "bcryptjs"
 
-const prisma = new PrismaClient()
+// Only create Prisma client if DATABASE_URL is available
+const prisma = process.env.DATABASE_URL ? new PrismaClient() : null
 
 const handler = NextAuth({
-  adapter: PrismaAdapter(prisma),
+  adapter: prisma ? PrismaAdapter(prisma) : undefined,
   providers: [
     CredentialsProvider({
       name: "credentials",
@@ -17,6 +18,11 @@ const handler = NextAuth({
       },
       async authorize(credentials) {
         if (!credentials?.email || !credentials?.password) {
+          return null
+        }
+
+        if (!prisma) {
+          console.error('Prisma client not available')
           return null
         }
 
