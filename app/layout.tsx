@@ -2,6 +2,7 @@ import type { Metadata } from 'next'
 import { GeistSans } from 'geist/font/sans'
 import { GeistMono } from 'geist/font/mono'
 import { Montserrat, Fraunces } from 'next/font/google'
+import AuthSessionProvider from '@/components/providers/session-provider'
 import './globals.css'
 
 const montserrat = Montserrat({ 
@@ -38,7 +39,9 @@ html {
 }
         `}</style>
       </head>
-      <body className={`${montserrat.variable} ${fraunces.variable}`}>{children}</body>
+      <body className={`${montserrat.variable} ${fraunces.variable}`}>
+        <AuthSessionProvider>{children}</AuthSessionProvider>
+      </body>
     </html>
   )
 }

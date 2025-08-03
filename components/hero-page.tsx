@@ -1,21 +1,31 @@
 "use client"
 
 import Image from "next/image"
+import { useRouter } from "next/navigation"
 
 interface HeroPageProps {
   onStartCourse: () => void
 }
 
 export function HeroPage({ onStartCourse }: HeroPageProps) {
+  const router = useRouter()
 
   const handleBuildCourse = () => {
     onStartCourse()
   }
 
+  const handleSignIn = () => {
+    router.push("/auth/signin")
+  }
+
+  const handleSignUp = () => {
+    router.push("/auth/signup")
+  }
+
   const menuItems = [
     { label: "build a course", action: handleBuildCourse },
-    { label: "sign-in", action: () => console.log("Sign in clicked") },
-    { label: "sign-up", action: () => console.log("Sign up clicked") },
+    { label: "sign-in", action: handleSignIn },
+    { label: "sign-up", action: handleSignUp },
     { label: "schedule a demo", action: () => console.log("Schedule demo clicked") },
     { label: "contact", action: () => console.log("Contact clicked") },
   ]
