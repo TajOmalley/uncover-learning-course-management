@@ -63,6 +63,7 @@ export function NavigationSidebar({ isOpen, onClose, currentPage, courses = [], 
                     width={1000}
                     height={1000}
                     className="object-contain"
+                    // TEMP: Force deployment test - logo should be 1000x1000
                   />
                 </div>
               </div>

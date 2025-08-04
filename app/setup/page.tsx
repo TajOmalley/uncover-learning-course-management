@@ -1,20 +1,14 @@
 "use client"
 
-import { useState } from "react"
+import { useRouter } from "next/navigation"
 import { CourseSetup } from "@/components/course-setup"
-import { UserDashboard } from "@/components/user-dashboard"
 
 export default function SetupPage() {
-  const [currentView, setCurrentView] = useState<'setup' | 'dashboard'>('setup')
-  const [courseData, setCourseData] = useState<any>(null)
+  const router = useRouter()
 
   const handleCourseComplete = (data: any) => {
-    setCourseData(data)
-    setCurrentView('dashboard')
-  }
-
-  if (currentView === 'dashboard' && courseData) {
-    return <UserDashboard />
+    // Navigate back to main page which will show the updated course list
+    router.push('/')
   }
 
   return <CourseSetup onComplete={handleCourseComplete} />

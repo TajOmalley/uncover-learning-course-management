@@ -1,14 +1,14 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import { signOut } from "next-auth/react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { BookOpen, FileText, PenTool, GraduationCap, Sparkles, Plus, Edit, Eye, LogOut } from "lucide-react"
+import { BookOpen, FileText, PenTool, GraduationCap, Sparkles, Plus, Edit, Eye, Menu } from "lucide-react"
 import { CourseCalendar } from "@/components/course-calendar"
 import { ContentGenerator } from "@/components/content-generator"
+import { NavigationSidebar } from "@/components/navigation-sidebar"
 
 interface CourseDashboardProps {
   courseData: any
@@ -24,6 +24,8 @@ export function CourseDashboard({ courseData, onBack }: CourseDashboardProps) {
   const [savedHomeworkContent, setSavedHomeworkContent] = useState<any[]>([])
   const [savedLessonPlanContent, setSavedLessonPlanContent] = useState<any[]>([])
   const [savedExamContent, setSavedExamContent] = useState<any[]>([])
+  const [sidebarOpen, setSidebarOpen] = useState(false)
+  const [allCourses, setAllCourses] = useState<any[]>([])
 
   // Load saved content from database
   useEffect(() => {
@@ -58,6 +60,29 @@ export function CourseDashboard({ courseData, onBack }: CourseDashboardProps) {
 
     fetchContent()
   }, [courseData.courseId])
+
+  // Load all courses for sidebar
+  useEffect(() => {
+    const fetchCourses = async () => {
+      try {
+        const response = await fetch('/api/courses')
+        
+        if (!response.ok) {
+          throw new Error(`Failed to fetch courses: ${response.status}`)
+        }
+
+        const result = await response.json()
+        
+        if (result.success) {
+          setAllCourses(result.courses)
+        }
+      } catch (error) {
+        console.error('Error fetching courses:', error)
+      }
+    }
+
+    fetchCourses()
+  }, [])
 
   const contentTypes = [
     {
@@ -104,21 +129,46 @@ export function CourseDashboard({ courseData, onBack }: CourseDashboardProps) {
   }
 
   return (
-    <div className="min-h-screen relative">
-      <button
-        onClick={onBack || (() => window.location.href = '/')}
-        className="absolute top-20 left-2 z-10 text-white hover:text-[#C9F2C7] transition-colors"
-      >
-        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-          <path d="m15 18-6-6 6-6"/>
-        </svg>
-      </button>
-      {/* Header */}
-      <div className="bg-gradient-to-r from-[#47624f] via-[#707D7F] to-[#47624f] text-white">
-        <div className="max-w-7xl mx-auto px-4 py-8">
-          <div className="flex items-center justify-between">
-            <div>
-              <h1 className="text-3xl font-bold">{courseData.courseName}</h1>
+    <div className="min-h-screen flex">
+      <NavigationSidebar 
+        isOpen={sidebarOpen} 
+        onClose={() => setSidebarOpen(false)}
+        currentPage={courseData.courseName}
+        courses={allCourses}
+        onCourseSelect={(course) => {
+          // Navigate to the selected course
+          const courseData = {
+            courseName: course.title,
+            subject: course.subject,
+            level: course.level,
+            startDate: course.startDate,
+            endDate: course.endDate,
+            lectureSchedule: course.lectureSchedule,
+            calendar: course.units,
+            courseId: course.id,
+          }
+          // This would need to be handled by the parent component
+          // For now, we'll reload the page with the new course
+          window.location.href = `/?courseId=${course.id}`
+        }}
+        onAddCourse={() => {
+          window.location.href = '/setup'
+        }}
+      />
+      
+      <div className={`flex-1 relative transition-all duration-300 ${sidebarOpen ? 'lg:ml-80' : ''}`}>
+                {/* Header */}
+        <div className="bg-gradient-to-r from-[#47624f] via-[#707D7F] to-[#47624f] text-white relative">
+          <button
+            onClick={() => setSidebarOpen(!sidebarOpen)}
+            className="absolute top-1/2 left-8 z-10 text-white hover:text-[#C9F2C7] transition-colors transform -translate-y-1/2"
+          >
+            <Menu className="w-6 h-6" />
+          </button>
+          <div className="max-w-7xl mx-auto px-4 py-8">
+            <div className="flex items-center justify-between">
+              <div className="ml-20">
+                <h1 className="text-3xl font-bold">{courseData.courseName}</h1>
               <p className="text-[#C9F2C7] mt-2">
                 {courseData.subject} • {courseData.level}
               </p>
@@ -131,22 +181,7 @@ export function CourseDashboard({ courseData, onBack }: CourseDashboardProps) {
                 </Badge>
               </div>
             </div>
-            <div className="text-right">
-              <div className="flex flex-col items-center text-xl text-white" style={{ fontFamily: 'var(--font-fraunces)' }}>
-                <div>uncover</div>
-                <div>learning</div>
-              </div>
-              <div className="mt-4">
-                <Button
-                  onClick={() => signOut({ callbackUrl: '/' })}
-                  size="sm"
-                  className="text-[#47624f] border-white bg-white hover:bg-white hover:text-[#47624f] transition-colors"
-                >
-                  <LogOut className="w-4 h-4 mr-2" />
-                  Sign Out
-                </Button>
-              </div>
-            </div>
+
           </div>
         </div>
       </div>
@@ -444,6 +479,7 @@ export function CourseDashboard({ courseData, onBack }: CourseDashboardProps) {
             </div>
           </TabsContent>
         </Tabs>
+      </div>
       </div>
     </div>
   )

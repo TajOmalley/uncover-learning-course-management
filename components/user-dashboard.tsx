@@ -1,13 +1,14 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import { useSession, signOut } from "next-auth/react"
+import { useSession } from "next-auth/react"
 import { useRouter } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
-import { Plus, BookOpen, Calendar, GraduationCap, LogOut } from "lucide-react"
+import { Plus, BookOpen, Calendar, GraduationCap, Menu } from "lucide-react"
 import { CourseDashboard } from "@/components/course-dashboard"
+import { NavigationSidebar } from "@/components/navigation-sidebar"
 
 interface Course {
   id: string
@@ -28,6 +29,7 @@ export function UserDashboard() {
   const [courses, setCourses] = useState<Course[]>([])
   const [loading, setLoading] = useState(true)
   const [selectedCourse, setSelectedCourse] = useState<Course | null>(null)
+  const [sidebarOpen, setSidebarOpen] = useState(false)
 
   useEffect(() => {
     if (status === "loading") return
@@ -115,43 +117,34 @@ export function UserDashboard() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-[#C9F2C7] via-white to-[#C9F2C7]">
-      <button
-        onClick={() => router.push('/')}
-        className="absolute top-20 left-2 z-10 text-[#47624f] hover:text-[#000000] transition-colors"
-      >
-        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-          <path d="m15 18-6-6 6-6"/>
-        </svg>
-      </button>
-
-      {/* Header */}
-      <div className="bg-gradient-to-r from-[#47624f] via-[#707D7F] to-[#47624f] text-white">
+    <div className="min-h-screen flex">
+      <NavigationSidebar 
+        isOpen={sidebarOpen} 
+        onClose={() => setSidebarOpen(false)}
+        currentPage="My Courses"
+        courses={courses}
+        onCourseSelect={handleSelectCourse}
+        onAddCourse={handleCreateCourse}
+      />
+      
+      <div className={`flex-1 bg-gradient-to-br from-[#C9F2C7] via-white to-[#C9F2C7] relative transition-all duration-300 ${sidebarOpen ? 'lg:ml-80' : ''}`}>
+              {/* Header */}
+      <div className="bg-gradient-to-r from-[#47624f] via-[#707D7F] to-[#47624f] text-white relative">
+        <button
+          onClick={() => setSidebarOpen(!sidebarOpen)}
+          className="absolute top-1/2 left-8 z-10 text-white hover:text-[#C9F2C7] transition-colors transform -translate-y-1/2"
+        >
+          <Menu className="w-6 h-6" />
+        </button>
         <div className="max-w-7xl mx-auto px-4 py-8">
           <div className="flex items-center justify-between">
-            <div>
+            <div className="ml-20">
               <h1 className="text-3xl font-bold">My Courses</h1>
               <p className="text-[#C9F2C7] mt-2">
                 Welcome back, {session?.user?.name || session?.user?.email}
               </p>
             </div>
-            <div className="text-right">
-              <div className="flex flex-col items-center text-xl text-white" style={{ fontFamily: 'var(--font-fraunces)' }}>
-                <div>uncover</div>
-                <div>learning</div>
-              </div>
-              <div className="mt-4">
-                <Button
-                  onClick={() => signOut({ callbackUrl: '/' })}
-                  variant="outline"
-                  size="sm"
-                  className="text-[#47624f] border-white bg-white hover:bg-white hover:text-[#47624f] transition-colors"
-                >
-                  <LogOut className="w-4 h-4 mr-2" />
-                  Sign Out
-                </Button>
-              </div>
-            </div>
+
           </div>
         </div>
       </div>
@@ -234,6 +227,7 @@ export function UserDashboard() {
             </div>
           </div>
         )}
+      </div>
       </div>
     </div>
   )
