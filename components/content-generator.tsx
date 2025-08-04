@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Label } from "@/components/ui/label"
@@ -9,6 +9,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { ArrowLeft, Sparkles, Download, Copy, RefreshCw } from "lucide-react"
 import ReactMarkdown from 'react-markdown'
 import remarkGfm from 'remark-gfm'
+import { Badge } from "@/components/ui/badge"
 
 interface ContentGeneratorProps {
   type: string
@@ -23,6 +24,7 @@ export function ContentGenerator({ type, courseData, onBack }: ContentGeneratorP
   const [customPrompt, setCustomPrompt] = useState("")
   const [isSaving, setIsSaving] = useState(false)
   const [savedContent, setSavedContent] = useState<any[]>([])
+  const [loadingSavedContent, setLoadingSavedContent] = useState(false)
   
   // Homework problem specifications
   const [totalProblems, setTotalProblems] = useState(5)
@@ -60,6 +62,36 @@ export function ContentGenerator({ type, courseData, onBack }: ContentGeneratorP
   }
 
   const currentType = contentTypes[type as keyof typeof contentTypes]
+
+  // Load saved content when component mounts
+  useEffect(() => {
+    if (courseData.courseId) {
+      loadSavedContent()
+    }
+  }, [courseData.courseId])
+
+  const loadSavedContent = async () => {
+    setLoadingSavedContent(true)
+    try {
+      const response = await fetch(`/api/content?courseId=${courseData.courseId}`)
+      
+      if (!response.ok) {
+        throw new Error(`Failed to fetch saved content: ${response.status}`)
+      }
+
+      const result = await response.json()
+      
+      if (result.success) {
+        setSavedContent(result.content)
+      } else {
+        console.error('Failed to fetch saved content:', result.error)
+      }
+    } catch (error) {
+      console.error('Error loading saved content:', error)
+    } finally {
+      setLoadingSavedContent(false)
+    }
+  }
 
   const handleGenerate = async () => {
     setIsGenerating(true)
@@ -253,7 +285,7 @@ export function ContentGenerator({ type, courseData, onBack }: ContentGeneratorP
         }),
         ...(type === "lesson-plan" && {
           lectureLength: defaultLectureLength
-        }),
+          }),
         ...(type === "exam" && {
           examSpecs: {
             ...examSpecs,
@@ -294,8 +326,24 @@ export function ContentGenerator({ type, courseData, onBack }: ContentGeneratorP
 
       console.log('Content saved successfully to database:', result.content)
       
+      // Show success message
+      alert(`✅ Content saved successfully!\n\nYour ${type.replace('-', ' ')} has been saved to the "${selectedUnit}" unit.`)
+      
+      // Reset the generation window
+      setGeneratedContent("")
+      setCustomPrompt("")
+      setSelectedUnit("")
+      
+      // Add the saved content to the list
+      setSavedContent(prev => [...prev, result.content])
+      
+      // Show a link to view the saved content
+      const viewLink = `#saved-content-${result.content.id}`
+      console.log(`View saved content: ${viewLink}`)
+      
     } catch (error) {
       console.error('Error saving content:', error)
+      alert('❌ Failed to save content. Please try again.')
     } finally {
       setIsSaving(false)
     }
@@ -866,6 +914,70 @@ Detailed solutions and explanations will be provided during the review session.`
               )}
             </CardContent>
           </Card>
+          
+          {/* Saved Content Section */}
+          {savedContent.length > 0 && (
+            <Card className="lg:col-span-3">
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Download className="w-5 h-5 text-[#47624f]" />
+                  Saved Content
+                </CardTitle>
+                <CardDescription>
+                  Your previously saved content organized by units
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                {loadingSavedContent ? (
+                  <div className="flex items-center justify-center py-8">
+                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#47624f]"></div>
+                    <span className="ml-2 text-[#707D7F]">Loading saved content...</span>
+                  </div>
+                ) : (
+                  <div className="space-y-6">
+                    {courseData.calendar?.map((unit: any) => {
+                      const unitContent = savedContent.filter(content => content.unitId === unit.id)
+                      
+                      if (unitContent.length === 0) return null
+                      
+                      return (
+                        <div key={unit.id} className="border border-[#B2A29E]/20 rounded-lg p-4">
+                          <h3 className="text-lg font-semibold text-[#47624f] mb-4 flex items-center gap-2">
+                            <div className={`w-3 h-3 rounded-full ${unit.color}`}></div>
+                            {unit.title} - Week {unit.week}
+                          </h3>
+                          <div className="space-y-4">
+                            {unitContent.map((content: any) => (
+                              <div key={content.id} className="bg-white rounded-lg border border-[#C9F2C7]/30 p-4">
+                                <div className="flex items-center justify-between mb-3">
+                                  <div className="flex items-center gap-2">
+                                    <Badge variant="secondary" className="bg-[#C9F2C7]/20 text-[#47624f]">
+                                      {content.type.replace('-', ' ')}
+                                    </Badge>
+                                    <span className="text-sm text-[#707D7F]">
+                                      Saved {new Date(content.createdAt).toLocaleDateString()}
+                                    </span>
+                                  </div>
+                                  <Button size="sm" variant="outline" className="border-[#47624f] text-[#47624f] hover:bg-[#47624f] hover:text-white">
+                                    View Content
+                                  </Button>
+                                </div>
+                                <div className="bg-[#C9F2C7]/10 rounded-lg p-3">
+                                  <p className="text-[#000000] leading-relaxed text-sm">
+                                    {String(content.content).substring(0, 300)}...
+                                  </p>
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      )
+                    })}
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          )}
         </div>
       </div>
     </div>
