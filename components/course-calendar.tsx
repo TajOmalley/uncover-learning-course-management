@@ -321,7 +321,7 @@ export function CourseCalendar({ courseData }: CourseCalendarProps) {
                                 </div>
                               </div>
                               <div className="text-xs text-[#707D7F] ml-6">
-                                {item.content}
+                                View: Unit {unit.id} - {unit.title}
                                 {item.isGenerated && (
                                   <div className="mt-1">
                                     <Badge variant="secondary" className="bg-[#C9F2C7]/20 text-[#47624f] text-xs">
