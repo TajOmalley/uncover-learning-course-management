@@ -242,17 +242,7 @@ export function ContentGenerator({ type, courseData, onBack }: ContentGeneratorP
       const defaultLectureLength = lectureDurations.length > 0 ? 
         parseInt(lectureDurations[0].replace(/\D/g, '')) || 90 : 90
 
-      const contentToSave = {
-        id: Date.now(),
-        type: type,
-        unitId: selectedUnitData.id,
-        unitTitle: selectedUnitData.title,
-        content: generatedContent,
-        title: type === "homework" ? `Homework: ${selectedUnitData.title}` : 
-               type === "lesson-plan" ? `Lesson Plan: ${selectedUnitData.title}` : 
-               type === "exam" ? `Exam: ${selectedUnitData.title}` : 
-               `Reading: ${selectedUnitData.title}`,
-        createdAt: new Date().toISOString(),
+      const specifications = {
         customPrompt: customPrompt,
         ...(type === "homework" && {
           problemSpecs: {
@@ -277,19 +267,32 @@ export function ContentGenerator({ type, courseData, onBack }: ContentGeneratorP
         })
       }
 
-      // Save to localStorage for persistence
-      const storageKey = type === "homework" ? 'savedHomeworkContent' : 
-                        type === "lesson-plan" ? 'savedLessonPlanContent' : 
-                        type === "exam" ? 'savedExamContent' : 
-                        'savedReadingContent'
-      const existingContent = JSON.parse(localStorage.getItem(storageKey) || '[]')
-      const updatedContent = [...existingContent, contentToSave]
-      localStorage.setItem(storageKey, JSON.stringify(updatedContent))
+      // Save to database
+      const response = await fetch('/api/content', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          courseId: courseData.courseId,
+          unitId: selectedUnitData.id,
+          type: type,
+          content: generatedContent,
+          specifications: specifications
+        }),
+      })
+
+      if (!response.ok) {
+        throw new Error(`Failed to save content: ${response.status}`)
+      }
+
+      const result = await response.json()
       
-      setSavedContent(updatedContent)
-      
-      // You could also save to a backend API here
-      console.log('Content saved successfully:', contentToSave)
+      if (!result.success) {
+        throw new Error(result.error || 'Failed to save content')
+      }
+
+      console.log('Content saved successfully to database:', result.content)
       
     } catch (error) {
       console.error('Error saving content:', error)

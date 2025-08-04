@@ -11,9 +11,10 @@ import { ContentGenerator } from "@/components/content-generator"
 
 interface CourseDashboardProps {
   courseData: any
+  onBack?: () => void
 }
 
-export function CourseDashboard({ courseData }: CourseDashboardProps) {
+export function CourseDashboard({ courseData, onBack }: CourseDashboardProps) {
   const [activeTab, setActiveTab] = useState("overview")
   const [showGenerator, setShowGenerator] = useState(false)
   const [generatorType, setGeneratorType] = useState("")
@@ -23,17 +24,39 @@ export function CourseDashboard({ courseData }: CourseDashboardProps) {
   const [savedLessonPlanContent, setSavedLessonPlanContent] = useState<any[]>([])
   const [savedExamContent, setSavedExamContent] = useState<any[]>([])
 
-  // Load saved content from localStorage
+  // Load saved content from database
   useEffect(() => {
-    const savedReading = JSON.parse(localStorage.getItem('savedReadingContent') || '[]')
-    const savedHomework = JSON.parse(localStorage.getItem('savedHomeworkContent') || '[]')
-    const savedLessonPlans = JSON.parse(localStorage.getItem('savedLessonPlanContent') || '[]')
-    const savedExams = JSON.parse(localStorage.getItem('savedExamContent') || '[]')
-    setSavedReadingContent(savedReading)
-    setSavedHomeworkContent(savedHomework)
-    setSavedLessonPlanContent(savedLessonPlans)
-    setSavedExamContent(savedExams)
-  }, [])
+    const fetchContent = async () => {
+      if (!courseData.courseId) return
+      
+      try {
+        const response = await fetch(`/api/content?courseId=${courseData.courseId}`)
+        
+        if (!response.ok) {
+          throw new Error(`Failed to fetch content: ${response.status}`)
+        }
+
+        const result = await response.json()
+        
+        if (result.success) {
+          // Group content by type
+          const reading = result.content.filter((item: any) => item.type === 'reading')
+          const homework = result.content.filter((item: any) => item.type === 'homework')
+          const lessonPlans = result.content.filter((item: any) => item.type === 'lesson-plan')
+          const exams = result.content.filter((item: any) => item.type === 'exam')
+          
+          setSavedReadingContent(reading)
+          setSavedHomeworkContent(homework)
+          setSavedLessonPlanContent(lessonPlans)
+          setSavedExamContent(exams)
+        }
+      } catch (error) {
+        console.error('Error fetching content:', error)
+      }
+    }
+
+    fetchContent()
+  }, [courseData.courseId])
 
   const contentTypes = [
     {
@@ -82,7 +105,7 @@ export function CourseDashboard({ courseData }: CourseDashboardProps) {
   return (
     <div className="min-h-screen relative">
       <button
-        onClick={() => window.location.href = '/'}
+        onClick={onBack || (() => window.location.href = '/')}
         className="absolute top-20 left-2 z-10 text-white hover:text-[#C9F2C7] transition-colors"
       >
         <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">

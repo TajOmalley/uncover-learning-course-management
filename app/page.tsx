@@ -1,38 +1,38 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
+import { useSession } from "next-auth/react"
 import { HeroPage } from "@/components/hero-page"
-import { CourseSetup } from "@/components/course-setup"
-import { CourseDashboard } from "@/components/course-dashboard"
+import { UserDashboard } from "@/components/user-dashboard"
 
 export default function Home() {
-  const [currentView, setCurrentView] = useState<'hero' | 'setup' | 'dashboard'>('hero')
-  const [courseData, setCourseData] = useState(null)
+  const { data: session, status } = useSession()
+  const [currentView, setCurrentView] = useState<'hero' | 'dashboard'>('hero')
+
+  useEffect(() => {
+    if (status === "authenticated") {
+      setCurrentView('dashboard')
+    } else if (status === "unauthenticated") {
+      setCurrentView('hero')
+    }
+  }, [status])
 
   const handleStartCourse = () => {
-    setCurrentView('setup')
+    // This will redirect to the setup page for authenticated users
+    window.location.href = '/setup'
   }
 
-  const handleCourseSetup = (data: any) => {
-    setCourseData(data)
-    setCurrentView('dashboard')
+  if (status === "loading") {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#47624f]"></div>
+      </div>
+    )
   }
 
   if (currentView === 'hero') {
     return <HeroPage onStartCourse={handleStartCourse} />
   }
 
-  if (currentView === 'setup') {
-    return (
-      <div className="min-h-screen bg-gradient-to-br from-[#C9F2C7] via-[#B2A29E] to-[#707D7F]">
-        <CourseSetup onComplete={handleCourseSetup} />
-      </div>
-    )
-  }
-
-  return (
-    <div className="min-h-screen bg-gradient-to-br from-[#C9F2C7] via-[#B2A29E] to-[#707D7F]">
-      <CourseDashboard courseData={courseData} />
-    </div>
-  )
+  return <UserDashboard />
 }
