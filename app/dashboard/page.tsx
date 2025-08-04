@@ -34,7 +34,7 @@ export default function Dashboard() {
             <h1 className="text-3xl font-bold text-[#47624f]">Dashboard</h1>
             <button
               onClick={() => signOut({ callbackUrl: "/" })}
-              className="bg-[#47624f] text-white px-4 py-2 rounded-md hover:bg-[#3a4f3f]"
+              className="text-[#47624f] border border-[#47624f] bg-white px-4 py-2 rounded-md hover:bg-[#47624f] hover:text-white transition-colors"
             >
               Sign Out
             </button>

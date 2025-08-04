@@ -139,9 +139,8 @@ export function CourseDashboard({ courseData, onBack }: CourseDashboardProps) {
               <div className="mt-4">
                 <Button
                   onClick={() => signOut({ callbackUrl: '/' })}
-                  variant="outline"
                   size="sm"
-                  className="text-white border-white hover:bg-white hover:text-[#47624f] transition-colors"
+                  className="text-[#47624f] border-white bg-white hover:bg-white hover:text-[#47624f] transition-colors"
                 >
                   <LogOut className="w-4 h-4 mr-2" />
                   Sign Out
