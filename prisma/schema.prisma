@@ -45,7 +45,7 @@ model Course {
 }
 
 model Unit {
-  id          String @id @default(uuid())
+  id          String   @id @default(uuid())
   title       String
   week        Int
   type        String

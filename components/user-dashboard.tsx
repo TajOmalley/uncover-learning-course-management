@@ -6,9 +6,25 @@ import { useRouter } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
-import { Plus, BookOpen, Calendar, GraduationCap, Menu } from "lucide-react"
+import { Plus, BookOpen, Calendar, GraduationCap, Menu, MoreVertical, Trash2 } from "lucide-react"
 import { CourseDashboard } from "@/components/course-dashboard"
 import { NavigationSidebar } from "@/components/navigation-sidebar"
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu"
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog"
 
 interface Course {
   id: string
@@ -30,6 +46,9 @@ export function UserDashboard() {
   const [loading, setLoading] = useState(true)
   const [selectedCourse, setSelectedCourse] = useState<Course | null>(null)
   const [sidebarOpen, setSidebarOpen] = useState(false)
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false)
+  const [courseToDelete, setCourseToDelete] = useState<Course | null>(null)
+  const [deleting, setDeleting] = useState(false)
 
   useEffect(() => {
     if (status === "loading") return
@@ -98,6 +117,47 @@ export function UserDashboard() {
     setSelectedCourse(null)
   }
 
+  const handleDeleteCourse = async (course: Course) => {
+    setCourseToDelete(course)
+    setDeleteDialogOpen(true)
+  }
+
+  const confirmDelete = async () => {
+    if (!courseToDelete) return
+
+    setDeleting(true)
+    try {
+      const response = await fetch(`/api/courses?courseId=${courseToDelete.id}`, {
+        method: 'DELETE',
+      })
+
+      if (!response.ok) {
+        throw new Error(`Failed to delete course: ${response.status}`)
+      }
+
+      const result = await response.json()
+      
+      if (result.success) {
+        // Remove the course from the local state
+        setCourses(courses.filter(course => course.id !== courseToDelete.id))
+        setDeleteDialogOpen(false)
+        setCourseToDelete(null)
+      } else {
+        throw new Error(result.error || 'Failed to delete course')
+      }
+    } catch (error) {
+      console.error('Error deleting course:', error)
+      alert('Failed to delete course. Please try again.')
+    } finally {
+      setDeleting(false)
+    }
+  }
+
+  const cancelDelete = () => {
+    setDeleteDialogOpen(false)
+    setCourseToDelete(null)
+  }
+
   if (status === "loading" || loading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
@@ -139,8 +199,8 @@ export function UserDashboard() {
       />
       
       <div className={`flex-1 bg-gradient-to-br from-[#C9F2C7] via-white to-[#C9F2C7] relative transition-all duration-300 ${sidebarOpen ? 'lg:ml-80' : ''}`}>
-              {/* Header */}
-      <div className="bg-gradient-to-r from-[#47624f] via-[#707D7F] to-[#47624f] text-white relative">
+        {/* Header */}
+        <div className="bg-gradient-to-r from-[#47624f] via-[#707D7F] to-[#47624f] text-white relative">
         <button
           onClick={() => setSidebarOpen(!sidebarOpen)}
           className="absolute top-1/2 left-8 z-10 text-white hover:text-[#C9F2C7] transition-colors transform -translate-y-1/2"
@@ -197,9 +257,34 @@ export function UserDashboard() {
               {courses.map((course) => (
                 <Card
                   key={course.id}
-                  className="hover:shadow-lg transition-all duration-200 cursor-pointer border-2 hover:border-[#47624f]/20"
-                  onClick={() => handleSelectCourse(course)}
+                  className="hover:shadow-lg transition-all duration-200 border-2 hover:border-[#47624f]/20 relative"
                 >
+                  <div className="absolute top-2 right-2 z-10">
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className="h-8 w-8 p-0 hover:bg-gray-100"
+                          onClick={(e) => e.stopPropagation()}
+                        >
+                          <MoreVertical className="h-4 w-4" />
+                        </Button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent align="end">
+                        <DropdownMenuItem
+                          onClick={(e) => {
+                            e.stopPropagation()
+                            handleDeleteCourse(course)
+                          }}
+                          className="text-red-600 focus:text-red-600"
+                        >
+                          <Trash2 className="mr-2 h-4 w-4" />
+                          Delete Course
+                        </DropdownMenuItem>
+                      </DropdownMenuContent>
+                    </DropdownMenu>
+                  </div>
                   <CardHeader>
                     <CardTitle className="flex items-center gap-2">
                       <GraduationCap className="w-5 h-5 text-[#47624f]" />
@@ -209,7 +294,10 @@ export function UserDashboard() {
                       {course.subject} • {course.level}
                     </CardDescription>
                   </CardHeader>
-                  <CardContent>
+                  <CardContent 
+                    className="cursor-pointer"
+                    onClick={() => handleSelectCourse(course)}
+                  >
                     <div className="space-y-3">
                       <div className="flex items-center gap-2">
                         <Calendar className="w-4 h-4 text-[#707D7F]" />
@@ -239,7 +327,29 @@ export function UserDashboard() {
           </div>
         )}
       </div>
-      </div>
     </div>
-  )
+    
+    {/* Delete Confirmation Dialog */}
+    <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+      <AlertDialogContent>
+        <AlertDialogHeader>
+          <AlertDialogTitle>Delete Course</AlertDialogTitle>
+          <AlertDialogDescription>
+            Are you sure you want to delete "{courseToDelete?.title}"? This action cannot be undone and will permanently remove the course and all its content.
+          </AlertDialogDescription>
+        </AlertDialogHeader>
+        <AlertDialogFooter>
+          <AlertDialogCancel onClick={cancelDelete}>Cancel</AlertDialogCancel>
+          <AlertDialogAction 
+            onClick={confirmDelete}
+            disabled={deleting}
+            className="bg-red-600 hover:bg-red-700"
+          >
+            {deleting ? 'Deleting...' : 'Delete Course'}
+          </AlertDialogAction>
+        </AlertDialogFooter>
+      </AlertDialogContent>
+    </AlertDialog>
+  </div>
+)
 } 
