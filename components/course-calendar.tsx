@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useMemo } from "react"
+import { useState, useMemo, useEffect } from "react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
@@ -18,6 +18,9 @@ interface CalendarItem {
   unit: string
   date?: Date
   color: string
+  content?: string
+  createdAt?: string
+  isGenerated?: boolean
 }
 
 export function CourseCalendar({ courseData }: CourseCalendarProps) {
@@ -29,6 +32,36 @@ export function CourseCalendar({ courseData }: CourseCalendarProps) {
   const [currentMonth, setCurrentMonth] = useState(courseStartDate)
   const [draggedItem, setDraggedItem] = useState<CalendarItem | null>(null)
   const [calendarItems, setCalendarItems] = useState<CalendarItem[]>([])
+  const [savedContent, setSavedContent] = useState<any[]>([])
+  const [loadingContent, setLoadingContent] = useState(false)
+
+  // Load saved content when component mounts
+  useEffect(() => {
+    const loadSavedContent = async () => {
+      if (!courseData.courseId) return
+      
+      setLoadingContent(true)
+      try {
+        const response = await fetch(`/api/content?courseId=${courseData.courseId}`)
+        
+        if (!response.ok) {
+          throw new Error(`Failed to fetch content: ${response.status}`)
+        }
+
+        const result = await response.json()
+        
+        if (result.success) {
+          setSavedContent(result.content)
+        }
+      } catch (error) {
+        console.error('Error loading saved content:', error)
+      } finally {
+        setLoadingContent(false)
+      }
+    }
+
+    loadSavedContent()
+  }, [courseData.courseId])
 
   // Generate calendar days for current month with proper alignment
   const calendarDays = useMemo(() => {
@@ -62,21 +95,33 @@ export function CourseCalendar({ courseData }: CourseCalendarProps) {
       { id: "exam", title: "Exams", icon: GraduationCap, color: "from-[#000000] to-[#707D7F]" },
     ]
 
-    return courseData.calendar?.map((unit: any) => ({
-      id: unit.id,
-      title: unit.title,
-      color: unit.color,
-      items: contentTypes.map(type => ({
-        id: `${type.id}-${unit.id}`,
-        title: `${type.title} - ${unit.title}`,
-        type: type.id,
-        unit: unit.title,
+    return courseData.calendar?.map((unit: { id: string; title: string; color: string }) => {
+      // Get saved content for this unit
+      const unitContent = savedContent.filter(content => content.unitId === unit.id)
+      
+      return {
+        id: unit.id,
+        title: unit.title,
         color: unit.color,
-        content: `Generated ${type.title.toLowerCase()} for ${unit.title}`,
-        typeInfo: type
-      })) || []
-    })) || []
-  }, [courseData.calendar])
+        items: contentTypes.map(type => {
+          // Find if there's saved content for this type and unit
+          const savedItem = unitContent.find(content => content.type === type.id)
+          
+          return {
+            id: `${type.id}-${unit.id}`,
+            title: `${type.title} - ${unit.title}`,
+            type: type.id,
+            unit: unit.title,
+            color: unit.color,
+            content: savedItem ? savedItem.content : `Generated ${type.title.toLowerCase()} for ${unit.title}`,
+            createdAt: savedItem?.createdAt,
+            isGenerated: !!savedItem,
+            typeInfo: type
+          }
+        })
+      }
+    }) || []
+  }, [courseData.calendar, savedContent])
 
   // Handle drag start
   const handleDragStart = (e: React.DragEvent, item: CalendarItem) => {
@@ -249,7 +294,7 @@ export function CourseCalendar({ courseData }: CourseCalendarProps) {
             <div className="space-y-4">
               <h3 className="font-semibold text-[#000000] mb-4">Units</h3>
               <div className="space-y-4 max-h-[600px] overflow-y-auto">
-                {generatedContent.map(unit => (
+                {generatedContent.map((unit: { id: string; title: string; color: string; items: any[] }) => (
                   <Card key={unit.id} className="border-[#B2A29E]/20">
                     <CardHeader className="pb-3">
                       <CardTitle className="text-sm">
@@ -277,6 +322,13 @@ export function CourseCalendar({ courseData }: CourseCalendarProps) {
                               </div>
                               <div className="text-xs text-[#707D7F] ml-6">
                                 {item.content}
+                                {item.isGenerated && (
+                                  <div className="mt-1">
+                                    <Badge variant="secondary" className="bg-[#C9F2C7]/20 text-[#47624f] text-xs">
+                                      ✓ Generated
+                                    </Badge>
+                                  </div>
+                                )}
                               </div>
                             </div>
                           )
