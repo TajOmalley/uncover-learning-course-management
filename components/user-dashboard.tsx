@@ -1,12 +1,12 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import { useSession } from "next-auth/react"
+import { useSession, signOut } from "next-auth/react"
 import { useRouter } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
-import { Plus, BookOpen, Calendar, GraduationCap } from "lucide-react"
+import { Plus, BookOpen, Calendar, GraduationCap, LogOut } from "lucide-react"
 import { CourseDashboard } from "@/components/course-dashboard"
 
 interface Course {
@@ -139,6 +139,17 @@ export function UserDashboard() {
               <div className="flex flex-col items-center text-xl text-white" style={{ fontFamily: 'var(--font-fraunces)' }}>
                 <div>uncover</div>
                 <div>learning</div>
+              </div>
+              <div className="mt-4">
+                <Button
+                  onClick={() => signOut({ callbackUrl: '/' })}
+                  variant="outline"
+                  size="sm"
+                  className="text-white border-white hover:bg-white hover:text-[#47624f] transition-colors"
+                >
+                  <LogOut className="w-4 h-4 mr-2" />
+                  Sign Out
+                </Button>
               </div>
             </div>
           </div>
