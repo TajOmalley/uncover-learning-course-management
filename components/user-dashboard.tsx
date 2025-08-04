@@ -42,8 +42,16 @@ export function UserDashboard() {
     fetchCourses()
   }, [status, router])
 
+  // Add effect to refetch courses when URL changes (e.g., after course creation)
+  useEffect(() => {
+    if (status === "authenticated") {
+      fetchCourses()
+    }
+  }, [status])
+
   const fetchCourses = async () => {
     try {
+      console.log('Fetching courses...')
       const response = await fetch('/api/courses')
       
       if (!response.ok) {
@@ -51,9 +59,11 @@ export function UserDashboard() {
       }
 
       const result = await response.json()
+      console.log('Courses API response:', result)
       
       if (result.success) {
         setCourses(result.courses)
+        console.log('Courses set:', result.courses)
       } else {
         console.error('Failed to fetch courses:', result.error)
       }

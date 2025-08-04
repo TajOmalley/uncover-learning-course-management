@@ -136,7 +136,44 @@ export function CourseSetup({ onComplete }: CourseSetupProps) {
     } catch (error) {
       console.error('Error generating course units:', error)
       
-      // Fallback to mock data if API fails
+      // Try to save course with mock units if generation fails
+      try {
+        const mockUnits = generateMockCalendar(formData)
+        
+        const courseResponse = await fetch('/api/courses', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            title: formData.courseName,
+            subject: formData.subject,
+            level: formData.level,
+            startDate: formData.startDate,
+            endDate: formData.endDate,
+            lectureSchedule: formData.lectureSchedule,
+            numberOfUnits: mockUnits.length,
+            units: mockUnits,
+          }),
+        })
+
+        if (courseResponse.ok) {
+          const courseResult = await courseResponse.json()
+          if (courseResult.success) {
+            const courseData = {
+              ...formData,
+              calendar: mockUnits,
+              courseId: courseResult.course.id,
+            }
+            onComplete(courseData)
+            return
+          }
+        }
+      } catch (saveError) {
+        console.error('Error saving course with mock data:', saveError)
+      }
+      
+      // If all else fails, still complete with mock data
       const courseData = {
         ...formData,
         calendar: generateMockCalendar(formData),
