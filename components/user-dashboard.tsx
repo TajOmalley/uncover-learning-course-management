@@ -52,6 +52,7 @@ export function UserDashboard() {
   const fetchCourses = async () => {
     try {
       console.log('Fetching courses...')
+      // Force fresh deployment to regenerate Prisma client
       const response = await fetch('/api/courses')
       
       if (!response.ok) {
