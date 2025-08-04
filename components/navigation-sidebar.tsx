@@ -60,9 +60,9 @@ export function NavigationSidebar({ isOpen, onClose, currentPage, courses = [], 
                   <Image
                     src="/logo.png"
                     alt="Logo"
-                    width={500}
-                    height={500}
-                    className="object-contain transform scale-[200%]"
+                    width={1000}
+                    height={1000}
+                    className="object-contain"
                   />
                 </div>
               </div>
