@@ -449,33 +449,222 @@ export function CourseDashboard({ courseData, onBack }: CourseDashboardProps) {
           </TabsContent>
 
           <TabsContent value="content">
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {contentTypes.map((type) => {
-                const Icon = type.icon
-                return (
-                  <Card key={type.id}>
-                    <CardHeader>
-                      <CardTitle className="flex items-center gap-2">
-                        <Icon className="w-5 h-5 text-[#47624f]" />
-                        {type.title}
-                      </CardTitle>
-                      <CardDescription className="text-[#707D7F]">{type.description}</CardDescription>
-                    </CardHeader>
-                    <CardContent>
-                      <div className="space-y-3">
-                        <div className="flex justify-between items-center">
-                          <span className="text-sm text-[#707D7F]">Generated Items</span>
-                          <Badge variant="secondary">{type.count}</Badge>
+            <div className="space-y-8">
+              {/* Reading Content Section */}
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <FileText className="w-5 h-5 text-[#47624f]" />
+                    Reading Content
+                  </CardTitle>
+                  <CardDescription>Comprehensive reading materials and study guides</CardDescription>
+                </CardHeader>
+                <CardContent>
+                  {savedReadingContent.length > 0 ? (
+                    <div className="space-y-4">
+                      {savedReadingContent.map((content) => (
+                        <div key={content.id} className="flex items-center justify-between p-4 bg-[#C9F2C7]/10 rounded-lg border border-[#B2A29E]/20">
+                          <div className="flex-1">
+                            <div className="flex items-center gap-2 mb-2">
+                              <Badge variant="secondary" className="bg-[#C9F2C7]/20 text-[#47624f]">
+                                Reading
+                              </Badge>
+                              <span className="text-sm text-[#707D7F]">
+                                {new Date(content.createdAt).toLocaleDateString()}
+                              </span>
+                            </div>
+                            <p className="text-sm text-[#000000] font-medium">
+                              {content.content.substring(0, 100)}...
+                            </p>
+                          </div>
+                          <div className="flex gap-2">
+                            <Button size="sm" variant="outline">
+                              <Eye className="w-4 h-4" />
+                            </Button>
+                            <Button size="sm" variant="outline">
+                              <Edit className="w-4 h-4" />
+                            </Button>
+                          </div>
                         </div>
-                        <Button className="w-full bg-gradient-to-r from-[#47624f] to-[#707D7F] hover:from-[#000000] hover:to-[#47624f]" onClick={() => handleGenerateContent(type.id)}>
-                          <Plus className="w-4 h-4 mr-2" />
-                          Generate New
-                        </Button>
-                      </div>
-                    </CardContent>
-                  </Card>
-                )
-              })}
+                      ))}
+                    </div>
+                  ) : (
+                    <div className="text-center py-8 text-[#707D7F]">
+                      <FileText className="w-12 h-12 mx-auto mb-4 text-[#B2A29E]" />
+                      <p>No reading content generated yet</p>
+                      <Button 
+                        className="mt-4 bg-gradient-to-r from-[#47624f] to-[#707D7F] hover:from-[#000000] hover:to-[#47624f]"
+                        onClick={() => handleGenerateContent('reading')}
+                      >
+                        <Plus className="w-4 h-4 mr-2" />
+                        Generate Reading Content
+                      </Button>
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+
+              {/* Homework Content Section */}
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <PenTool className="w-5 h-5 text-[#47624f]" />
+                    Homework Problems
+                  </CardTitle>
+                  <CardDescription>Practice problems and assignments with solutions</CardDescription>
+                </CardHeader>
+                <CardContent>
+                  {savedHomeworkContent.length > 0 ? (
+                    <div className="space-y-4">
+                      {savedHomeworkContent.map((content) => (
+                        <div key={content.id} className="flex items-center justify-between p-4 bg-[#C9F2C7]/10 rounded-lg border border-[#B2A29E]/20">
+                          <div className="flex-1">
+                            <div className="flex items-center gap-2 mb-2">
+                              <Badge variant="secondary" className="bg-[#C9F2C7]/20 text-[#47624f]">
+                                Homework
+                              </Badge>
+                              <span className="text-sm text-[#707D7F]">
+                                {new Date(content.createdAt).toLocaleDateString()}
+                              </span>
+                            </div>
+                            <p className="text-sm text-[#000000] font-medium">
+                              {content.content.substring(0, 100)}...
+                            </p>
+                          </div>
+                          <div className="flex gap-2">
+                            <Button size="sm" variant="outline">
+                              <Eye className="w-4 h-4" />
+                            </Button>
+                            <Button size="sm" variant="outline">
+                              <Edit className="w-4 h-4" />
+                            </Button>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <div className="text-center py-8 text-[#707D7F]">
+                      <PenTool className="w-12 h-12 mx-auto mb-4 text-[#B2A29E]" />
+                      <p>No homework problems generated yet</p>
+                      <Button 
+                        className="mt-4 bg-gradient-to-r from-[#47624f] to-[#707D7F] hover:from-[#000000] hover:to-[#47624f]"
+                        onClick={() => handleGenerateContent('homework')}
+                      >
+                        <Plus className="w-4 h-4 mr-2" />
+                        Generate Homework Problems
+                      </Button>
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+
+              {/* Lesson Plans Section */}
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <BookOpen className="w-5 h-5 text-[#47624f]" />
+                    Lesson Plans
+                  </CardTitle>
+                  <CardDescription>Detailed lesson plans with objectives, activities, and assessments</CardDescription>
+                </CardHeader>
+                <CardContent>
+                  {savedLessonPlanContent.length > 0 ? (
+                    <div className="space-y-4">
+                      {savedLessonPlanContent.map((content) => (
+                        <div key={content.id} className="flex items-center justify-between p-4 bg-[#C9F2C7]/10 rounded-lg border border-[#B2A29E]/20">
+                          <div className="flex-1">
+                            <div className="flex items-center gap-2 mb-2">
+                              <Badge variant="secondary" className="bg-[#C9F2C7]/20 text-[#47624f]">
+                                Lesson Plan
+                              </Badge>
+                              <span className="text-sm text-[#707D7F]">
+                                {new Date(content.createdAt).toLocaleDateString()}
+                              </span>
+                            </div>
+                            <p className="text-sm text-[#000000] font-medium">
+                              {content.content.substring(0, 100)}...
+                            </p>
+                          </div>
+                          <div className="flex gap-2">
+                            <Button size="sm" variant="outline">
+                              <Eye className="w-4 h-4" />
+                            </Button>
+                            <Button size="sm" variant="outline">
+                              <Edit className="w-4 h-4" />
+                            </Button>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <div className="text-center py-8 text-[#707D7F]">
+                      <BookOpen className="w-12 h-12 mx-auto mb-4 text-[#B2A29E]" />
+                      <p>No lesson plans generated yet</p>
+                      <Button 
+                        className="mt-4 bg-gradient-to-r from-[#47624f] to-[#707D7F] hover:from-[#000000] hover:to-[#47624f]"
+                        onClick={() => handleGenerateContent('lesson-plan')}
+                      >
+                        <Plus className="w-4 h-4 mr-2" />
+                        Generate Lesson Plan
+                      </Button>
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+
+              {/* Exams Section */}
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <GraduationCap className="w-5 h-5 text-[#47624f]" />
+                    Exams
+                  </CardTitle>
+                  <CardDescription>Comprehensive exams with multiple question types</CardDescription>
+                </CardHeader>
+                <CardContent>
+                  {savedExamContent.length > 0 ? (
+                    <div className="space-y-4">
+                      {savedExamContent.map((content) => (
+                        <div key={content.id} className="flex items-center justify-between p-4 bg-[#C9F2C7]/10 rounded-lg border border-[#B2A29E]/20">
+                          <div className="flex-1">
+                            <div className="flex items-center gap-2 mb-2">
+                              <Badge variant="secondary" className="bg-[#C9F2C7]/20 text-[#47624f]">
+                                Exam
+                              </Badge>
+                              <span className="text-sm text-[#707D7F]">
+                                {new Date(content.createdAt).toLocaleDateString()}
+                              </span>
+                            </div>
+                            <p className="text-sm text-[#000000] font-medium">
+                              {content.content.substring(0, 100)}...
+                            </p>
+                          </div>
+                          <div className="flex gap-2">
+                            <Button size="sm" variant="outline">
+                              <Eye className="w-4 h-4" />
+                            </Button>
+                            <Button size="sm" variant="outline">
+                              <Edit className="w-4 h-4" />
+                            </Button>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <div className="text-center py-8 text-[#707D7F]">
+                      <GraduationCap className="w-12 h-12 mx-auto mb-4 text-[#B2A29E]" />
+                      <p>No exams generated yet</p>
+                      <Button 
+                        className="mt-4 bg-gradient-to-r from-[#47624f] to-[#707D7F] hover:from-[#000000] hover:to-[#47624f]"
+                        onClick={() => handleGenerateContent('exam')}
+                      >
+                        <Plus className="w-4 h-4 mr-2" />
+                        Generate Exam
+                      </Button>
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
             </div>
           </TabsContent>
         </Tabs>
