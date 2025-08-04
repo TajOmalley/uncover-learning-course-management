@@ -98,9 +98,38 @@ export function CourseSetup({ onComplete }: CourseSetupProps) {
         throw new Error(result.error || 'Failed to generate course units')
       }
 
+      // Save course to database
+      const courseResponse = await fetch('/api/courses', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          title: formData.courseName,
+          subject: formData.subject,
+          level: formData.level,
+          startDate: formData.startDate,
+          endDate: formData.endDate,
+          lectureSchedule: formData.lectureSchedule,
+          numberOfUnits: result.units.length,
+          units: result.units,
+        }),
+      })
+
+      if (!courseResponse.ok) {
+        throw new Error(`Failed to save course: ${courseResponse.status}`)
+      }
+
+      const courseResult = await courseResponse.json()
+      
+      if (!courseResult.success) {
+        throw new Error(courseResult.error || 'Failed to save course')
+      }
+
       const courseData = {
         ...formData,
         calendar: result.units,
+        courseId: courseResult.course.id,
       }
 
       onComplete(courseData)

@@ -7,7 +7,7 @@ import bcrypt from "bcryptjs"
 // Only create Prisma client if DATABASE_URL is available
 const prisma = process.env.DATABASE_URL ? new PrismaClient() : null
 
-const handler = NextAuth({
+const authOptions = {
   adapter: prisma ? PrismaAdapter(prisma) : undefined,
   providers: [
     CredentialsProvider({
@@ -54,7 +54,7 @@ const handler = NextAuth({
     })
   ],
   session: {
-    strategy: "jwt"
+    strategy: "jwt" as const
   },
   pages: {
     signIn: "/auth/signin"
@@ -73,6 +73,9 @@ const handler = NextAuth({
       return session
     }
   }
-})
+}
 
+const handler = NextAuth(authOptions)
+
+export { authOptions }
 export { handler as GET, handler as POST } 
