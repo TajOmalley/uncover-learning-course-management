@@ -31,7 +31,6 @@ export function CourseSetup({ onComplete }: CourseSetupProps) {
   })
   const [isGenerating, setIsGenerating] = useState(false)
   const [selectedDays, setSelectedDays] = useState<string[]>([])
-  const [showDurationInput, setShowDurationInput] = useState<string | null>(null)
 
   const questions = [
     {
@@ -307,7 +306,6 @@ export function CourseSetup({ onComplete }: CourseSetupProps) {
                           setFormData({ ...formData, lectureSchedule: newSchedule })
                         } else {
                           setSelectedDays([...selectedDays, day])
-                          setShowDurationInput(day)
                         }
                       }}
                       className={`p-3 rounded-lg border-2 transition-colors ${
@@ -321,9 +319,9 @@ export function CourseSetup({ onComplete }: CourseSetupProps) {
                   ))}
                 </div>
                 
-                {showDurationInput && (
+                {selectedDays.length > 0 && (
                   <div className="p-4 bg-[#C9F2C7]/20 rounded-lg border border-[#B2A29E]/20">
-                    <Label htmlFor="duration">How long is the lecture on {showDurationInput}?</Label>
+                    <Label htmlFor="duration">How long are the lectures on the selected days?</Label>
                     <div className="flex gap-2 mt-2">
                       <Input
                         id="duration"
@@ -331,14 +329,14 @@ export function CourseSetup({ onComplete }: CourseSetupProps) {
                         onKeyPress={(e) => {
                           if (e.key === 'Enter') {
                             const duration = (e.target as HTMLInputElement).value
+                            const newSchedule = { ...formData.lectureSchedule }
+                            selectedDays.forEach(day => {
+                              newSchedule[day] = duration
+                            })
                             setFormData({
                               ...formData,
-                              lectureSchedule: {
-                                ...formData.lectureSchedule,
-                                [showDurationInput]: duration
-                              }
+                              lectureSchedule: newSchedule
                             })
-                            setShowDurationInput(null)
                           }
                         }}
                         className="flex-1"
@@ -348,19 +346,19 @@ export function CourseSetup({ onComplete }: CourseSetupProps) {
                           const input = document.getElementById('duration') as HTMLInputElement
                           const duration = input.value
                           if (duration) {
+                            const newSchedule = { ...formData.lectureSchedule }
+                            selectedDays.forEach(day => {
+                              newSchedule[day] = duration
+                            })
                             setFormData({
                               ...formData,
-                              lectureSchedule: {
-                                ...formData.lectureSchedule,
-                                [showDurationInput]: duration
-                              }
+                              lectureSchedule: newSchedule
                             })
-                            setShowDurationInput(null)
                           }
                         }}
                         className="bg-gradient-to-r from-[#47624f] to-[#707D7F]"
                       >
-                        Set
+                        Set for All Selected Days
                       </Button>
                     </div>
                   </div>
