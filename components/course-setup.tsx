@@ -206,7 +206,7 @@ export function CourseSetup({ onComplete }: CourseSetupProps) {
           <CardContent className="pt-6">
             <div className="text-center space-y-4">
               <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#47624f] mx-auto"></div>
-              <h3 className="text-lg font-semibold text-[#000000]">Generating Your Course Calendar</h3>
+                              <h3 className="text-lg font-semibold text-[#000000]">Building Your Course</h3>
               <p className="text-[#707D7F]">
                 Our AI is creating a personalized curriculum structure for your course...
               </p>
