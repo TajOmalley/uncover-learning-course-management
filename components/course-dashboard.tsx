@@ -474,7 +474,7 @@ export function CourseDashboard({ courseData, onBack }: CourseDashboardProps) {
                               </span>
                             </div>
                             <p className="text-sm text-[#000000] font-medium">
-                              View: Unit {content.unitId} - {courseData.calendar?.find((unit: any) => unit.id === content.unitId)?.title || 'Unknown Unit'}
+                              View: Unit {courseData.calendar?.findIndex((unit: any) => unit.id === content.unitId) + 1} - {courseData.calendar?.find((unit: any) => unit.id === content.unitId)?.title || 'Unknown Unit'}
                             </p>
                           </div>
                           <div className="flex gap-2">
@@ -528,7 +528,7 @@ export function CourseDashboard({ courseData, onBack }: CourseDashboardProps) {
                               </span>
                             </div>
                             <p className="text-sm text-[#000000] font-medium">
-                              View: Unit {content.unitId} - {courseData.calendar?.find((unit: any) => unit.id === content.unitId)?.title || 'Unknown Unit'}
+                              View: Unit {courseData.calendar?.findIndex((unit: any) => unit.id === content.unitId) + 1} - {courseData.calendar?.find((unit: any) => unit.id === content.unitId)?.title || 'Unknown Unit'}
                             </p>
                           </div>
                           <div className="flex gap-2">
@@ -582,7 +582,7 @@ export function CourseDashboard({ courseData, onBack }: CourseDashboardProps) {
                               </span>
                             </div>
                             <p className="text-sm text-[#000000] font-medium">
-                              View: Unit {content.unitId} - {courseData.calendar?.find((unit: any) => unit.id === content.unitId)?.title || 'Unknown Unit'}
+                              View: Unit {courseData.calendar?.findIndex((unit: any) => unit.id === content.unitId) + 1} - {courseData.calendar?.find((unit: any) => unit.id === content.unitId)?.title || 'Unknown Unit'}
                             </p>
                           </div>
                           <div className="flex gap-2">
@@ -636,7 +636,7 @@ export function CourseDashboard({ courseData, onBack }: CourseDashboardProps) {
                               </span>
                             </div>
                             <p className="text-sm text-[#000000] font-medium">
-                              View: Unit {content.unitId} - {courseData.calendar?.find((unit: any) => unit.id === content.unitId)?.title || 'Unknown Unit'}
+                              View: Unit {courseData.calendar?.findIndex((unit: any) => unit.id === content.unitId) + 1} - {courseData.calendar?.find((unit: any) => unit.id === content.unitId)?.title || 'Unknown Unit'}
                             </p>
                           </div>
                           <div className="flex gap-2">
