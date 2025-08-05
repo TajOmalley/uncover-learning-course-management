@@ -2,6 +2,7 @@
 
 import Image from "next/image"
 import { useRouter } from "next/navigation"
+import { Button } from "@/components/ui/button"
 
 interface HeroPageProps {
   onStartCourse: () => void
@@ -9,10 +10,6 @@ interface HeroPageProps {
 
 export function HeroPage({ onStartCourse }: HeroPageProps) {
   const router = useRouter()
-
-  const handleBuildCourse = () => {
-    onStartCourse()
-  }
 
   const handleSignIn = () => {
     router.push("/auth/signin")
@@ -22,56 +19,70 @@ export function HeroPage({ onStartCourse }: HeroPageProps) {
     router.push("/auth/signup")
   }
 
-  const menuItems = [
-    { label: "build a course", action: handleBuildCourse },
-    { label: "sign-in", action: handleSignIn },
-    { label: "sign-up", action: handleSignUp },
-    { label: "schedule a demo", action: () => console.log("Schedule demo clicked") },
-    { label: "contact", action: () => console.log("Contact clicked") },
-  ]
-
-
-
   return (
-    <div className="min-h-screen bg-white">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex items-center justify-between h-screen">
-          {/* Left Content Section */}
-          <div className="flex-1 flex flex-col items-center justify-center space-y-6">
-            <div className="space-y-4">
-              <h1 className="text-8xl font-bold text-black leading-tight font-montserrat" style={{ fontFamily: 'var(--font-montserrat)' }}>
-                welcome to
-              </h1>
-              <div className="flex justify-center">
-                <Image
-                  src="/logo.png"
-                  alt="Uncover Learning Logo"
-                  width={700}
-                  height={200}
-                  style={{ objectFit: 'contain' }}
-                  priority
-                />
-              </div>
-            </div>
-          </div>
+    <div className="min-h-screen bg-gradient-to-br from-[#C9F2C7]/20 via-white to-[#B2A29E]/10 flex items-center justify-center">
+      <div className="max-w-4xl mx-auto px-6 text-center">
+        {/* Logo Section */}
+        <div className="mb-12">
+          <Image
+            src="/logo.png"
+            alt="Uncover Learning Logo"
+            width={600}
+            height={150}
+            className="mx-auto"
+            priority
+          />
+        </div>
 
-          {/* Right Menu Section */}
-          <div className="flex-1 flex justify-end">
-            <nav className="flex flex-col space-y-8">
-              {menuItems.map((item, index) => (
-                <button
-                  key={index}
-                  onClick={item.action}
-                  className="text-right font-montserrat text-3xl text-[#47624f] hover:text-[#000000] hover:font-bold transition-all duration-200 group"
-                  style={{ fontFamily: 'var(--font-montserrat)' }}
-                >
-                  <span className="relative">
-                    {item.label}
-                    <span className="absolute bottom-0 left-0 w-0 h-0.5 bg-[#000000] group-hover:w-full transition-all duration-200"></span>
-                  </span>
-                </button>
-              ))}
-            </nav>
+        {/* Tagline */}
+        <h1 className="text-4xl md:text-5xl font-bold text-[#47624f] mb-6 leading-tight">
+          AI-Powered Course Management
+        </h1>
+        <p className="text-xl text-[#707D7F] mb-12 max-w-2xl mx-auto leading-relaxed">
+          Create dynamic, textbook-free learning experiences with intelligent content generation
+        </p>
+
+        {/* Action Buttons */}
+        <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
+          <Button
+            onClick={handleSignIn}
+            size="lg"
+            className="bg-[#47624f] hover:bg-[#000000] text-white px-8 py-3 text-lg font-semibold transition-all duration-200 shadow-lg hover:shadow-xl"
+          >
+            Sign In
+          </Button>
+          <Button
+            onClick={handleSignUp}
+            variant="outline"
+            size="lg"
+            className="border-2 border-[#47624f] text-[#47624f] hover:bg-[#47624f] hover:text-white px-8 py-3 text-lg font-semibold transition-all duration-200"
+          >
+            Sign Up
+          </Button>
+        </div>
+
+        {/* Feature Highlights */}
+        <div className="mt-16 grid grid-cols-1 md:grid-cols-3 gap-8">
+          <div className="text-center">
+            <div className="w-12 h-12 bg-[#C9F2C7]/30 rounded-full flex items-center justify-center mx-auto mb-4">
+              <div className="w-6 h-6 bg-[#47624f] rounded-full"></div>
+            </div>
+            <h3 className="text-lg font-semibold text-[#47624f] mb-2">AI Content Generation</h3>
+            <p className="text-[#707D7F] text-sm">Generate lesson plans, readings, and assessments instantly</p>
+          </div>
+          <div className="text-center">
+            <div className="w-12 h-12 bg-[#C9F2C7]/30 rounded-full flex items-center justify-center mx-auto mb-4">
+              <div className="w-6 h-6 bg-[#47624f] rounded-full"></div>
+            </div>
+            <h3 className="text-lg font-semibold text-[#47624f] mb-2">Interactive Calendar</h3>
+            <p className="text-[#707D7F] text-sm">Visual timeline management for course planning</p>
+          </div>
+          <div className="text-center">
+            <div className="w-12 h-12 bg-[#C9F2C7]/30 rounded-full flex items-center justify-center mx-auto mb-4">
+              <div className="w-6 h-6 bg-[#47624f] rounded-full"></div>
+            </div>
+            <h3 className="text-lg font-semibold text-[#47624f] mb-2">Modern Interface</h3>
+            <p className="text-[#707D7F] text-sm">Clean, intuitive design for seamless course management</p>
           </div>
         </div>
       </div>
