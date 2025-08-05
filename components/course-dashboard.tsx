@@ -42,11 +42,17 @@ export function CourseDashboard({ courseData, onBack }: CourseDashboardProps) {
         const result = await response.json()
         
         if (result.success) {
+          console.log('Fetched content:', result.content)
           // Group content by type
           const reading = result.content.filter((item: any) => item.type === 'reading')
           const homework = result.content.filter((item: any) => item.type === 'homework')
           const lessonPlans = result.content.filter((item: any) => item.type === 'lesson-plan')
           const exams = result.content.filter((item: any) => item.type === 'exam')
+          
+          console.log('Reading content:', reading)
+          console.log('Homework content:', homework)
+          console.log('Lesson plans:', lessonPlans)
+          console.log('Exams:', exams)
           
           setSavedReadingContent(reading)
           setSavedHomeworkContent(homework)
