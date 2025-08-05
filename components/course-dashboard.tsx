@@ -203,7 +203,7 @@ export function CourseDashboard({ courseData, onBack }: CourseDashboardProps) {
                   Build Your Course, Your Way
                 </CardTitle>
                 <CardDescription>
-                  Generate course materials instantly based on your course context
+                  Create and organize course materials tailored to your teaching style
                 </CardDescription>
               </CardHeader>
               <CardContent>

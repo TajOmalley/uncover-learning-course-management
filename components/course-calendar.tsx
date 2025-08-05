@@ -298,7 +298,7 @@ export function CourseCalendar({ courseData }: CourseCalendarProps) {
                   <Card key={unit.id} className="border-[#B2A29E]/20">
                     <CardHeader className="pb-3">
                       <CardTitle className="text-sm">
-                        {unit.title.includes('Unit') ? unit.title : `Unit ${unit.id}: ${unit.title}`}
+                        {unit.title.includes('Unit') ? unit.title : `Unit ${courseData.calendar?.findIndex((u: any) => u.id === unit.id) + 1}: ${unit.title}`}
                       </CardTitle>
                     </CardHeader>
                     <CardContent className="pt-0">
