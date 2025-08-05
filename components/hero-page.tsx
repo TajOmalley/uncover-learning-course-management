@@ -36,7 +36,7 @@ export function HeroPage({ onStartCourse }: HeroPageProps) {
 
         {/* Tagline */}
         <h1 className="text-4xl md:text-5xl font-bold text-[#47624f] mb-6 leading-tight">
-          AI-Powered Course Management
+          build and manage intelligent college courses - accessible for all students
         </h1>
         <p className="text-xl text-[#707D7F] mb-12 max-w-2xl mx-auto leading-relaxed">
           Create dynamic, textbook-free learning experiences with intelligent content generation
@@ -59,31 +59,6 @@ export function HeroPage({ onStartCourse }: HeroPageProps) {
           >
             Sign Up
           </Button>
-        </div>
-
-        {/* Feature Highlights */}
-        <div className="mt-16 grid grid-cols-1 md:grid-cols-3 gap-8">
-          <div className="text-center">
-            <div className="w-12 h-12 bg-[#C9F2C7]/30 rounded-full flex items-center justify-center mx-auto mb-4">
-              <div className="w-6 h-6 bg-[#47624f] rounded-full"></div>
-            </div>
-            <h3 className="text-lg font-semibold text-[#47624f] mb-2">AI Content Generation</h3>
-            <p className="text-[#707D7F] text-sm">Generate lesson plans, readings, and assessments instantly</p>
-          </div>
-          <div className="text-center">
-            <div className="w-12 h-12 bg-[#C9F2C7]/30 rounded-full flex items-center justify-center mx-auto mb-4">
-              <div className="w-6 h-6 bg-[#47624f] rounded-full"></div>
-            </div>
-            <h3 className="text-lg font-semibold text-[#47624f] mb-2">Interactive Calendar</h3>
-            <p className="text-[#707D7F] text-sm">Visual timeline management for course planning</p>
-          </div>
-          <div className="text-center">
-            <div className="w-12 h-12 bg-[#C9F2C7]/30 rounded-full flex items-center justify-center mx-auto mb-4">
-              <div className="w-6 h-6 bg-[#47624f] rounded-full"></div>
-            </div>
-            <h3 className="text-lg font-semibold text-[#47624f] mb-2">Modern Interface</h3>
-            <p className="text-[#707D7F] text-sm">Clean, intuitive design for seamless course management</p>
-          </div>
         </div>
       </div>
     </div>
