@@ -42,17 +42,11 @@ export function CourseDashboard({ courseData, onBack }: CourseDashboardProps) {
         const result = await response.json()
         
         if (result.success) {
-          console.log('Fetched content:', result.content)
           // Group content by type
           const reading = result.content.filter((item: any) => item.type === 'reading')
           const homework = result.content.filter((item: any) => item.type === 'homework')
           const lessonPlans = result.content.filter((item: any) => item.type === 'lesson-plan')
           const exams = result.content.filter((item: any) => item.type === 'exam')
-          
-          console.log('Reading content:', reading)
-          console.log('Homework content:', homework)
-          console.log('Lesson plans:', lessonPlans)
-          console.log('Exams:', exams)
           
           setSavedReadingContent(reading)
           setSavedHomeworkContent(homework)
@@ -484,7 +478,13 @@ export function CourseDashboard({ courseData, onBack }: CourseDashboardProps) {
                             </p>
                           </div>
                           <div className="flex gap-2">
-                            <Button size="sm" variant="outline">
+                            <Button 
+                              size="sm" 
+                              variant="outline"
+                              onClick={() => {
+                                alert(`Reading Content Preview:\n\n${content.content}`)
+                              }}
+                            >
                               <Eye className="w-4 h-4" />
                             </Button>
                             <Button size="sm" variant="outline">
@@ -538,7 +538,13 @@ export function CourseDashboard({ courseData, onBack }: CourseDashboardProps) {
                             </p>
                           </div>
                           <div className="flex gap-2">
-                            <Button size="sm" variant="outline">
+                            <Button 
+                              size="sm" 
+                              variant="outline"
+                              onClick={() => {
+                                alert(`Homework Content Preview:\n\n${content.content}`)
+                              }}
+                            >
                               <Eye className="w-4 h-4" />
                             </Button>
                             <Button size="sm" variant="outline">
@@ -592,7 +598,13 @@ export function CourseDashboard({ courseData, onBack }: CourseDashboardProps) {
                             </p>
                           </div>
                           <div className="flex gap-2">
-                            <Button size="sm" variant="outline">
+                            <Button 
+                              size="sm" 
+                              variant="outline"
+                              onClick={() => {
+                                alert(`Lesson Plan Preview:\n\n${content.content}`)
+                              }}
+                            >
                               <Eye className="w-4 h-4" />
                             </Button>
                             <Button size="sm" variant="outline">
@@ -646,7 +658,13 @@ export function CourseDashboard({ courseData, onBack }: CourseDashboardProps) {
                             </p>
                           </div>
                           <div className="flex gap-2">
-                            <Button size="sm" variant="outline">
+                            <Button 
+                              size="sm" 
+                              variant="outline"
+                              onClick={() => {
+                                alert(`Exam Preview:\n\n${content.content}`)
+                              }}
+                            >
                               <Eye className="w-4 h-4" />
                             </Button>
                             <Button size="sm" variant="outline">
