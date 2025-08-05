@@ -7,20 +7,6 @@ import { UserDashboard } from "@/components/user-dashboard"
 
 export default function Home() {
   const { data: session, status } = useSession()
-  const [currentView, setCurrentView] = useState<'hero' | 'dashboard'>('hero')
-
-  useEffect(() => {
-    if (status === "authenticated") {
-      setCurrentView('dashboard')
-    } else if (status === "unauthenticated") {
-      setCurrentView('hero')
-    }
-  }, [status])
-
-  const handleStartCourse = () => {
-    // This will redirect to the setup page for authenticated users
-    window.location.href = '/setup'
-  }
 
   if (status === "loading") {
     return (
@@ -30,9 +16,9 @@ export default function Home() {
     )
   }
 
-  if (currentView === 'hero') {
-    return <HeroPage onStartCourse={handleStartCourse} />
+  if (status === "authenticated") {
+    return <UserDashboard />
   }
 
-  return <UserDashboard />
+  return <HeroPage onStartCourse={() => {}} />
 }
