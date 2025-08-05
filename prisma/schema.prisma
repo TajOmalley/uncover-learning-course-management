@@ -64,6 +64,7 @@ model GeneratedContent {
   id        String   @id @default(uuid())
   type      String   // "reading", "homework", "lesson-plan", "exam"
   content   String   // JSON string
+  storageFilename String? // Google Cloud Storage filename
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
   
