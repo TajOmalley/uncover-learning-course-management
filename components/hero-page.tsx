@@ -36,10 +36,10 @@ export function HeroPage({ onStartCourse }: HeroPageProps) {
 
         {/* Tagline */}
         <h1 className="text-4xl md:text-5xl font-bold text-[#47624f] mb-6 leading-tight">
-          build and manage intelligent college courses - accessible for all students
+          Build and Manage Intelligent College Courses
         </h1>
         <p className="text-xl text-[#707D7F] mb-12 max-w-2xl mx-auto leading-relaxed">
-          Create dynamic, textbook-free learning experiences with intelligent content generation
+          Accessible For Students - Personalized, Textbook Free Content
         </p>
 
         {/* Action Buttons */}
