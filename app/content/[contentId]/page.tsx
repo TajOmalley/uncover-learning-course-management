@@ -5,9 +5,10 @@ import { useParams, useRouter } from "next/navigation"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
-import { ArrowLeft, BookOpen, FileText, PenTool, GraduationCap, Calendar, User } from "lucide-react"
+import { ArrowLeft, BookOpen, FileText, PenTool, GraduationCap, Calendar, User, Menu } from "lucide-react"
 import { format } from "date-fns"
 import ReactMarkdown from "react-markdown"
+import { NavigationSidebar } from "@/components/navigation-sidebar"
 
 interface ContentData {
   id: string
@@ -34,6 +35,7 @@ export default function ContentViewPage() {
   const [content, setContent] = useState<ContentData | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+  const [sidebarOpen, setSidebarOpen] = useState(false)
 
   const contentId = params.contentId as string
 
@@ -146,38 +148,58 @@ export default function ContentViewPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      {/* Header */}
-      <div className="bg-white border-b border-gray-200">
-        <div className="max-w-7xl mx-auto px-4 py-4">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-4">
-              <Button
-                variant="outline"
-                onClick={() => router.back()}
-                className="border-[#B2A29E] text-[#707D7F] hover:border-[#47624f]"
-              >
-                <ArrowLeft className="w-4 h-4 mr-2" />
-                Back
-              </Button>
-              <div>
-                <h1 className="text-2xl font-bold text-[#000000]">
-                  {getContentTypeLabel(content.type)}
-                </h1>
-                <p className="text-[#707D7F]">
-                  {content.course.title} • {content.unit.title}
-                </p>
+    <div className="flex h-screen bg-gray-50">
+      {/* Navigation Sidebar */}
+      <NavigationSidebar 
+        sidebarOpen={sidebarOpen}
+        setSidebarOpen={setSidebarOpen}
+        currentCourseId={content?.courseId}
+        onCourseSelect={(courseId) => {
+          router.push(`/?courseId=${courseId}`)
+        }}
+        onAddCourse={() => {
+          router.push('/setup')
+        }}
+      />
+      
+      <div className={`flex-1 relative transition-all duration-300 ${sidebarOpen ? 'lg:ml-80' : ''}`}>
+        {/* Header */}
+        <div className="bg-white border-b border-gray-200">
+          <div className="max-w-7xl mx-auto px-4 py-4">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-4">
+                <button
+                  onClick={() => setSidebarOpen(!sidebarOpen)}
+                  className="lg:hidden text-[#707D7F] hover:text-[#47624f] transition-colors"
+                >
+                  <Menu className="w-6 h-6" />
+                </button>
+                <Button
+                  variant="outline"
+                  onClick={() => router.back()}
+                  className="border-[#B2A29E] text-[#707D7F] hover:border-[#47624f]"
+                >
+                  <ArrowLeft className="w-4 h-4 mr-2" />
+                  Back
+                </Button>
+                <div>
+                  <h1 className="text-2xl font-bold text-[#000000]">
+                    {getContentTypeLabel(content.type)}
+                  </h1>
+                  <p className="text-[#707D7F]">
+                    {content.course.title} • {content.unit.title}
+                  </p>
+                </div>
               </div>
-            </div>
-            <div className={`p-3 rounded-lg ${getContentTypeColor(content.type)} text-white`}>
-              {getContentTypeIcon(content.type)}
+              <div className={`p-3 rounded-lg ${getContentTypeColor(content.type)} text-white`}>
+                {getContentTypeIcon(content.type)}
+              </div>
             </div>
           </div>
         </div>
-      </div>
 
-      {/* Content */}
-      <div className="max-w-4xl mx-auto px-4 py-8">
+        {/* Content */}
+        <div className="max-w-4xl mx-auto px-4 py-8">
         <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
           {/* Main Content */}
           <div className="lg:col-span-3">
@@ -256,5 +278,6 @@ export default function ContentViewPage() {
         </div>
       </div>
     </div>
+  </div>
   )
 } 
