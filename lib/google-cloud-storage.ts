@@ -1,15 +1,28 @@
 import { Storage } from '@google-cloud/storage'
 
 // Initialize Google Cloud Storage
-const storage = new Storage({
-  projectId: process.env.GOOGLE_CLOUD_PROJECT_ID,
-  keyFilename: process.env.GOOGLE_CLOUD_KEY_FILE,
-  // For production, you might want to use service account credentials
-  // credentials: {
-  //   client_email: process.env.GOOGLE_CLOUD_CLIENT_EMAIL,
-  //   private_key: process.env.GOOGLE_CLOUD_PRIVATE_KEY?.replace(/\\n/g, '\n'),
-  // }
-})
+const getStorageConfig = () => {
+  const projectId = process.env.GOOGLE_CLOUD_PROJECT_ID
+  
+  // For production (Vercel), use service account credentials
+  if (process.env.NODE_ENV === 'production') {
+    return {
+      projectId,
+      credentials: {
+        client_email: process.env.GOOGLE_CLOUD_CLIENT_EMAIL,
+        private_key: process.env.GOOGLE_CLOUD_PRIVATE_KEY?.replace(/\\n/g, '\n'),
+      }
+    }
+  }
+  
+  // For local development, use key file
+  return {
+    projectId,
+    keyFilename: process.env.GOOGLE_CLOUD_KEY_FILE,
+  }
+}
+
+const storage = new Storage(getStorageConfig())
 
 const bucketName = process.env.GOOGLE_CLOUD_BUCKET_NAME || 'course-content-storage'
 
@@ -33,6 +46,15 @@ export class GoogleCloudStorageService {
     filename?: string
   ): Promise<string> {
     try {
+      // Validate required environment variables
+      if (!process.env.GOOGLE_CLOUD_PROJECT_ID) {
+        throw new Error('GOOGLE_CLOUD_PROJECT_ID is not configured')
+      }
+      
+      if (!process.env.GOOGLE_CLOUD_BUCKET_NAME) {
+        throw new Error('GOOGLE_CLOUD_BUCKET_NAME is not configured')
+      }
+
       const timestamp = new Date().toISOString().replace(/[:.]/g, '-')
       const defaultFilename = `${metadata.userId}/${metadata.courseId}/${metadata.unitId}/${metadata.type}-${timestamp}.json`
       const finalFilename = filename || defaultFilename
@@ -56,7 +78,7 @@ export class GoogleCloudStorageService {
       return finalFilename
     } catch (error) {
       console.error('Error uploading to Google Cloud Storage:', error)
-      throw new Error('Failed to upload content to cloud storage')
+      throw new Error(`Failed to upload content to cloud storage: ${error.message}`)
     }
   }
 
