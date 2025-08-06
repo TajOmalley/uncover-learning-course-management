@@ -37,38 +37,44 @@ export function ContentModal({ isOpen, onClose, contentId }: ContentModalProps) 
   const [content, setContent] = useState<ContentData | null>(null)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [popupWindow, setPopupWindow] = useState<Window | null>(null)
 
   useEffect(() => {
     if (isOpen && contentId) {
-      fetchContent()
+      openPopupWindow()
     }
   }, [isOpen, contentId])
 
-  const fetchContent = async () => {
+  const openPopupWindow = () => {
     if (!contentId) return
     
-    try {
-      setLoading(true)
-      setError(null)
-      
-      const response = await fetch(`/api/content/${contentId}`)
-      
-      if (!response.ok) {
-        throw new Error('Failed to fetch content')
-      }
+    // Close existing popup if any
+    if (popupWindow && !popupWindow.closed) {
+      popupWindow.close()
+    }
 
-      const result = await response.json()
+    // Open new popup window
+    const popup = window.open(
+      `/content/${contentId}`,
+      'contentViewer',
+      'width=1200,height=800,scrollbars=yes,resizable=yes,toolbar=no,menubar=no,location=no,status=no'
+    )
+
+    if (popup) {
+      setPopupWindow(popup)
       
-      if (result.success) {
-        setContent(result.content)
-      } else {
-        setError(result.error || 'Failed to load content')
-      }
-    } catch (error) {
-      console.error('Error fetching content:', error)
-      setError('Failed to load content')
-    } finally {
-      setLoading(false)
+      // Listen for popup close
+      const checkClosed = setInterval(() => {
+        if (popup.closed) {
+          clearInterval(checkClosed)
+          setPopupWindow(null)
+          onClose()
+        }
+      }, 1000)
+    } else {
+      // Fallback if popup blocked
+      alert('Please allow popups for this site to view content')
+      onClose()
     }
   }
 
@@ -117,136 +123,6 @@ export function ContentModal({ isOpen, onClose, contentId }: ContentModalProps) 
     }
   }
 
-  if (!isOpen) return null
-
-  return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
-      <div className="bg-white rounded-lg shadow-xl max-w-4xl w-full max-h-[90vh] overflow-hidden">
-        {/* Header */}
-        <div className="flex items-center justify-between p-6 border-b border-gray-200">
-          <div className="flex items-center gap-4">
-            <div className={`p-3 rounded-lg ${getContentTypeColor(content?.type || '')} text-white`}>
-              {getContentTypeIcon(content?.type || '')}
-            </div>
-            <div>
-              <h2 className="text-xl font-bold text-[#000000]">
-                {content ? getContentTypeLabel(content.type) : 'Loading...'}
-              </h2>
-              {content && (
-                <p className="text-[#707D7F]">
-                  {content.course.title} • {content.unit.title}
-                </p>
-              )}
-            </div>
-          </div>
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={onClose}
-            className="text-[#707D7F] hover:text-[#47624f]"
-          >
-            <X className="w-5 h-5" />
-          </Button>
-        </div>
-
-        {/* Content */}
-        <div className="p-6 overflow-y-auto max-h-[calc(90vh-120px)]">
-          {loading && (
-            <div className="text-center py-8">
-              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#47624f] mx-auto mb-4"></div>
-              <p className="text-[#707D7F]">Loading content...</p>
-            </div>
-          )}
-
-          {error && (
-            <div className="text-center py-8">
-              <p className="text-red-600 mb-4">{error}</p>
-              <Button onClick={onClose} className="bg-gradient-to-r from-[#47624f] to-[#707D7F]">
-                Close
-              </Button>
-            </div>
-          )}
-
-          {content && !loading && (
-            <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
-              {/* Main Content */}
-              <div className="lg:col-span-3">
-                <Card className="mb-6">
-                  <CardHeader>
-                    <CardTitle className="flex items-center gap-2">
-                      {getContentTypeIcon(content.type)}
-                      {getContentTypeLabel(content.type)}
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="prose max-w-none">
-                      <ReactMarkdown>{content.content}</ReactMarkdown>
-                    </div>
-                  </CardContent>
-                </Card>
-              </div>
-
-              {/* Sidebar */}
-              <div className="space-y-6">
-                {/* Course Info */}
-                <Card>
-                  <CardHeader>
-                    <CardTitle className="text-lg">Course Information</CardTitle>
-                  </CardHeader>
-                  <CardContent className="space-y-4">
-                    <div className="flex items-center gap-2">
-                      <BookOpen className="w-4 h-4 text-[#707D7F]" />
-                      <span className="text-sm font-medium">{content.course.title}</span>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <User className="w-4 h-4 text-[#707D7F]" />
-                      <span className="text-sm text-[#707D7F]">{content.course.subject}</span>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <Calendar className="w-4 h-4 text-[#707D7F]" />
-                      <span className="text-sm text-[#707D7F]">Week {content.unit.week}</span>
-                    </div>
-                    <Badge variant="secondary" className="w-full justify-center">
-                      {content.course.level}
-                    </Badge>
-                  </CardContent>
-                </Card>
-
-                {/* Content Details */}
-                <Card>
-                  <CardHeader>
-                    <CardTitle className="text-lg">Content Details</CardTitle>
-                  </CardHeader>
-                  <CardContent className="space-y-4">
-                    <div>
-                      <p className="text-sm font-medium text-[#000000]">Created</p>
-                      <p className="text-sm text-[#707D7F]">
-                        {format(new Date(content.createdAt), 'MMM dd, yyyy')}
-                      </p>
-                    </div>
-                    <div>
-                      <p className="text-sm font-medium text-[#000000]">Unit</p>
-                      <p className="text-sm text-[#707D7F]">{content.unit.title}</p>
-                    </div>
-                    {content.specifications && (
-                      <div>
-                        <p className="text-sm font-medium text-[#000000]">Specifications</p>
-                        <div className="text-sm text-[#707D7F]">
-                          {Object.entries(content.specifications).map(([key, value]) => (
-                            <div key={key} className="mt-1">
-                              <span className="font-medium">{key}:</span> {String(value)}
-                            </div>
-                          ))}
-                        </div>
-                      </div>
-                    )}
-                  </CardContent>
-                </Card>
-              </div>
-            </div>
-          )}
-        </div>
-      </div>
-    </div>
-  )
+  // Don't render anything - the popup window handles the content display
+  return null
 } 
