@@ -1,6 +1,7 @@
 "use client"
 
 import { useState, useEffect } from "react"
+import { useRouter } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Label } from "@/components/ui/label"
@@ -18,6 +19,7 @@ interface ContentGeneratorProps {
 }
 
 export function ContentGenerator({ type, courseData, onBack }: ContentGeneratorProps) {
+  const router = useRouter()
   const [isGenerating, setIsGenerating] = useState(false)
   const [generatedContent, setGeneratedContent] = useState("")
   const [selectedUnit, setSelectedUnit] = useState("")
@@ -962,9 +964,9 @@ Detailed solutions and explanations will be provided during the review session.`
                                     size="sm" 
                                     variant="outline" 
                                     className="border-[#47624f] text-[#47624f] hover:bg-[#47624f] hover:text-white"
-                                    onClick={() => {
-                                      window.open(`/content/${content.id}`, '_blank')
-                                    }}
+                                                                       onClick={() => {
+                                     router.push(`/content/${content.id}`)
+                                   }}
                                   >
                                     View Content
                                   </Button>

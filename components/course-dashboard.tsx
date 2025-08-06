@@ -1,6 +1,7 @@
 "use client"
 
 import { useState, useEffect } from "react"
+import { useRouter } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
@@ -16,6 +17,7 @@ interface CourseDashboardProps {
 }
 
 export function CourseDashboard({ courseData, onBack }: CourseDashboardProps) {
+  const router = useRouter()
   const [activeTab, setActiveTab] = useState("overview")
   const [showGenerator, setShowGenerator] = useState(false)
   const [generatorType, setGeneratorType] = useState("")
@@ -482,7 +484,7 @@ export function CourseDashboard({ courseData, onBack }: CourseDashboardProps) {
                               size="sm" 
                               variant="outline"
                               onClick={() => {
-                                window.open(`/content/${content.id}`, '_blank')
+                                router.push(`/content/${content.id}`)
                               }}
                             >
                               <Eye className="w-4 h-4" />
@@ -542,7 +544,7 @@ export function CourseDashboard({ courseData, onBack }: CourseDashboardProps) {
                               size="sm" 
                               variant="outline"
                               onClick={() => {
-                                window.open(`/content/${content.id}`, '_blank')
+                                router.push(`/content/${content.id}`)
                               }}
                             >
                               <Eye className="w-4 h-4" />
@@ -602,7 +604,7 @@ export function CourseDashboard({ courseData, onBack }: CourseDashboardProps) {
                               size="sm" 
                               variant="outline"
                               onClick={() => {
-                                window.open(`/content/${content.id}`, '_blank')
+                                router.push(`/content/${content.id}`)
                               }}
                             >
                               <Eye className="w-4 h-4" />
@@ -662,7 +664,7 @@ export function CourseDashboard({ courseData, onBack }: CourseDashboardProps) {
                               size="sm" 
                               variant="outline"
                               onClick={() => {
-                                window.open(`/content/${content.id}`, '_blank')
+                                router.push(`/content/${content.id}`)
                               }}
                             >
                               <Eye className="w-4 h-4" />
