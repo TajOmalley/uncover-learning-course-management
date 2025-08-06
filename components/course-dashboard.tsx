@@ -10,6 +10,7 @@ import { BookOpen, FileText, PenTool, GraduationCap, Sparkles, Plus, Edit, Eye, 
 import { CourseCalendar } from "@/components/course-calendar"
 import { ContentGenerator } from "@/components/content-generator"
 import { NavigationSidebar } from "@/components/navigation-sidebar"
+import { ContentModal } from "@/components/content-modal"
 
 interface CourseDashboardProps {
   courseData: any
@@ -28,6 +29,8 @@ export function CourseDashboard({ courseData, onBack }: CourseDashboardProps) {
   const [savedExamContent, setSavedExamContent] = useState<any[]>([])
   const [sidebarOpen, setSidebarOpen] = useState(false)
   const [allCourses, setAllCourses] = useState<any[]>([])
+  const [contentModalOpen, setContentModalOpen] = useState(false)
+  const [selectedContentId, setSelectedContentId] = useState<string | null>(null)
 
   // Load saved content from database
   useEffect(() => {
@@ -484,7 +487,8 @@ export function CourseDashboard({ courseData, onBack }: CourseDashboardProps) {
                               size="sm" 
                               variant="outline"
                               onClick={() => {
-                                router.push(`/content/${content.id}`)
+                                setSelectedContentId(content.id)
+                                setContentModalOpen(true)
                               }}
                             >
                               <Eye className="w-4 h-4" />
@@ -544,7 +548,8 @@ export function CourseDashboard({ courseData, onBack }: CourseDashboardProps) {
                               size="sm" 
                               variant="outline"
                               onClick={() => {
-                                router.push(`/content/${content.id}`)
+                                setSelectedContentId(content.id)
+                                setContentModalOpen(true)
                               }}
                             >
                               <Eye className="w-4 h-4" />
@@ -604,7 +609,8 @@ export function CourseDashboard({ courseData, onBack }: CourseDashboardProps) {
                               size="sm" 
                               variant="outline"
                               onClick={() => {
-                                router.push(`/content/${content.id}`)
+                                setSelectedContentId(content.id)
+                                setContentModalOpen(true)
                               }}
                             >
                               <Eye className="w-4 h-4" />
@@ -664,7 +670,8 @@ export function CourseDashboard({ courseData, onBack }: CourseDashboardProps) {
                               size="sm" 
                               variant="outline"
                               onClick={() => {
-                                router.push(`/content/${content.id}`)
+                                setSelectedContentId(content.id)
+                                setContentModalOpen(true)
                               }}
                             >
                               <Eye className="w-4 h-4" />
@@ -694,8 +701,18 @@ export function CourseDashboard({ courseData, onBack }: CourseDashboardProps) {
             </div>
           </TabsContent>
         </Tabs>
+              </div>
       </div>
-      </div>
+      
+      {/* Content Modal */}
+      <ContentModal
+        isOpen={contentModalOpen}
+        onClose={() => {
+          setContentModalOpen(false)
+          setSelectedContentId(null)
+        }}
+        contentId={selectedContentId}
+      />
     </div>
   )
 }

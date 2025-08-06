@@ -6,6 +6,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Calendar, ChevronLeft, ChevronRight, Plus, Edit, Trash2, BookOpen, FileText, PenTool, GraduationCap } from "lucide-react"
+import { ContentModal } from "@/components/content-modal"
 import { format, startOfMonth, endOfMonth, eachDayOfInterval, isSameMonth, isSameDay, addMonths, subMonths, parseISO } from "date-fns"
 
 interface CourseCalendarProps {
@@ -36,6 +37,8 @@ export function CourseCalendar({ courseData }: CourseCalendarProps) {
   const [calendarItems, setCalendarItems] = useState<CalendarItem[]>([])
   const [savedContent, setSavedContent] = useState<any[]>([])
   const [loadingContent, setLoadingContent] = useState(false)
+  const [contentModalOpen, setContentModalOpen] = useState(false)
+  const [selectedContentId, setSelectedContentId] = useState<string | null>(null)
 
   // Load saved content when component mounts
   useEffect(() => {
@@ -313,11 +316,12 @@ export function CourseCalendar({ courseData }: CourseCalendarProps) {
                               draggable
                               onDragStart={(e) => handleDragStart(e, item)}
                               className="p-2 bg-[#C9F2C7]/20 rounded border border-[#B2A29E]/20 cursor-move hover:bg-[#C9F2C7]/30 transition-colors"
-                                                             onClick={() => {
-                                 if (item.id && item.id !== 'mock') {
-                                   router.push(`/content/${item.id}`)
-                                 }
-                               }}
+                                                                                              onClick={() => {
+                                   if (item.id && item.id !== 'mock') {
+                                     setSelectedContentId(item.id)
+                                     setContentModalOpen(true)
+                                   }
+                                 }}
                             >
                               <div className="flex items-center gap-2 mb-1">
                                 <div className={`w-4 h-4 rounded bg-gradient-to-r ${item.typeInfo.color} flex items-center justify-center`}>
@@ -349,6 +353,16 @@ export function CourseCalendar({ courseData }: CourseCalendarProps) {
           </div>
         </CardContent>
       </Card>
+      
+      {/* Content Modal */}
+      <ContentModal
+        isOpen={contentModalOpen}
+        onClose={() => {
+          setContentModalOpen(false)
+          setSelectedContentId(null)
+        }}
+        contentId={selectedContentId}
+      />
     </div>
   )
 }

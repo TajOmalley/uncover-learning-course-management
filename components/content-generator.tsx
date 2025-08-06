@@ -8,6 +8,7 @@ import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { ArrowLeft, Sparkles, Download, Copy, RefreshCw } from "lucide-react"
+import { ContentModal } from "@/components/content-modal"
 import ReactMarkdown from 'react-markdown'
 import remarkGfm from 'remark-gfm'
 import { Badge } from "@/components/ui/badge"
@@ -27,6 +28,8 @@ export function ContentGenerator({ type, courseData, onBack }: ContentGeneratorP
   const [isSaving, setIsSaving] = useState(false)
   const [savedContent, setSavedContent] = useState<any[]>([])
   const [loadingSavedContent, setLoadingSavedContent] = useState(false)
+  const [contentModalOpen, setContentModalOpen] = useState(false)
+  const [selectedContentId, setSelectedContentId] = useState<string | null>(null)
   
   // Homework problem specifications
   const [totalProblems, setTotalProblems] = useState(5)
@@ -965,7 +968,8 @@ Detailed solutions and explanations will be provided during the review session.`
                                     variant="outline" 
                                     className="border-[#47624f] text-[#47624f] hover:bg-[#47624f] hover:text-white"
                                                                        onClick={() => {
-                                     router.push(`/content/${content.id}`)
+                                     setSelectedContentId(content.id)
+                                     setContentModalOpen(true)
                                    }}
                                   >
                                     View Content
@@ -989,6 +993,16 @@ Detailed solutions and explanations will be provided during the review session.`
           )}
         </div>
       </div>
+      
+      {/* Content Modal */}
+      <ContentModal
+        isOpen={contentModalOpen}
+        onClose={() => {
+          setContentModalOpen(false)
+          setSelectedContentId(null)
+        }}
+        contentId={selectedContentId}
+      />
     </div>
   )
 }
