@@ -958,7 +958,14 @@ Detailed solutions and explanations will be provided during the review session.`
                                       Saved {new Date(content.createdAt).toLocaleDateString()}
                                     </span>
                                   </div>
-                                  <Button size="sm" variant="outline" className="border-[#47624f] text-[#47624f] hover:bg-[#47624f] hover:text-white">
+                                  <Button 
+                                    size="sm" 
+                                    variant="outline" 
+                                    className="border-[#47624f] text-[#47624f] hover:bg-[#47624f] hover:text-white"
+                                    onClick={() => {
+                                      window.open(`/content/${content.id}`, '_blank')
+                                    }}
+                                  >
                                     View Content
                                   </Button>
                                 </div>

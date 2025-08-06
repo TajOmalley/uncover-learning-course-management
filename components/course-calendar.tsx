@@ -311,6 +311,11 @@ export function CourseCalendar({ courseData }: CourseCalendarProps) {
                               draggable
                               onDragStart={(e) => handleDragStart(e, item)}
                               className="p-2 bg-[#C9F2C7]/20 rounded border border-[#B2A29E]/20 cursor-move hover:bg-[#C9F2C7]/30 transition-colors"
+                              onClick={() => {
+                                if (item.id && item.id !== 'mock') {
+                                  window.open(`/content/${item.id}`, '_blank')
+                                }
+                              }}
                             >
                               <div className="flex items-center gap-2 mb-1">
                                 <div className={`w-4 h-4 rounded bg-gradient-to-r ${item.typeInfo.color} flex items-center justify-center`}>

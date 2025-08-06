@@ -482,7 +482,7 @@ export function CourseDashboard({ courseData, onBack }: CourseDashboardProps) {
                               size="sm" 
                               variant="outline"
                               onClick={() => {
-                                alert(`Reading Content Preview:\n\n${content.content}`)
+                                window.open(`/content/${content.id}`, '_blank')
                               }}
                             >
                               <Eye className="w-4 h-4" />
@@ -542,7 +542,7 @@ export function CourseDashboard({ courseData, onBack }: CourseDashboardProps) {
                               size="sm" 
                               variant="outline"
                               onClick={() => {
-                                alert(`Homework Content Preview:\n\n${content.content}`)
+                                window.open(`/content/${content.id}`, '_blank')
                               }}
                             >
                               <Eye className="w-4 h-4" />
@@ -602,7 +602,7 @@ export function CourseDashboard({ courseData, onBack }: CourseDashboardProps) {
                               size="sm" 
                               variant="outline"
                               onClick={() => {
-                                alert(`Lesson Plan Preview:\n\n${content.content}`)
+                                window.open(`/content/${content.id}`, '_blank')
                               }}
                             >
                               <Eye className="w-4 h-4" />
@@ -662,7 +662,7 @@ export function CourseDashboard({ courseData, onBack }: CourseDashboardProps) {
                               size="sm" 
                               variant="outline"
                               onClick={() => {
-                                alert(`Exam Preview:\n\n${content.content}`)
+                                window.open(`/content/${content.id}`, '_blank')
                               }}
                             >
                               <Eye className="w-4 h-4" />
