@@ -36,6 +36,7 @@ export default function ContentViewPage() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [sidebarOpen, setSidebarOpen] = useState(false)
+  const [courses, setCourses] = useState<any[]>([])
 
   const contentId = params.contentId as string
 
@@ -64,8 +65,23 @@ export default function ContentViewPage() {
       }
     }
 
+    const fetchCourses = async () => {
+      try {
+        const response = await fetch('/api/courses')
+        if (response.ok) {
+          const result = await response.json()
+          if (result.success) {
+            setCourses(result.courses)
+          }
+        }
+      } catch (error) {
+        console.error('Error fetching courses:', error)
+      }
+    }
+
     if (contentId) {
       fetchContent()
+      fetchCourses()
     }
   }, [contentId])
 
@@ -151,11 +167,12 @@ export default function ContentViewPage() {
     <div className="flex h-screen bg-gray-50">
       {/* Navigation Sidebar */}
       <NavigationSidebar 
-        sidebarOpen={sidebarOpen}
-        setSidebarOpen={setSidebarOpen}
-        currentCourseId={content?.courseId}
-        onCourseSelect={(courseId) => {
-          router.push(`/?courseId=${courseId}`)
+        isOpen={sidebarOpen}
+        onClose={() => setSidebarOpen(false)}
+        currentPage="Content"
+        courses={courses}
+        onCourseSelect={(course) => {
+          router.push(`/?courseId=${course.id}`)
         }}
         onAddCourse={() => {
           router.push('/setup')
