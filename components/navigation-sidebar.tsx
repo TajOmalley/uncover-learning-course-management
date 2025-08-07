@@ -46,8 +46,9 @@ export function NavigationSidebar({ isOpen, onClose, currentPage, courses = [], 
     <>
       {/* Sidebar - Toggleable on All Screen Sizes */}
       <div className={`
-        fixed top-0 left-0 h-screen w-80 bg-white shadow-xl z-50 transform transition-transform duration-300 ease-in-out
+        fixed top-0 left-0 h-screen w-80 shadow-xl z-50 transform transition-transform duration-300 ease-in-out
         ${isOpen ? 'translate-x-0' : '-translate-x-full'}
+        bg-white/40 backdrop-blur-md border border-white/30
       `}>
         <div className="flex flex-col h-full">
           {/* Header */}

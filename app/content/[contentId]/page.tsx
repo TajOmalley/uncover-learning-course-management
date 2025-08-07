@@ -181,7 +181,7 @@ export default function ContentViewPage() {
       
              <div className={`flex-1 relative transition-all duration-300 ${sidebarOpen ? 'ml-80' : ''}`}>
         {/* Header */}
-        <div className="bg-white border-b border-gray-200">
+        <div className="bg-white/50 backdrop-blur-md border-b border-white/30">
           <div className="max-w-7xl mx-auto px-4 py-4">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-4">
@@ -216,7 +216,7 @@ export default function ContentViewPage() {
         </div>
 
         {/* Content */}
-        <div className="max-w-4xl mx-auto px-4 py-8">
+        <div className="max-w-4xl mx-auto px-4 py-8 bg-[#F2F7F3] rounded-2xl border border-white/20">
         <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
           {/* Main Content */}
           <div className="lg:col-span-3">

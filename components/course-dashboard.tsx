@@ -191,7 +191,7 @@ export function CourseDashboard({ courseData, onBack }: CourseDashboardProps) {
         </div>
       </div>
 
-      <div className="max-w-7xl mx-auto px-4 py-8">
+      <div className="max-w-7xl mx-auto px-4 py-8 bg-[#F2F7F3] rounded-2xl border border-white/20">
         <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
           <TabsList className="grid w-full grid-cols-3 lg:w-auto lg:grid-cols-3">
             <TabsTrigger value="overview">Overview</TabsTrigger>
