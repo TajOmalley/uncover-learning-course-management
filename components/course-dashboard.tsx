@@ -161,7 +161,7 @@ export function CourseDashboard({ courseData, onBack }: CourseDashboardProps) {
         }}
       />
       
-      <div className={`flex-1 relative transition-all duration-300 ${sidebarOpen ? 'lg:ml-80' : ''}`}>
+      <div className={`flex-1 relative transition-all duration-300 ${sidebarOpen ? 'ml-80' : ''}`}>
                 {/* Header */}
         <div className="bg-gradient-to-r from-[#47624f] via-[#707D7F] to-[#47624f] text-white relative">
           <button

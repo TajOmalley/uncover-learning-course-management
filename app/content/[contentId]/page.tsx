@@ -179,7 +179,7 @@ export default function ContentViewPage() {
         }}
       />
       
-             <div className={`flex-1 relative transition-all duration-300 lg:ml-80 ${sidebarOpen ? 'ml-80' : ''}`}>
+             <div className={`flex-1 relative transition-all duration-300 ${sidebarOpen ? 'ml-80' : ''}`}>
         {/* Header */}
         <div className="bg-white border-b border-gray-200">
           <div className="max-w-7xl mx-auto px-4 py-4">
