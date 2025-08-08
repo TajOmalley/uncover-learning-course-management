@@ -11,6 +11,8 @@ import { format, startOfMonth, endOfMonth, eachDayOfInterval, isSameMonth, isSam
 
 interface CourseCalendarProps {
   courseData: any
+  onOpenContent?: (contentId: string) => void
+  onRequestGenerate?: (type: string, unitId: string) => void
 }
 
 interface CalendarItem {
@@ -25,7 +27,7 @@ interface CalendarItem {
   isGenerated?: boolean
 }
 
-export function CourseCalendar({ courseData }: CourseCalendarProps) {
+export function CourseCalendar({ courseData, onOpenContent, onRequestGenerate }: CourseCalendarProps) {
   const router = useRouter()
   // Parse course date range
   const courseStartDate = courseData.startDate ? parseISO(courseData.startDate) : new Date()
@@ -391,7 +393,7 @@ export function CourseCalendar({ courseData }: CourseCalendarProps) {
                       {/* Lecture Schedule Display */}
                       {lectureInfo && (
                         <div className="mt-1 mb-2">
-                          <div className="text-xs bg-[#47624f] text-white px-2 py-1 rounded font-medium">
+                          <div className="text-[10px] bg-[#47624f] text-white px-1.5 py-0.5 rounded font-medium inline-block">
                             Lecture: {lectureInfo}
                           </div>
                         </div>
@@ -401,7 +403,18 @@ export function CourseCalendar({ courseData }: CourseCalendarProps) {
                         {dayItems.map(item => (
                           <div
                             key={item.id}
-                            className={`text-xs p-1 rounded ${item.color} text-white truncate`}
+                            className={`text-xs p-1 rounded ${item.color} text-white truncate cursor-pointer`}
+                            onClick={() => {
+                              if (item.isGenerated && item.id && item.id !== 'mock') {
+                                onOpenContent?.(item.id)
+                              } else {
+                                // route to generator for this unit/type
+                                const unit = courseData.calendar?.find((u: any) => u.title === item.unit || u.id === item.unit)
+                                if (unit) {
+                                  onRequestGenerate?.(item.type, unit.id)
+                                }
+                              }
+                            }}
                           >
                             {item.title}
                           </div>

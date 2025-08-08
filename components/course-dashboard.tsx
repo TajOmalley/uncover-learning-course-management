@@ -450,7 +450,20 @@ export function CourseDashboard({ courseData, onBack }: CourseDashboardProps) {
           </TabsContent>
 
           <TabsContent value="calendar">
-            <CourseCalendar courseData={courseData} />
+            <CourseCalendar 
+              courseData={courseData}
+              onOpenContent={(id) => {
+                setSelectedContentId(id)
+                setContentModalOpen(true)
+              }}
+              onRequestGenerate={(type, unitId) => {
+                // Switch to generator tab and preselect
+                setActiveTab("overview")
+                setGeneratorType(type)
+                setShowGenerator(true)
+                // ContentGenerator will allow unit selection; we can enhance to preselect by id later
+              }}
+            />
           </TabsContent>
 
           <TabsContent value="content">
@@ -640,14 +653,14 @@ export function CourseDashboard({ courseData, onBack }: CourseDashboardProps) {
 
               {/* Exams Section */}
               <Card>
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2">
+                    <CardHeader>
+                      <CardTitle className="flex items-center gap-2">
                     <GraduationCap className="w-5 h-5 text-[#47624f]" />
                     Exams
-                  </CardTitle>
+                      </CardTitle>
                   <CardDescription>Comprehensive exams with multiple question types</CardDescription>
-                </CardHeader>
-                <CardContent>
+                    </CardHeader>
+                    <CardContent>
                   {savedExamContent.length > 0 ? (
                     <div className="space-y-4">
                       {savedExamContent.map((content) => (
@@ -691,17 +704,17 @@ export function CourseDashboard({ courseData, onBack }: CourseDashboardProps) {
                         className="mt-4 bg-gradient-to-r from-[#47624f] to-[#707D7F] hover:from-[#000000] hover:to-[#47624f]"
                         onClick={() => handleGenerateContent('exam')}
                       >
-                        <Plus className="w-4 h-4 mr-2" />
+                          <Plus className="w-4 h-4 mr-2" />
                         Generate Exam
-                      </Button>
-                    </div>
+                        </Button>
+                      </div>
                   )}
-                </CardContent>
-              </Card>
+                    </CardContent>
+                  </Card>
             </div>
           </TabsContent>
         </Tabs>
-              </div>
+      </div>
       </div>
       
       {/* Content Modal */}

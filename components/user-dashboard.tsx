@@ -180,7 +180,9 @@ export function UserDashboard() {
       level: selectedCourse.level,
       startDate: selectedCourse.startDate,
       endDate: selectedCourse.endDate,
-      lectureSchedule: selectedCourse.lectureSchedule,
+      lectureSchedule: typeof selectedCourse.lectureSchedule === 'string'
+        ? (() => { try { return JSON.parse(selectedCourse.lectureSchedule) } catch { return {} } })()
+        : selectedCourse.lectureSchedule,
       calendar: selectedCourse.units,
       courseId: selectedCourse.id,
     }

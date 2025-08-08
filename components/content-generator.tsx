@@ -331,8 +331,14 @@ export function ContentGenerator({ type, courseData, onBack }: ContentGeneratorP
 
       console.log('Content saved successfully to database:', result.content)
       
-      // Show success message
-      alert(`✅ Content saved successfully!\n\nYour ${type.replace('-', ' ')} has been saved to the "${selectedUnit}" unit.`)
+      // Show success toast (styled)
+      try {
+        const { toast } = await import("@/hooks/use-toast")
+        toast({
+          title: "Content saved",
+          description: `Your ${type.replace('-', ' ')} has been saved to the "${selectedUnit}" unit.`,
+        })
+      } catch (_) {}
       
       // Reset the generation window
       setGeneratedContent("")
@@ -348,7 +354,13 @@ export function ContentGenerator({ type, courseData, onBack }: ContentGeneratorP
       
     } catch (error) {
       console.error('Error saving content:', error)
-      alert('❌ Failed to save content. Please try again.')
+      try {
+        const { toast } = await import("@/hooks/use-toast")
+        toast({
+          title: "Save failed",
+          description: 'Please try again.',
+        })
+      } catch (_) {}
     } finally {
       setIsSaving(false)
     }
