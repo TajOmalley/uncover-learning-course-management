@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Calendar, ChevronLeft, ChevronRight, Plus, Edit, Trash2, BookOpen, FileText, PenTool, GraduationCap } from "lucide-react"
 import { ContentModal } from "@/components/content-modal"
-import { format, startOfMonth, endOfMonth, eachDayOfInterval, isSameMonth, isSameDay, addMonths, subMonths, parseISO } from "date-fns"
+import { format, startOfMonth, endOfMonth, eachDayOfInterval, isSameMonth, isSameDay, addMonths, subMonths, parseISO, addDays } from "date-fns"
 
 interface CourseCalendarProps {
   courseData: any
@@ -183,6 +183,117 @@ export function CourseCalendar({ courseData }: CourseCalendarProps) {
     return courseData.lectureSchedule?.[abbreviatedDayName] || null
   }
 
+  // Auto-plan: place generated content across the course range using given rules
+  const autoPlanContent = () => {
+    if (!courseData?.calendar || courseData.calendar.length === 0) return
+
+    const placements: CalendarItem[] = []
+
+    // Build an index of dates within course range grouped by weekday for lecture matching
+    const allDays: Date[] = eachDayOfInterval({ start: courseStartDate, end: courseEndDate })
+
+    const findNextDateMatchingLecture = (startDate: Date): Date | null => {
+      for (const d of allDays) {
+        if (d < startDate) continue
+        const lecture = getLectureForDate(d)
+        if (lecture) return d
+      }
+      return null
+    }
+
+    const findSameWeekNextDate = (baseDate: Date) => addDays(baseDate, 7)
+
+    // Iterate units sequentially
+    let cursorDate: Date = courseStartDate
+    const getSavedFor = (unitId: string, type: string) => savedContent.find(c => c.unitId === unitId && c.type === type)
+
+    for (const unit of courseData.calendar) {
+      // 1. Lesson plan on a lecture day
+      const lesson = getSavedFor(unit.id, 'lesson-plan')
+      let lessonDate: Date | null = null
+      if (lesson) {
+        const nextLectureDate = findNextDateMatchingLecture(cursorDate)
+        if (nextLectureDate) {
+          placements.push({
+            id: lesson.id || `lesson-plan-${unit.id}`,
+            title: `Lesson Plan - ${unit.title}`,
+            type: 'lesson-plan',
+            unit: unit.title,
+            date: nextLectureDate,
+            color: unit.color,
+            isGenerated: true,
+          })
+          lessonDate = nextLectureDate
+          cursorDate = addDays(nextLectureDate, 1)
+        }
+      }
+
+      // 2. Reading on same day as lesson (if exists), else next day
+      const reading = getSavedFor(unit.id, 'reading')
+      if (reading && (lessonDate || cursorDate)) {
+        const readingDate = lessonDate || cursorDate
+        placements.push({
+          id: reading.id || `reading-${unit.id}`,
+          title: `Reading - ${unit.title}`,
+          type: 'reading',
+          unit: unit.title,
+          date: readingDate,
+          color: unit.color,
+          isGenerated: true,
+        })
+        // keep cursor
+      }
+
+      // 3. Homework one week after lesson (or cursor if no lesson)
+      const homework = getSavedFor(unit.id, 'homework')
+      if (homework) {
+        const base = lessonDate || cursorDate
+        const hwDate = findSameWeekNextDate(base)
+        if (hwDate <= courseEndDate) {
+          placements.push({
+            id: homework.id || `homework-${unit.id}`,
+            title: `Homework - ${unit.title}`,
+            type: 'homework',
+            unit: unit.title,
+            date: hwDate,
+            color: unit.color,
+            isGenerated: true,
+          })
+          cursorDate = addDays(hwDate, 1)
+        }
+      }
+
+      // 4. Exam spans after lesson but before next unit; place start 3 days after lesson if possible
+      const exam = getSavedFor(unit.id, 'exam')
+      if (exam && (lessonDate || cursorDate)) {
+        const base = lessonDate || cursorDate
+        const examStart = addDays(base, 3)
+        if (examStart <= courseEndDate) {
+          placements.push({
+            id: exam.id || `exam-${unit.id}`,
+            title: `Exam - ${unit.title}`,
+            type: 'exam',
+            unit: unit.title,
+            date: examStart,
+            color: unit.color,
+            isGenerated: true,
+          })
+          cursorDate = addDays(examStart, 1)
+        }
+      }
+    }
+
+    // Merge with existing items, de-dup by id+date
+    setCalendarItems(prev => {
+      const key = (it: CalendarItem) => `${it.id}-${it.date?.toDateString()}`
+      const map = new Map<string, CalendarItem>()
+      ;[...prev, ...placements].forEach(it => {
+        if (it.date) map.set(key(it), it)
+      })
+      return Array.from(map.values())
+    })
+  }
+
   // Check if we can navigate to previous month
   const canGoToPreviousMonth = () => {
     const previousMonth = subMonths(currentMonth, 1)
@@ -205,6 +316,13 @@ export function CourseCalendar({ courseData }: CourseCalendarProps) {
               <CardTitle>Course Calendar</CardTitle>
             </div>
             <div className="flex items-center gap-2">
+              <Button
+                className="bg-[#47624f] text-white hover:bg-[#000000]"
+                size="sm"
+                onClick={() => autoPlanContent()}
+              >
+                Auto-Plan
+              </Button>
               <Button
                 variant="outline"
                 size="sm"
