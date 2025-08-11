@@ -75,10 +75,10 @@ export async function searchWeb(query: string): Promise<SearchSource[]> {
     const resp = await fetch('https://api.tavily.com/search', {
       method: 'POST',
       headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${apiKey}`
+        'Content-Type': 'application/json'
       },
       body: JSON.stringify({
+        api_key: apiKey,
         query,
         include_answer: false,
         search_depth: 'advanced',
