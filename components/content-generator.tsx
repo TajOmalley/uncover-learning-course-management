@@ -25,6 +25,8 @@ export function ContentGenerator({ type, courseData, onBack }: ContentGeneratorP
   const [generatedCitations, setGeneratedCitations] = useState<Array<{ id: string; title: string; url: string }>>([])
   const [selectedUnit, setSelectedUnit] = useState("")
   const [customPrompt, setCustomPrompt] = useState("")
+  const [instructionsAdded, setInstructionsAdded] = useState(false)
+  const [storedInstructions, setStoredInstructions] = useState("")
   const [isSaving, setIsSaving] = useState(false)
   const [savedContent, setSavedContent] = useState<any[]>([])
   const [loadingSavedContent, setLoadingSavedContent] = useState(false)
@@ -98,6 +100,20 @@ export function ContentGenerator({ type, courseData, onBack }: ContentGeneratorP
     }
   }
 
+  const handleAddInstructions = () => {
+    if (customPrompt.trim()) {
+      setStoredInstructions(customPrompt.trim())
+      setCustomPrompt("")
+      setInstructionsAdded(true)
+    }
+  }
+
+  const handleResetInstructions = () => {
+    setStoredInstructions("")
+    setInstructionsAdded(false)
+    setCustomPrompt("")
+  }
+
   const handleGenerate = async () => {
     setIsGenerating(true)
     
@@ -118,7 +134,7 @@ export function ContentGenerator({ type, courseData, onBack }: ContentGeneratorP
           body: JSON.stringify({
             courseData: courseData,
             unit: selectedUnitData,
-            customPrompt: customPrompt || undefined
+            customPrompt: storedInstructions || undefined
           }),
         })
 
@@ -193,7 +209,7 @@ export function ContentGenerator({ type, courseData, onBack }: ContentGeneratorP
             courseData: courseData,
             unit: selectedUnitData,
             lectureLength: defaultLectureLength,
-            customPrompt: customPrompt || undefined
+            customPrompt: storedInstructions || undefined
           }),
         })
 
@@ -236,7 +252,7 @@ export function ContentGenerator({ type, courseData, onBack }: ContentGeneratorP
               ...examSpecs,
               totalExamTime: totalExamTime
             },
-            customPrompt: customPrompt || undefined
+            customPrompt: storedInstructions || undefined
           }),
         })
 
@@ -253,14 +269,14 @@ export function ContentGenerator({ type, courseData, onBack }: ContentGeneratorP
         setGeneratedContent(result.exam.content)
       } else {
         // For other content types, use mock content for now
-        const mockContent = generateMockContent(type, selectedUnit, customPrompt)
+        const mockContent = generateMockContent(type, selectedUnit, storedInstructions)
         setGeneratedContent(mockContent)
       }
     } catch (error) {
       console.error('Error generating content:', error)
       
       // Fallback to mock content if API fails
-      const mockContent = generateMockContent(type, selectedUnit, customPrompt)
+      const mockContent = generateMockContent(type, selectedUnit, storedInstructions)
       setGeneratedContent(mockContent)
     } finally {
       setIsGenerating(false)
@@ -285,7 +301,7 @@ export function ContentGenerator({ type, courseData, onBack }: ContentGeneratorP
         parseInt(lectureDurations[0].replace(/\D/g, '')) || 90 : 90
 
       const specifications = {
-        customPrompt: customPrompt,
+        customPrompt: storedInstructions,
         ...(type === "homework" && {
           problemSpecs: {
             totalProblems: totalProblems,
@@ -876,16 +892,42 @@ Detailed solutions and explanations will be provided during the review session.`
                             <CardDescription>Provide specific instructions to customize the content</CardDescription>
           </CardHeader>
           <CardContent>
-            <div>
-              <Label htmlFor="prompt">Custom Instructions</Label>
+            <div className="space-y-3">
+              <div className="flex items-center justify-between">
+                <Label htmlFor="prompt">Custom Instructions</Label>
+                {instructionsAdded && (
+                  <Badge variant="secondary" className="bg-green-100 text-green-800">
+                    Instructions Active
+                  </Badge>
+                )}
+              </div>
               <Textarea
                 id="prompt"
-                placeholder={currentType.placeholder}
+                placeholder={instructionsAdded ? "Instructions have been added. Click 'Reset Instructions' to add new ones." : currentType.placeholder}
                 value={customPrompt}
                 onChange={(e) => setCustomPrompt(e.target.value)}
                 rows={4}
                 className="w-full"
+                disabled={instructionsAdded}
               />
+              <div className="flex justify-end">
+                <Button
+                  onClick={handleAddInstructions}
+                  disabled={!customPrompt.trim() || instructionsAdded}
+                  variant={instructionsAdded ? "secondary" : "default"}
+                  className={instructionsAdded ? "bg-green-100 text-green-800 hover:bg-green-200" : ""}
+                >
+                  {instructionsAdded ? "Instructions Added" : "Add Instructions"}
+                </Button>
+                <Button
+                  onClick={handleResetInstructions}
+                  disabled={!instructionsAdded}
+                  variant="outline"
+                  className="ml-2 border-[#47624f] text-[#47624f] hover:bg-[#47624f] hover:text-white"
+                >
+                  Reset Instructions
+                </Button>
+              </div>
             </div>
           </CardContent>
         </Card>
