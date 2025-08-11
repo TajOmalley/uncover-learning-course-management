@@ -47,22 +47,22 @@ export function ContentGenerator({ type, courseData, onBack }: ContentGeneratorP
     "lesson-plan": {
       title: "Lesson Plan Creator",
       description: "Create detailed lesson plans with objectives, activities, and assessments",
-      placeholder: "Additional requirements or focus areas for this lesson...",
+      placeholder: "e.g., Include more group activities, focus on hands-on learning, make it more interactive, emphasize student engagement...",
     },
     reading: {
       title: "Reading Content Creator",
       description: "Create comprehensive reading materials and study guides",
-      placeholder: "Specific topics or concepts to emphasize in the reading...",
+      placeholder: "e.g., Focus on practical applications, include case studies, make it more conversational, emphasize historical context...",
     },
     homework: {
       title: "Homework Problem Creator",
       description: "Create practice problems and assignments with solutions",
-      placeholder: "Difficulty level, problem types, or specific skills to assess...",
+      placeholder: "e.g., Focus on real-world applications, include more word problems, make problems more challenging, emphasize critical thinking...",
     },
     exam: {
       title: "Exam Creator",
       description: "Create comprehensive exams with multiple question types",
-      placeholder: "Exam format, question types, or specific topics to cover...",
+      placeholder: "e.g., Focus on application questions, include more essay questions, make it more challenging, emphasize problem-solving...",
     },
   }
 
@@ -117,7 +117,8 @@ export function ContentGenerator({ type, courseData, onBack }: ContentGeneratorP
           },
           body: JSON.stringify({
             courseData: courseData,
-            unit: selectedUnitData
+            unit: selectedUnitData,
+            customPrompt: customPrompt || undefined
           }),
         })
 
@@ -153,7 +154,8 @@ export function ContentGenerator({ type, courseData, onBack }: ContentGeneratorP
               totalProblems: totalProblems,
               wordProblems: wordProblems,
               multipleChoiceProblems: multipleChoiceProblems
-            }
+            },
+            customPrompt: customPrompt || undefined
           }),
         })
 
@@ -190,7 +192,8 @@ export function ContentGenerator({ type, courseData, onBack }: ContentGeneratorP
           body: JSON.stringify({
             courseData: courseData,
             unit: selectedUnitData,
-            lectureLength: defaultLectureLength
+            lectureLength: defaultLectureLength,
+            customPrompt: customPrompt || undefined
           }),
         })
 
@@ -232,7 +235,8 @@ export function ContentGenerator({ type, courseData, onBack }: ContentGeneratorP
             examSpecs: {
               ...examSpecs,
               totalExamTime: totalExamTime
-            }
+            },
+            customPrompt: customPrompt || undefined
           }),
         })
 
@@ -371,8 +375,11 @@ export function ContentGenerator({ type, courseData, onBack }: ContentGeneratorP
   }
 
   const generateMockContent = (type: string, unit: string, prompt: string) => {
+    // Create a custom instruction note if prompt is provided
+    const customInstructionNote = prompt ? `\n\n## Custom Instructions Applied\n${prompt}\n\n---\n` : ''
+    
     const baseContent = {
-      "lesson-plan": `# Lesson Plan: ${unit}
+      "lesson-plan": `# Lesson Plan: ${unit}${customInstructionNote}
 
 ## Learning Objectives
 By the end of this lesson, students will be able to:
@@ -412,7 +419,7 @@ By the end of this lesson, students will be able to:
 ## Homework Assignment
 Complete practice problems 1-10 from the textbook and prepare for next week's lab session.`,
 
-      reading: `# Reading Material: ${unit}
+      reading: `# Reading Material: ${unit}${customInstructionNote}
 
 ## Chapter Overview
 This chapter introduces the core principles of ${unit.toLowerCase()} and explores their applications in modern contexts.
@@ -441,7 +448,7 @@ Building on the fundamentals, we explore more sophisticated concepts that prepar
 - Online tutorials and simulations
 - Professional organization websites`,
 
-      homework: `# Homework Assignment: ${unit}
+      homework: `# Homework Assignment: ${unit}${customInstructionNote}
 
 ## Instructions
 Complete the following problems to reinforce your understanding of ${unit.toLowerCase()}. Show all work and explain your reasoning.
@@ -481,7 +488,7 @@ Evaluate the effectiveness of different strategies:
 - Explanation quality: 30%
 - Presentation: 20%`,
 
-      exam: `# Exam: ${unit}
+      exam: `# Exam: ${unit}${customInstructionNote}
 
 **Course:** ${courseData.courseName}
 **Duration:** 2 hours

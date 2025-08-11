@@ -20,6 +20,7 @@ interface ReadingRequestData {
     color: string
     description?: string
   }
+  customPrompt?: string
 }
 
 interface GeneratedReading {
@@ -33,7 +34,7 @@ interface GeneratedReading {
 export async function POST(request: NextRequest) {
   try {
     // Parse the request body
-    const { courseData, unit }: ReadingRequestData = await request.json()
+    const { courseData, unit, customPrompt }: ReadingRequestData = await request.json()
 
     // Validate required fields
     if (!courseData || !unit) {
@@ -119,6 +120,9 @@ Please create engaging reading content that:
 4. Includes relevant examples and explanations
 5. Is structured with clear headings and sections
 6. Is engaging and educational
+
+${customPrompt ? `CUSTOM INSTRUCTIONS: ${customPrompt}
+These instructions should guide the style, length, and focus of the reading material. Please incorporate these requirements while maintaining the core educational content structure.` : ''}
 
 Format the content with markdown headings (# for main headings, ## for subheadings) and ensure it flows logically from introduction to conclusion.
 

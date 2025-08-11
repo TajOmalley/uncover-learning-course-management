@@ -24,6 +24,7 @@ interface HomeworkRequestData {
     wordProblems: number
     multipleChoiceProblems: number
   }
+  customPrompt?: string
 }
 
 interface GeneratedHomework {
@@ -41,7 +42,7 @@ interface GeneratedHomework {
 export async function POST(request: NextRequest) {
   try {
     // Parse the request body
-    const { courseData, unit, problemSpecs }: HomeworkRequestData = await request.json()
+    const { courseData, unit, problemSpecs, customPrompt }: HomeworkRequestData = await request.json()
 
     // Validate required fields
     if (!courseData || !unit || !problemSpecs) {
@@ -92,6 +93,9 @@ Please create homework problems that:
 5. Are clearly numbered and formatted
 6. Include answer keys at the end
 7. Vary in difficulty but are all appropriate for the course level
+
+${customPrompt ? `CUSTOM INSTRUCTIONS: ${customPrompt}
+These instructions should guide the difficulty level, problem types, and focus areas. Please incorporate these requirements while maintaining the core educational structure.` : ''}
 
 Format the content with clear headings, numbered problems, and separate answer key section.`
 

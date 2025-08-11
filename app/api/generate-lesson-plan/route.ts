@@ -20,6 +20,7 @@ interface LessonPlanRequestData {
     description?: string
   }
   lectureLength: number // in minutes
+  customPrompt?: string
 }
 
 interface GeneratedLessonPlan {
@@ -33,7 +34,7 @@ interface GeneratedLessonPlan {
 export async function POST(request: NextRequest) {
   try {
     // Parse the request body
-    const { courseData, unit, lectureLength }: LessonPlanRequestData = await request.json()
+    const { courseData, unit, lectureLength, customPrompt }: LessonPlanRequestData = await request.json()
 
     // Validate required fields
     if (!courseData || !unit || !lectureLength) {
@@ -101,6 +102,9 @@ Please create a comprehensive lesson plan that includes:
    - Summary of key takeaways
    - Connection to next lesson
    - Assignment or homework preview
+
+${customPrompt ? `CUSTOM INSTRUCTIONS: ${customPrompt}
+These instructions should guide the lesson structure, activities, and teaching approach. Please incorporate these requirements while maintaining the core educational structure.` : ''}
 
 Format the content with clear headings, time allocations, and detailed instructions for each section. Ensure the lesson plan is engaging, educational, and appropriate for ${courseData.level} students studying ${courseData.subject}.`
 

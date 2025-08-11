@@ -34,6 +34,7 @@ interface ExamRequestData {
     }
     totalExamTime: number
   }
+  customPrompt?: string
 }
 
 interface GeneratedExam {
@@ -61,7 +62,7 @@ interface GeneratedExam {
 export async function POST(request: NextRequest) {
   try {
     // Parse the request body
-    const { courseData, unit, examSpecs }: ExamRequestData = await request.json()
+    const { courseData, unit, examSpecs, customPrompt }: ExamRequestData = await request.json()
 
     // Validate required fields
     if (!courseData || !unit || !examSpecs) {
@@ -147,6 +148,9 @@ Please create an exam that includes:
    - Sample essay responses with key points
    - Correct answers for multiple choice questions
    - Grading rubrics and point allocations
+
+${customPrompt ? `CUSTOM INSTRUCTIONS: ${customPrompt}
+These instructions should guide the exam format, question types, and assessment focus. Please incorporate these requirements while maintaining the core educational structure.` : ''}
 
 Format the exam with clear sections, time allocations, and detailed instructions. Ensure the exam is comprehensive, fair, and appropriate for ${courseData.level} students studying ${courseData.subject}.`
 
