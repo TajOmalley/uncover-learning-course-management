@@ -86,12 +86,23 @@ export async function POST(request: NextRequest) {
 
 Your response should be formatted as a textbook chapter with proper headings, subheadings, and well-organized content. Use markdown formatting for structure.
 
-IMPORTANT CITATION INSTRUCTIONS:
+CRITICAL CITATION INSTRUCTIONS:
 - You are provided with a list of numbered sources that you MUST rely on for factual claims.
-- When you state a concrete fact, statistic, definition, date, or named claim, annotate the exact span using this syntax: {{the fact text}}[S#] where S# is the source id (e.g., S1, S2).
+- When you state a concrete fact, statistic, definition, date, or named claim, annotate ONLY that specific span using this syntax: {{the fact text}}[S#] where S# is the source id (e.g., S1, S2).
+- DO NOT duplicate or repeat content. Write each sentence or fact only once.
+- DO NOT append cited content to original content. The citation syntax should wrap around existing text, not add new text.
 - Only use source ids from the provided list.
 - Do not invent citations.
 - Keep the content clear and suitable for the specified student level.
+- Ensure proper spacing and formatting - do not concatenate words or create run-on text.
+
+EXAMPLE OF CORRECT CITATION:
+❌ WRONG: "The YC application is detailed. The YC application is a detailed online form that asks about your startup, team, market, and progress."
+✅ CORRECT: "The YC application is a {{detailed online form that asks about your startup, team, market, and progress}}[S1]."
+
+EXAMPLE OF CORRECT FORMATTING:
+❌ WRONG: "crucialThe YC application is..."
+✅ CORRECT: "It's YC's first impression of you and your company, so clarity and honesty are crucial. The {{YC application is a detailed online form}}[S1]."
 `
 
     const userPrompt = `Please create reading content for the following unit:

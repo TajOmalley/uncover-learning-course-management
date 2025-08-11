@@ -25,20 +25,39 @@ function extractDomain(url: string): string {
   }
 }
 
+// Clean up concatenated text that might occur from AI generation
+function cleanConcatenatedText(text: string): string {
+  // Fix common concatenation patterns
+  return text
+    // Fix concatenated words like "crucialThe", "vitalYC", etc.
+    .replace(/([a-z])([A-Z])/g, '$1 $2')
+    // Fix double spaces
+    .replace(/\s+/g, ' ')
+    // Fix spacing around citations
+    .replace(/\s*\{\{/g, ' {{')
+    .replace(/\}\}\s*/g, '}} ')
+    // Clean up any remaining concatenated text
+    .replace(/([.!?])([A-Z])/g, '$1 $2')
+    .trim()
+}
+
 // Splits text and wraps citation markers {{text}}[S#] into a span with tooltip
 function transformTextWithCitations(text: string, citationMap: Map<string, CitationItem>) {
+  // Clean up the text first
+  const cleanedText = cleanConcatenatedText(text)
+  
   const nodes: React.ReactNode[] = []
   const regex = /\{\{([^}]+)\}\}\[(S\d+)\]/g
   let lastIndex = 0
   let match: RegExpExecArray | null
 
-  while ((match = regex.exec(text)) !== null) {
+  while ((match = regex.exec(cleanedText)) !== null) {
     const [full, innerText, sourceId] = match
     const start = match.index
     const end = start + full.length
 
     if (start > lastIndex) {
-      nodes.push(text.slice(lastIndex, start))
+      nodes.push(cleanedText.slice(lastIndex, start))
     }
 
     const citation = citationMap.get(sourceId)
@@ -71,8 +90,8 @@ function transformTextWithCitations(text: string, citationMap: Map<string, Citat
     lastIndex = end
   }
 
-  if (lastIndex < text.length) {
-    nodes.push(text.slice(lastIndex))
+  if (lastIndex < cleanedText.length) {
+    nodes.push(cleanedText.slice(lastIndex))
   }
 
   return nodes
