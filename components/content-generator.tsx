@@ -544,17 +544,17 @@ Detailed solutions and explanations will be provided during the review session.`
           </div>
         </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-          {/* Generation Controls */}
-          <Card className="lg:col-span-1">
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Sparkles className="w-5 h-5 text-[#47624f]" />
-                Generation Settings
-              </CardTitle>
-              <CardDescription>Configure the AI generation parameters</CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
+        {/* Horizontal Overhead Panel */}
+        <Card className="mb-6">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Sparkles className="w-5 h-5 text-[#47624f]" />
+              Generation Settings
+            </CardTitle>
+            <CardDescription>Configure the AI generation parameters</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="grid grid-cols-1 lg:grid-cols-4 gap-4 items-end">
               <div>
                 <Label htmlFor="unit">Select Course Unit</Label>
                 <Select value={selectedUnit} onValueChange={setSelectedUnit}>
@@ -872,11 +872,12 @@ Detailed solutions and explanations will be provided during the review session.`
                   </>
                 )}
               </Button>
-            </CardContent>
-          </Card>
+            </div>
+          </CardContent>
+        </Card>
 
-          {/* Generated Content */}
-          <Card className="lg:col-span-2">
+        {/* Full-Width Generated Content */}
+        <Card>
             <CardHeader>
               <div className="flex items-center justify-between">
                 <CardTitle>Generated Content</CardTitle>
@@ -918,9 +919,9 @@ Detailed solutions and explanations will be provided during the review session.`
             </CardContent>
           </Card>
           
-          {/* Saved Content Section */}
-          {savedContent.length > 0 && (
-            <Card className="lg:col-span-3">
+        {/* Saved Content Section */}
+        {savedContent.length > 0 && (
+          <Card>
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
                   <Download className="w-5 h-5 text-[#47624f]" />

@@ -92,8 +92,11 @@ export function CitedMarkdown({ content, citations }: CitedMarkdownProps) {
       <ReactMarkdown
         remarkPlugins={[remarkGfm]}
         components={{
+          h1: ({children}) => <h1 className="text-3xl font-bold text-[#000000] mb-6 mt-0 border-b-2 border-[#47624f] pb-2">{children}</h1>,
+          h2: ({children}) => <h2 className="text-2xl font-semibold text-[#47624f] mb-4 mt-8">{children}</h2>,
+          h3: ({children}) => <h3 className="text-xl font-medium text-[#707D7F] mb-3 mt-6">{children}</h3>,
           p: ({ node, children }) => {
-            // Post-process text nodes inside paragraphs
+            // Post-process text nodes inside paragraphs for citations
             const flat = React.Children.toArray(children)
             const processed: React.ReactNode[] = []
             flat.forEach((child, idx) => {
@@ -105,6 +108,14 @@ export function CitedMarkdown({ content, citations }: CitedMarkdownProps) {
             })
             return <p className="text-[#000000] leading-relaxed mb-4 text-base">{processed}</p>
           },
+          ul: ({children}) => <ul className="list-disc list-inside mb-4 space-y-1 text-[#000000]">{children}</ul>,
+          ol: ({children}) => <ol className="list-decimal list-inside mb-4 space-y-1 text-[#000000]">{children}</ol>,
+          li: ({children}) => <li className="text-[#000000] leading-relaxed">{children}</li>,
+          strong: ({children}) => <strong className="font-semibold text-[#000000]">{children}</strong>,
+          em: ({children}) => <em className="italic text-[#707D7F]">{children}</em>,
+          blockquote: ({children}) => <blockquote className="border-l-4 border-[#47624f] pl-4 italic text-[#707D7F] mb-4">{children}</blockquote>,
+          code: ({children}) => <code className="bg-[#C9F2C7]/30 px-2 py-1 rounded text-sm font-mono text-[#47624f]">{children}</code>,
+          pre: ({children}) => <pre className="bg-[#C9F2C7]/20 p-4 rounded-lg border overflow-x-auto text-sm">{children}</pre>,
         }}
       >
         {content}
