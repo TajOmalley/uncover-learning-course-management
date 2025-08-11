@@ -9,8 +9,7 @@ import { Textarea } from "@/components/ui/textarea"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { ArrowLeft, Sparkles, Download, Copy, RefreshCw } from "lucide-react"
 import { ContentModal } from "@/components/content-modal"
-import ReactMarkdown from 'react-markdown'
-import remarkGfm from 'remark-gfm'
+import { CitedMarkdown } from '@/components/CitedMarkdown'
 import { Badge } from "@/components/ui/badge"
 
 interface ContentGeneratorProps {
@@ -23,6 +22,7 @@ export function ContentGenerator({ type, courseData, onBack }: ContentGeneratorP
   const router = useRouter()
   const [isGenerating, setIsGenerating] = useState(false)
   const [generatedContent, setGeneratedContent] = useState("")
+  const [generatedCitations, setGeneratedCitations] = useState<Array<{ id: string; title: string; url: string }>>([])
   const [selectedUnit, setSelectedUnit] = useState("")
   const [customPrompt, setCustomPrompt] = useState("")
   const [isSaving, setIsSaving] = useState(false)
@@ -132,6 +132,7 @@ export function ContentGenerator({ type, courseData, onBack }: ContentGeneratorP
         }
 
         setGeneratedContent(result.reading.content)
+        setGeneratedCitations(result.reading.citations || [])
       } else if (type === "homework") {
         // Call the homework generation API
         const selectedUnitData = courseData.calendar?.find((unit: any) => unit.title === selectedUnit)
@@ -314,8 +315,11 @@ export function ContentGenerator({ type, courseData, onBack }: ContentGeneratorP
           courseId: courseData.courseId,
           unitId: selectedUnitData.id,
           type: type,
-          content: generatedContent,
-          specifications: specifications
+           content: generatedContent,
+           specifications: {
+             ...specifications,
+             citations: generatedCitations
+           }
         }),
       })
 
@@ -902,25 +906,7 @@ Detailed solutions and explanations will be provided during the review session.`
               ) : generatedContent ? (
                 <div className="prose max-w-none">
                   <div className="bg-white rounded-lg border border-[#B2A29E]/20 p-6 shadow-sm">
-                    <ReactMarkdown 
-                      remarkPlugins={[remarkGfm]}
-                      components={{
-                        h1: ({children}) => <h1 className="text-3xl font-bold text-[#000000] mb-6 mt-0 border-b-2 border-[#47624f] pb-2">{children}</h1>,
-                        h2: ({children}) => <h2 className="text-2xl font-semibold text-[#47624f] mb-4 mt-8">{children}</h2>,
-                        h3: ({children}) => <h3 className="text-xl font-medium text-[#707D7F] mb-3 mt-6">{children}</h3>,
-                        p: ({children}) => <p className="text-[#000000] leading-relaxed mb-4 text-base">{children}</p>,
-                        ul: ({children}) => <ul className="list-disc list-inside mb-4 space-y-1 text-[#000000]">{children}</ul>,
-                        ol: ({children}) => <ol className="list-decimal list-inside mb-4 space-y-1 text-[#000000]">{children}</ol>,
-                        li: ({children}) => <li className="text-[#000000] leading-relaxed">{children}</li>,
-                        strong: ({children}) => <strong className="font-semibold text-[#000000]">{children}</strong>,
-                        em: ({children}) => <em className="italic text-[#707D7F]">{children}</em>,
-                        blockquote: ({children}) => <blockquote className="border-l-4 border-[#47624f] pl-4 italic text-[#707D7F] mb-4">{children}</blockquote>,
-                        code: ({children}) => <code className="bg-[#C9F2C7]/30 px-2 py-1 rounded text-sm font-mono text-[#47624f]">{children}</code>,
-                        pre: ({children}) => <pre className="bg-[#C9F2C7]/20 p-4 rounded-lg border overflow-x-auto text-sm">{children}</pre>,
-                      }}
-                    >
-                      {generatedContent}
-                    </ReactMarkdown>
+                    <CitedMarkdown content={generatedContent} citations={generatedCitations} />
                   </div>
                 </div>
               ) : (
