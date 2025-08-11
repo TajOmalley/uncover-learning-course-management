@@ -35,20 +35,7 @@ function normalizeUrl(maybeUrl: string): string {
   }
 }
 
-function domainAllowed(url: string, allowedCsv?: string): boolean {
-  if (!allowedCsv) return true
-  try {
-    const hostname = new URL(url).hostname.toLowerCase()
-    const tokens = allowedCsv
-      .split(',')
-      .map(s => s.trim().toLowerCase())
-      .filter(Boolean)
-    if (tokens.length === 0) return true
-    return tokens.some(token => hostname.endsWith(token))
-  } catch {
-    return false
-  }
-}
+
 
 export function buildSearchQuery(params: BuildQueryParams): string {
   const parts = [
@@ -62,8 +49,6 @@ export function buildSearchQuery(params: BuildQueryParams): string {
 
 export async function searchWeb(query: string): Promise<SearchSource[]> {
   const provider = (process.env.CITATIONS_SEARCH_PROVIDER || 'tavily').toLowerCase()
-  const max = parseInt(process.env.CITATIONS_MAX_SOURCES || '6', 10)
-  const allowed = process.env.CITATIONS_ALLOWED_DOMAINS
 
   let rawResults: Array<{ title: string; url: string; snippet?: string }> = []
 
@@ -82,7 +67,7 @@ export async function searchWeb(query: string): Promise<SearchSource[]> {
         query,
         include_answer: false,
         search_depth: 'advanced',
-        max_results: Math.min(10, max * 2)
+        max_results: 10
       })
     })
     if (!resp.ok) {
@@ -121,18 +106,16 @@ export async function searchWeb(query: string): Promise<SearchSource[]> {
     throw new Error(`Unsupported search provider: ${provider}`)
   }
 
-  // Filter + dedupe + truncate
+  // Filter + dedupe
   const seen = new Set<string>()
   const cleaned = rawResults
     .filter(r => r && typeof r.url === 'string' && isHttpUrl(r.url))
     .map(r => ({ ...r, url: normalizeUrl(r.url) }))
-    .filter(r => domainAllowed(r.url, allowed))
     .filter(r => {
       if (seen.has(r.url)) return false
       seen.add(r.url)
       return true
     })
-    .slice(0, max)
 
   // Assign stable ids S1..Sn
   const sources: SearchSource[] = cleaned.map((r, idx) => ({
