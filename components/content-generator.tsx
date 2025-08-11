@@ -7,7 +7,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { ArrowLeft, Sparkles, Download, Copy, RefreshCw } from "lucide-react"
+import { ArrowLeft, Download, Copy, RefreshCw } from "lucide-react"
 import { ContentModal } from "@/components/content-modal"
 import { CitedMarkdown } from '@/components/CitedMarkdown'
 import { Badge } from "@/components/ui/badge"
@@ -548,7 +548,6 @@ Detailed solutions and explanations will be provided during the review session.`
         <Card className="mb-6">
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
-              <Sparkles className="w-5 h-5 text-[#47624f]" />
               Generation Settings
             </CardTitle>
           </CardHeader>
@@ -833,10 +832,9 @@ Detailed solutions and explanations will be provided during the review session.`
                     Generating...
                   </>
                 ) : (
-                  <>
-                    <Sparkles className="w-4 h-4 mr-2" />
-                    Generate Content
-                  </>
+                                  <>
+                  Generate Content
+                </>
                 )}
               </Button>
 
@@ -866,10 +864,9 @@ Detailed solutions and explanations will be provided during the review session.`
         <Card className="mb-6">
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
-              <Sparkles className="w-5 h-5 text-[#47624f]" />
               Additional Instructions
             </CardTitle>
-            <CardDescription>Provide specific instructions to customize the AI-generated content</CardDescription>
+            <CardDescription>Provide specific instructions to customize the generated content</CardDescription>
           </CardHeader>
           <CardContent>
             <div>
@@ -911,7 +908,7 @@ Detailed solutions and explanations will be provided during the review session.`
                 <div className="text-center space-y-4">
                   <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#47624f] mx-auto"></div>
                   <h3 className="text-lg font-semibold text-[#000000]">Generating Content</h3>
-                  <p className="text-[#707D7F]">AI is creating your {type.replace("-", " ")} content...</p>
+                  <p className="text-[#707D7F]">Creating your {type.replace("-", " ")} content...</p>
                 </div>
               </div>
             ) : generatedContent ? (
@@ -921,10 +918,9 @@ Detailed solutions and explanations will be provided during the review session.`
                 </div>
               </div>
             ) : (
-              <div className="text-center py-12 text-[#707D7F]">
-                <Sparkles className="w-12 h-12 mx-auto mb-4 text-[#B2A29E]" />
-                <p>Select a unit and click "Generate Content" to create AI-powered course materials.</p>
-              </div>
+                             <div className="text-center py-12 text-[#707D7F]">
+                 <p>Select a unit and click "Generate Content" to create course materials.</p>
+               </div>
             )}
           </CardContent>
         </Card>

@@ -17,7 +17,7 @@ const fraunces = Fraunces({
 
 export const metadata: Metadata = {
   title: 'Uncover Learning - Course Management',
-  description: 'AI-powered course management platform for professors',
+      description: 'Course management platform for professors',
   generator: 'v0.dev',
 }
 

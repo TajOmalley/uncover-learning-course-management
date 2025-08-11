@@ -6,7 +6,7 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { BookOpen, Calendar, GraduationCap, Sparkles } from "lucide-react"
+import { BookOpen, Calendar, GraduationCap } from "lucide-react"
 
 interface CourseSetupProps {
   onComplete: (data: any) => void
@@ -50,7 +50,7 @@ export function CourseSetup({ onComplete }: CourseSetupProps) {
       title: "What is the level of your course?",
       type: "select",
       options: ["Undergraduate - Introductory", "Undergraduate - Intermediate", "Undergraduate - Advanced", "Graduate"],
-      icon: Sparkles,
+      icon: BookOpen,
     },
     {
       id: "dateRange",
@@ -207,7 +207,7 @@ export function CourseSetup({ onComplete }: CourseSetupProps) {
               <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#47624f] mx-auto"></div>
                               <h3 className="text-lg font-semibold text-[#000000]">Building Your Course</h3>
               <p className="text-[#707D7F]">
-                Our AI is creating a personalized curriculum structure for your course...
+                Creating a personalized curriculum structure for your course...
               </p>
               <p className="text-sm text-[#707D7F]">
                 This may take a few moments...

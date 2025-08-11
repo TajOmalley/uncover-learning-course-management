@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { BookOpen, FileText, PenTool, GraduationCap, Sparkles, Plus, Edit, Eye, Menu } from "lucide-react"
+import { BookOpen, FileText, PenTool, GraduationCap, Plus, Edit, Eye, Menu } from "lucide-react"
 import { CourseCalendar } from "@/components/course-calendar"
 import { ContentGenerator } from "@/components/content-generator"
 import { NavigationSidebar } from "@/components/navigation-sidebar"
@@ -204,7 +204,6 @@ export function CourseDashboard({ courseData, onBack }: CourseDashboardProps) {
             <Card>
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
-                  <Sparkles className="w-5 h-5 text-[#47624f]" />
                   Build Your Course, Your Way
                 </CardTitle>
                 <CardDescription>
