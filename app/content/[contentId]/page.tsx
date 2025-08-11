@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { ArrowLeft, BookOpen, FileText, PenTool, GraduationCap, Calendar, User, Menu } from "lucide-react"
 import { format } from "date-fns"
-import ReactMarkdown from "react-markdown"
+import { CitedMarkdown } from "@/components/CitedMarkdown"
 import { NavigationSidebar } from "@/components/navigation-sidebar"
 
 interface ContentData {
@@ -228,9 +228,7 @@ export default function ContentViewPage() {
                 </CardTitle>
               </CardHeader>
               <CardContent>
-                <div className="prose max-w-none">
-                  <ReactMarkdown>{content.content}</ReactMarkdown>
-                </div>
+                <CitedMarkdown content={content.content} citations={content.specifications?.citations || []} />
               </CardContent>
             </Card>
           </div>

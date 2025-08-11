@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { GoogleGenerativeAI } from '@google/generative-ai'
 import OpenAI from 'openai'
+import { buildSearchQuery, searchWeb } from '@/lib/search'
 
 interface ReadingRequestData {
   courseData: {
@@ -26,6 +27,7 @@ interface GeneratedReading {
   content: string
   unitId: number
   unitTitle: string
+  citations?: Array<{ id: string; title: string; url: string }>
 }
 
 export async function POST(request: NextRequest) {
@@ -41,7 +43,39 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // Step 1: Prompt Engineering for Reading Content
+    const citationsEnabled = String(process.env.CITATIONS_ENABLED || 'true').toLowerCase() === 'true'
+    const citationsEnforce = String(process.env.CITATIONS_ENFORCE || 'true').toLowerCase() === 'true'
+
+    // Step 1: Retrieval for citations (mandatory)
+    let sources: Array<{ id: string; title: string; url: string; snippet?: string }> = []
+    if (citationsEnabled) {
+      try {
+        const query = buildSearchQuery({
+          subject: courseData.subject,
+          level: courseData.level,
+          unitTitle: unit.title,
+          unitDescription: unit.description,
+        })
+        sources = await searchWeb(query)
+      } catch (err) {
+        console.error('Citation retrieval failed:', err)
+        if (citationsEnforce) {
+          return NextResponse.json(
+            { error: 'Citations are required but retrieval failed. Please check search provider configuration.' },
+            { status: 500 }
+          )
+        }
+      }
+    }
+
+    if (citationsEnforce && (!sources || sources.length === 0)) {
+      return NextResponse.json(
+        { error: 'Citations are required but no sources were found.' },
+        { status: 500 }
+      )
+    }
+
+    // Step 2: Prompt Engineering for Reading Content
     const systemPrompt = `You are an expert educational content creator and textbook author with deep knowledge of creating engaging, student-friendly reading materials. Your task is to create comprehensive reading content that is:
 
 - Engaging and accessible for the target student level
@@ -50,7 +84,15 @@ export async function POST(request: NextRequest) {
 - Appropriate for the course subject and level
 - Tailored to the specific unit topic
 
-Your response should be formatted as a textbook chapter with proper headings, subheadings, and well-organized content. Use markdown formatting for structure.`
+Your response should be formatted as a textbook chapter with proper headings, subheadings, and well-organized content. Use markdown formatting for structure.
+
+IMPORTANT CITATION INSTRUCTIONS:
+- You are provided with a list of numbered sources that you MUST rely on for factual claims.
+- When you state a concrete fact, statistic, definition, date, or named claim, annotate the exact span using this syntax: {{the fact text}}[S#] where S# is the source id (e.g., S1, S2).
+- Only use source ids from the provided list.
+- Do not invent citations.
+- Keep the content clear and suitable for the specified student level.
+`
 
     const userPrompt = `Please create reading content for the following unit:
 
@@ -69,9 +111,14 @@ Please create engaging reading content that:
 5. Is structured with clear headings and sections
 6. Is engaging and educational
 
-Format the content with markdown headings (# for main headings, ## for subheadings) and ensure it flows logically from introduction to conclusion.`
+Format the content with markdown headings (# for main headings, ## for subheadings) and ensure it flows logically from introduction to conclusion.
 
-    // Step 2: LLM API Integration
+Sources:
+${(sources || []).map(s => `${s.id}: ${s.title} - ${s.url}`).join('\n')}
+
+Remember: Annotate factual spans using {{text}}[S#].`
+
+    // Step 3: LLM API Integration
     const llmProvider = process.env.LLM_PROVIDER || 'gemini'
     
     // Debug logging
@@ -144,7 +191,8 @@ Format the content with markdown headings (# for main headings, ## for subheadin
         title: `Reading: ${unit.title}`,
         content: text,
         unitId: unit.id,
-        unitTitle: unit.title
+        unitTitle: unit.title,
+        citations: (sources || []).map(s => ({ id: s.id, title: s.title, url: s.url }))
       }
 
       return NextResponse.json({
