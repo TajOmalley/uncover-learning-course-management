@@ -27,84 +27,118 @@ function extractDomain(url: string): string {
 
 // Clean up concatenated text that might occur from AI generation
 function cleanConcatenatedText(text: string): string {
-  // Fix common concatenation patterns
   return text
     // Fix concatenated words like "crucialThe", "vitalYC", etc.
     .replace(/([a-z])([A-Z])/g, '$1 $2')
     // Fix double spaces
     .replace(/\s+/g, ' ')
-    // Fix spacing around citations
-    .replace(/\s*\{\{/g, ' {{')
-    .replace(/\}\}\s*/g, '}} ')
     // Clean up any remaining concatenated text
     .replace(/([.!?])([A-Z])/g, '$1 $2')
     .trim()
 }
 
-// Splits text and wraps citation markers {{text}}[S#] into a span with tooltip
-function transformTextWithCitations(text: string, citationMap: Map<string, CitationItem>) {
-  // Clean up the text first
+// Intelligently detect and underline factual claims based on citations
+function transformTextWithIntelligentCitations(text: string, citations: CitationItem[]) {
+  if (!citations || citations.length === 0) {
+    return [cleanConcatenatedText(text)]
+  }
+
   const cleanedText = cleanConcatenatedText(text)
-  
   const nodes: React.ReactNode[] = []
-  const regex = /\{\{([^}]+)\}\}\[(S\d+)\]/g
-  let lastIndex = 0
-  let match: RegExpExecArray | null
+  
+  // Create a map of citation IDs to citation objects
+  const citationMap = new Map<string, CitationItem>()
+  citations.forEach(citation => {
+    citationMap.set(citation.id, citation)
+  })
 
-  while ((match = regex.exec(cleanedText)) !== null) {
-    const [full, innerText, sourceId] = match
-    const start = match.index
-    const end = start + full.length
+  // Define common factual claim patterns to look for
+  const factualPatterns = [
+    // Definitions
+    /\b(?:is|are|refers to|means|defined as)\s+[^.!?]+/gi,
+    // Statistics and numbers
+    /\b\d+(?:\.\d+)?\s+(?:percent|%|million|billion|thousand|hundred)/gi,
+    // Dates
+    /\b(?:in|during|since|from|between)\s+\d{4}/gi,
+    // Named entities and concepts
+    /\b(?:the|a|an)\s+[A-Z][a-z]+(?:\s+[A-Z][a-z]+)*\s+(?:is|are|refers to|means)/gi,
+    // Economic concepts (for economics content)
+    /\b(?:demand|supply|price|market|economy|economic|law of|principle of)/gi,
+  ]
 
-    if (start > lastIndex) {
-      nodes.push(cleanedText.slice(lastIndex, start))
+  let currentText = cleanedText
+  let citationIndex = 0
+
+  // For each citation, try to find a matching factual claim in the text
+  citations.forEach((citation, index) => {
+    // Extract key terms from the citation title
+    const titleWords = citation.title.toLowerCase().split(/\s+/).filter(word => word.length > 3)
+    
+    // Look for sentences that contain these key terms
+    const sentences = currentText.split(/(?<=[.!?])\s+/)
+    
+    for (let i = 0; i < sentences.length; i++) {
+      const sentence = sentences[i]
+      const sentenceLower = sentence.toLowerCase()
+      
+      // Check if this sentence contains key terms from the citation
+      const hasKeyTerms = titleWords.some(word => sentenceLower.includes(word))
+      
+      // Check if this sentence matches any factual patterns
+      const hasFactualPattern = factualPatterns.some(pattern => pattern.test(sentence))
+      
+      if (hasKeyTerms || hasFactualPattern) {
+        // Find the position of this sentence in the original text
+        const sentenceStart = currentText.indexOf(sentence)
+        const sentenceEnd = sentenceStart + sentence.length
+        
+        // Add text before this sentence
+        if (sentenceStart > 0) {
+          nodes.push(currentText.slice(0, sentenceStart))
+        }
+        
+        // Add the underlined sentence
+        nodes.push(
+          <TooltipProvider key={`citation-${citation.id}-${index}`}>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <span className="underline underline-offset-4 decoration-dotted cursor-help">
+                  {sentence}
+                </span>
+              </TooltipTrigger>
+              <TooltipContent>
+                <div className="max-w-xs space-y-1">
+                  <div className="font-medium">{citation.title}</div>
+                  <a
+                    href={citation.url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-[#47624f] hover:underline"
+                  >
+                    {extractDomain(citation.url)} ↗
+                  </a>
+                </div>
+              </TooltipContent>
+            </Tooltip>
+          </TooltipProvider>
+        )
+        
+        // Update currentText to continue processing
+        currentText = currentText.slice(sentenceEnd)
+        break
+      }
     }
-
-    const citation = citationMap.get(sourceId)
-    if (citation) {
-      nodes.push(
-        <TooltipProvider key={`${start}-${sourceId}`}>
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <span className="underline underline-offset-4 decoration-dotted cursor-help">{innerText}</span>
-            </TooltipTrigger>
-            <TooltipContent>
-              <div className="max-w-xs space-y-1">
-                <div className="font-medium">{citation.title}</div>
-                <a
-                  href={citation.url}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="text-[#47624f] hover:underline"
-                >
-                  {extractDomain(citation.url)} ↗
-                </a>
-              </div>
-            </TooltipContent>
-          </Tooltip>
-        </TooltipProvider>
-      )
-    } else {
-      nodes.push(innerText)
-    }
-    lastIndex = end
+  })
+  
+  // Add any remaining text
+  if (currentText.length > 0) {
+    nodes.push(currentText)
   }
-
-  if (lastIndex < cleanedText.length) {
-    nodes.push(cleanedText.slice(lastIndex))
-  }
-
-  return nodes
+  
+  return nodes.length > 0 ? nodes : [cleanedText]
 }
 
 export function CitedMarkdown({ content, citations }: CitedMarkdownProps) {
-  const citationMap = React.useMemo(() => {
-    const map = new Map<string, CitationItem>()
-    for (const c of citations || []) {
-      map.set(c.id, c)
-    }
-    return map
-  }, [citations])
 
   return (
     <div className="prose max-w-none">
@@ -114,19 +148,19 @@ export function CitedMarkdown({ content, citations }: CitedMarkdownProps) {
           h1: ({children}) => <h1 className="text-3xl font-bold text-[#000000] mb-6 mt-0 border-b-2 border-[#47624f] pb-2">{children}</h1>,
           h2: ({children}) => <h2 className="text-2xl font-semibold text-[#47624f] mb-4 mt-8">{children}</h2>,
           h3: ({children}) => <h3 className="text-xl font-medium text-[#707D7F] mb-3 mt-6">{children}</h3>,
-          p: ({ node, children }) => {
-            // Post-process text nodes inside paragraphs for citations
-            const flat = React.Children.toArray(children)
-            const processed: React.ReactNode[] = []
-            flat.forEach((child, idx) => {
-              if (typeof child === 'string') {
-                processed.push(...transformTextWithCitations(child, citationMap))
-              } else {
-                processed.push(child)
-              }
-            })
-            return <p className="text-[#000000] leading-relaxed mb-4 text-base">{processed}</p>
-          },
+                     p: ({ node, children }) => {
+             // Post-process text nodes inside paragraphs for intelligent citations
+             const flat = React.Children.toArray(children)
+             const processed: React.ReactNode[] = []
+             flat.forEach((child, idx) => {
+               if (typeof child === 'string') {
+                 processed.push(...transformTextWithIntelligentCitations(child, citations || []))
+               } else {
+                 processed.push(child)
+               }
+             })
+             return <p className="text-[#000000] leading-relaxed mb-4 text-base">{processed}</p>
+           },
           ul: ({children}) => <ul className="list-disc list-inside mb-4 space-y-1 text-[#000000]">{children}</ul>,
           ol: ({children}) => <ol className="list-decimal list-inside mb-4 space-y-1 text-[#000000]">{children}</ol>,
           li: ({children}) => <li className="text-[#000000] leading-relaxed">{children}</li>,

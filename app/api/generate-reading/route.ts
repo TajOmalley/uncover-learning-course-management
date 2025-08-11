@@ -86,23 +86,21 @@ export async function POST(request: NextRequest) {
 
 Your response should be formatted as a textbook chapter with proper headings, subheadings, and well-organized content. Use markdown formatting for structure.
 
-CRITICAL CITATION INSTRUCTIONS:
-- You are provided with a list of numbered sources that you MUST rely on for factual claims.
-- When you state a concrete fact, statistic, definition, date, or named claim, annotate ONLY that specific span using this syntax: {{the fact text}}[S#] where S# is the source id (e.g., S1, S2).
-- DO NOT duplicate or repeat content. Write each sentence or fact only once.
-- DO NOT append cited content to original content. The citation syntax should wrap around existing text, not add new text.
-- Only use source ids from the provided list.
-- Do not invent citations.
+CRITICAL CONTENT INSTRUCTIONS:
+- Write clean, natural text without any citation syntax, brackets, or special formatting.
+- Use the provided sources for factual information, but write the content normally.
+- DO NOT include any citation markers like {{...}}, [...], or (...).
+- DO NOT duplicate or repeat any content.
+- Write each sentence or fact only once in natural, flowing prose.
 - Keep the content clear and suitable for the specified student level.
 - Ensure proper spacing and formatting - do not concatenate words or create run-on text.
 
-EXAMPLE OF CORRECT CITATION:
-❌ WRONG: "The YC application is detailed. The YC application is a detailed online form that asks about your startup, team, market, and progress."
-✅ CORRECT: "The YC application is a {{detailed online form that asks about your startup, team, market, and progress}}[S1]."
+EXAMPLE OF CORRECT WRITING:
+❌ WRONG: "The YC application is {{detailed online form}}[S1]."
+❌ WRONG: "The YC application is detailed. (The YC application is a detailed online form) [S1]."
+✅ CORRECT: "The YC application is a detailed online form that asks about your startup, team, market, and progress."
 
-EXAMPLE OF CORRECT FORMATTING:
-❌ WRONG: "crucialThe YC application is..."
-✅ CORRECT: "It's YC's first impression of you and your company, so clarity and honesty are crucial. The {{YC application is a detailed online form}}[S1]."
+Write naturally as if you're creating a textbook chapter. The citation system will automatically identify and underline factual claims based on the sources provided.
 `
 
     const userPrompt = `Please create reading content for the following unit:
@@ -127,7 +125,7 @@ Format the content with markdown headings (# for main headings, ## for subheadin
 Sources:
 ${(sources || []).map(s => `${s.id}: ${s.title} - ${s.url}`).join('\n')}
 
-Remember: Annotate factual spans using {{text}}[S#].`
+Remember: Write clean, natural text without any citation syntax. The citation system will automatically handle the underlining and source links.`
 
     // Step 3: LLM API Integration
     const llmProvider = process.env.LLM_PROVIDER || 'gemini'
