@@ -1,9 +1,7 @@
 import { NextRequest, NextResponse } from "next/server"
-import { PrismaClient } from "@prisma/client"
 import { getServerSession } from "next-auth"
 import { authOptions } from "../auth/[...nextauth]/route"
-
-const prisma = new PrismaClient()
+import { prisma } from "@/lib/prisma"
 
 // GET - Get all courses for the authenticated user
 export async function GET(request: NextRequest) {
@@ -147,6 +145,10 @@ export async function DELETE(request: NextRequest) {
       where: {
         id: courseId,
         userId: session.user.id
+      },
+      include: {
+        units: true,
+        generatedContent: true
       }
     })
 
@@ -157,11 +159,37 @@ export async function DELETE(request: NextRequest) {
       )
     }
 
-    // Delete the course (units and generated content will be cascaded)
-    await prisma.course.delete({
-      where: {
-        id: courseId
+    console.log(`Attempting to delete course: ${courseId} with ${course.units.length} units and ${course.generatedContent.length} content items`)
+
+    // Use a transaction to ensure atomicity
+    await prisma.$transaction(async (tx) => {
+      // Delete generated content first (if any)
+      if (course.generatedContent.length > 0) {
+        await tx.generatedContent.deleteMany({
+          where: {
+            courseId: courseId
+          }
+        })
+        console.log(`Deleted ${course.generatedContent.length} content items`)
       }
+
+      // Delete units (if any)
+      if (course.units.length > 0) {
+        await tx.unit.deleteMany({
+          where: {
+            courseId: courseId
+          }
+        })
+        console.log(`Deleted ${course.units.length} units`)
+      }
+
+      // Finally delete the course
+      await tx.course.delete({
+        where: {
+          id: courseId
+        }
+      })
+      console.log(`Successfully deleted course: ${courseId}`)
     })
 
     return NextResponse.json({
@@ -171,8 +199,25 @@ export async function DELETE(request: NextRequest) {
 
   } catch (error) {
     console.error("Error deleting course:", error)
+    
+    // Provide more specific error messages
+    if (error instanceof Error) {
+      if (error.message.includes('Foreign key constraint')) {
+        return NextResponse.json(
+          { error: "Cannot delete course: it has associated content that cannot be removed" },
+          { status: 400 }
+        )
+      }
+      if (error.message.includes('Record to delete does not exist')) {
+        return NextResponse.json(
+          { error: "Course not found" },
+          { status: 404 }
+        )
+      }
+    }
+    
     return NextResponse.json(
-      { error: "Internal server error" },
+      { error: "Failed to delete course. Please try again." },
       { status: 500 }
     )
   }

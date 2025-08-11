@@ -131,23 +131,53 @@ export function UserDashboard() {
         method: 'DELETE',
       })
 
-      if (!response.ok) {
-        throw new Error(`Failed to delete course: ${response.status}`)
-      }
-
       const result = await response.json()
       
-      if (result.success) {
+      if (response.ok && result.success) {
         // Remove the course from the local state
         setCourses(courses.filter(course => course.id !== courseToDelete.id))
         setDeleteDialogOpen(false)
         setCourseToDelete(null)
+        
+        // Show success message
+        try {
+          const { toast } = await import("@/hooks/use-toast")
+          toast({
+            title: "Course deleted",
+            description: `"${courseToDelete.title}" has been successfully deleted.`,
+          })
+        } catch (_) {}
       } else {
-        throw new Error(result.error || 'Failed to delete course')
+        // Handle specific error messages from the API
+        const errorMessage = result.error || 'Failed to delete course'
+        console.error('Error deleting course:', errorMessage)
+        
+        try {
+          const { toast } = await import("@/hooks/use-toast")
+          toast({
+            title: "Delete failed",
+            description: errorMessage,
+            variant: "destructive",
+          })
+        } catch (_) {
+          // Fallback to alert if toast is not available
+          alert(`Failed to delete course: ${errorMessage}`)
+        }
       }
     } catch (error) {
       console.error('Error deleting course:', error)
-      alert('Failed to delete course. Please try again.')
+      
+      try {
+        const { toast } = await import("@/hooks/use-toast")
+        toast({
+          title: "Delete failed",
+          description: "Network error. Please check your connection and try again.",
+          variant: "destructive",
+        })
+      } catch (_) {
+        // Fallback to alert if toast is not available
+        alert('Network error. Please check your connection and try again.')
+      }
     } finally {
       setDeleting(false)
     }

@@ -1,10 +1,8 @@
 import { NextRequest, NextResponse } from "next/server"
-import { PrismaClient } from "@prisma/client"
 import { getServerSession } from "next-auth"
 import { authOptions } from "../../auth/[...nextauth]/route"
 import { googleCloudStorage } from "@/lib/google-cloud-storage"
-
-const prisma = new PrismaClient()
+import { prisma } from "@/lib/prisma"
 
 // GET - Get specific content by ID
 export async function GET(

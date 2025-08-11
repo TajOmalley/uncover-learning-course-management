@@ -1,10 +1,8 @@
 import { NextRequest, NextResponse } from "next/server"
-import { PrismaClient } from "@prisma/client"
 import { getServerSession } from "next-auth"
 import { authOptions } from "../auth/[...nextauth]/route"
 import { googleCloudStorage } from "@/lib/google-cloud-storage"
-
-const prisma = new PrismaClient()
+import { prisma } from "@/lib/prisma"
 
 // POST - Save generated content to database
 export async function POST(request: NextRequest) {
