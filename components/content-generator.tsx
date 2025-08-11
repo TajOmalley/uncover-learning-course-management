@@ -544,17 +544,16 @@ Detailed solutions and explanations will be provided during the review session.`
           </div>
         </div>
 
-        {/* Horizontal Overhead Panel */}
+        {/* Generation Settings */}
         <Card className="mb-6">
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <Sparkles className="w-5 h-5 text-[#47624f]" />
               Generation Settings
             </CardTitle>
-            <CardDescription>Configure the AI generation parameters</CardDescription>
           </CardHeader>
           <CardContent>
-            <div className="grid grid-cols-1 lg:grid-cols-4 gap-4 items-end">
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 items-end">
               <div>
                 <Label htmlFor="unit">Select Course Unit</Label>
                 <Select value={selectedUnit} onValueChange={setSelectedUnit}>
@@ -569,17 +568,6 @@ Detailed solutions and explanations will be provided during the review session.`
                     ))}
                   </SelectContent>
                 </Select>
-              </div>
-
-              <div>
-                <Label htmlFor="prompt">Additional Instructions</Label>
-                <Textarea
-                  id="prompt"
-                  placeholder={currentType.placeholder}
-                  value={customPrompt}
-                  onChange={(e) => setCustomPrompt(e.target.value)}
-                  rows={4}
-                />
               </div>
 
               {/* Homework Problem Specifications */}
@@ -870,6 +858,30 @@ Detailed solutions and explanations will be provided during the review session.`
                   </>
                 )}
               </Button>
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Additional Instructions Section */}
+        <Card className="mb-6">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Sparkles className="w-5 h-5 text-[#47624f]" />
+              Additional Instructions
+            </CardTitle>
+            <CardDescription>Provide specific instructions to customize the AI-generated content</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div>
+              <Label htmlFor="prompt">Custom Instructions</Label>
+              <Textarea
+                id="prompt"
+                placeholder={currentType.placeholder}
+                value={customPrompt}
+                onChange={(e) => setCustomPrompt(e.target.value)}
+                rows={4}
+                className="w-full"
+              />
             </div>
           </CardContent>
         </Card>
