@@ -93,7 +93,7 @@ export function CourseCalendar({ courseData, onOpenContent, onRequestGenerate }:
     return alignedDays
   }, [currentMonth])
 
-  // Mock generated content organized by unit and type
+  // Mock content organized by unit and type
   const generatedContent = useMemo(() => {
     const contentTypes = [
       { id: "lesson-plan", title: "Lesson Plans", icon: BookOpen, color: "from-[#47624f] to-[#707D7F]" },
@@ -185,7 +185,7 @@ export function CourseCalendar({ courseData, onOpenContent, onRequestGenerate }:
     return courseData.lectureSchedule?.[abbreviatedDayName] || null
   }
 
-  // Auto-plan: place generated content across the course range using given rules
+  // Auto-plan: place content across the course range using given rules
   const autoPlanContent = () => {
     if (!courseData?.calendar || courseData.calendar.length === 0) return
 

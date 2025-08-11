@@ -93,7 +93,7 @@ export function CourseDashboard({ courseData, onBack }: CourseDashboardProps) {
     {
       id: "lesson-plan",
       title: "Lesson Plans",
-      description: "Generate detailed lesson plans for your course units",
+      description: "Create detailed lesson plans for your course units",
       icon: BookOpen,
       color: "from-[#47624f] to-[#707D7F]",
       count: 12,
@@ -117,7 +117,7 @@ export function CourseDashboard({ courseData, onBack }: CourseDashboardProps) {
     {
       id: "exam",
       title: "Exams",
-      description: "Generate comprehensive exams and assessments",
+      description: "Create comprehensive exams and assessments",
       icon: GraduationCap,
       color: "from-[#000000] to-[#707D7F]",
       count: 4,
@@ -436,7 +436,7 @@ export function CourseDashboard({ courseData, onBack }: CourseDashboardProps) {
                     <Badge variant="secondary">16 weeks</Badge>
                   </div>
                   <div className="flex justify-between items-center">
-                    <span className="text-[#707D7F]">Generated Content</span>
+                    <span className="text-[#707D7F]">Content</span>
                     <Badge variant="secondary">39 items</Badge>
                   </div>
                   <div className="flex justify-between items-center">
@@ -515,13 +515,13 @@ export function CourseDashboard({ courseData, onBack }: CourseDashboardProps) {
                   ) : (
                     <div className="text-center py-8 text-[#707D7F]">
                       <FileText className="w-12 h-12 mx-auto mb-4 text-[#B2A29E]" />
-                      <p>No reading content generated yet</p>
+                      <p>No reading content created yet</p>
                       <Button 
                         className="mt-4 bg-gradient-to-r from-[#47624f] to-[#707D7F] hover:from-[#000000] hover:to-[#47624f]"
                         onClick={() => handleGenerateContent('reading')}
                       >
                         <Plus className="w-4 h-4 mr-2" />
-                        Generate Reading Content
+                        Create Reading Content
                       </Button>
                     </div>
                   )}
@@ -576,13 +576,13 @@ export function CourseDashboard({ courseData, onBack }: CourseDashboardProps) {
                   ) : (
                     <div className="text-center py-8 text-[#707D7F]">
                       <PenTool className="w-12 h-12 mx-auto mb-4 text-[#B2A29E]" />
-                      <p>No homework problems generated yet</p>
+                      <p>No homework problems created yet</p>
                       <Button 
                         className="mt-4 bg-gradient-to-r from-[#47624f] to-[#707D7F] hover:from-[#000000] hover:to-[#47624f]"
                         onClick={() => handleGenerateContent('homework')}
                       >
                         <Plus className="w-4 h-4 mr-2" />
-                        Generate Homework Problems
+                        Create Homework Problems
                       </Button>
                     </div>
                   )}
@@ -637,13 +637,13 @@ export function CourseDashboard({ courseData, onBack }: CourseDashboardProps) {
                   ) : (
                     <div className="text-center py-8 text-[#707D7F]">
                       <BookOpen className="w-12 h-12 mx-auto mb-4 text-[#B2A29E]" />
-                      <p>No lesson plans generated yet</p>
+                      <p>No lesson plans created yet</p>
                       <Button 
                         className="mt-4 bg-gradient-to-r from-[#47624f] to-[#707D7F] hover:from-[#000000] hover:to-[#47624f]"
                         onClick={() => handleGenerateContent('lesson-plan')}
                       >
                         <Plus className="w-4 h-4 mr-2" />
-                        Generate Lesson Plan
+                        Create Lesson Plan
                       </Button>
                     </div>
                   )}
@@ -698,13 +698,13 @@ export function CourseDashboard({ courseData, onBack }: CourseDashboardProps) {
                   ) : (
                     <div className="text-center py-8 text-[#707D7F]">
                       <GraduationCap className="w-12 h-12 mx-auto mb-4 text-[#B2A29E]" />
-                      <p>No exams generated yet</p>
+                      <p>No exams created yet</p>
                       <Button 
                         className="mt-4 bg-gradient-to-r from-[#47624f] to-[#707D7F] hover:from-[#000000] hover:to-[#47624f]"
                         onClick={() => handleGenerateContent('exam')}
                       >
                           <Plus className="w-4 h-4 mr-2" />
-                        Generate Exam
+                        Create Exam
                         </Button>
                       </div>
                   )}

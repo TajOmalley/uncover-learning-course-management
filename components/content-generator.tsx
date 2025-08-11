@@ -45,23 +45,23 @@ export function ContentGenerator({ type, courseData, onBack }: ContentGeneratorP
 
   const contentTypes = {
     "lesson-plan": {
-      title: "Lesson Plan Generator",
+      title: "Lesson Plan Creator",
       description: "Create detailed lesson plans with objectives, activities, and assessments",
       placeholder: "Additional requirements or focus areas for this lesson...",
     },
     reading: {
-      title: "Reading Content Generator",
-      description: "Generate comprehensive reading materials and study guides",
+      title: "Reading Content Creator",
+      description: "Create comprehensive reading materials and study guides",
       placeholder: "Specific topics or concepts to emphasize in the reading...",
     },
     homework: {
-      title: "Homework Problem Generator",
+      title: "Homework Problem Creator",
       description: "Create practice problems and assignments with solutions",
       placeholder: "Difficulty level, problem types, or specific skills to assess...",
     },
     exam: {
-      title: "Exam Generator",
-      description: "Generate comprehensive exams with multiple question types",
+      title: "Exam Creator",
+      description: "Create comprehensive exams with multiple question types",
       placeholder: "Exam format, question types, or specific topics to cover...",
     },
   }
@@ -103,7 +103,7 @@ export function ContentGenerator({ type, courseData, onBack }: ContentGeneratorP
     
     try {
       if (type === "reading") {
-        // Call the reading generation API
+        // Call the reading creation API
         const selectedUnitData = courseData.calendar?.find((unit: any) => unit.title === selectedUnit)
         
         if (!selectedUnitData) {
@@ -128,13 +128,13 @@ export function ContentGenerator({ type, courseData, onBack }: ContentGeneratorP
         const result = await response.json()
         
         if (!result.success) {
-          throw new Error(result.error || 'Failed to generate reading content')
+          throw new Error(result.error || 'Failed to create reading content')
         }
 
         setGeneratedContent(result.reading.content)
         setGeneratedCitations(result.reading.citations || [])
       } else if (type === "homework") {
-        // Call the homework generation API
+        // Call the homework creation API
         const selectedUnitData = courseData.calendar?.find((unit: any) => unit.title === selectedUnit)
         
         if (!selectedUnitData) {
@@ -164,12 +164,12 @@ export function ContentGenerator({ type, courseData, onBack }: ContentGeneratorP
         const result = await response.json()
         
         if (!result.success) {
-          throw new Error(result.error || 'Failed to generate homework content')
+          throw new Error(result.error || 'Failed to create homework content')
         }
 
         setGeneratedContent(result.homework.content)
       } else if (type === "lesson-plan") {
-        // Call the lesson plan generation API
+        // Call the lesson plan creation API
         const selectedUnitData = courseData.calendar?.find((unit: any) => unit.title === selectedUnit)
         
         if (!selectedUnitData) {
@@ -201,12 +201,12 @@ export function ContentGenerator({ type, courseData, onBack }: ContentGeneratorP
         const result = await response.json()
         
         if (!result.success) {
-          throw new Error(result.error || 'Failed to generate lesson plan content')
+          throw new Error(result.error || 'Failed to create lesson plan content')
         }
 
         setGeneratedContent(result.lessonPlan.content)
       } else if (type === "exam") {
-        // Call the exam generation API
+        // Call the exam creation API
         const selectedUnitData = courseData.calendar?.find((unit: any) => unit.title === selectedUnit)
         
         if (!selectedUnitData) {
@@ -243,7 +243,7 @@ export function ContentGenerator({ type, courseData, onBack }: ContentGeneratorP
         const result = await response.json()
         
         if (!result.success) {
-          throw new Error(result.error || 'Failed to generate exam content')
+          throw new Error(result.error || 'Failed to create exam content')
         }
 
         setGeneratedContent(result.exam.content)
@@ -344,7 +344,7 @@ export function ContentGenerator({ type, courseData, onBack }: ContentGeneratorP
         })
       } catch (_) {}
       
-      // Reset the generation window
+              // Reset the creation window
       setGeneratedContent("")
       setCustomPrompt("")
       setSelectedUnit("")
@@ -526,7 +526,7 @@ Evaluate the effectiveness of different strategies:
 Detailed solutions and explanations will be provided during the review session.`,
     }
 
-    return baseContent[type as keyof typeof baseContent] || "Generated content will appear here..."
+            return baseContent[type as keyof typeof baseContent] || "Content will appear here..."
   }
 
   return (
@@ -544,11 +544,11 @@ Detailed solutions and explanations will be provided during the review session.`
           </div>
         </div>
 
-        {/* Generation Settings */}
+        {/* Content Settings */}
         <Card className="mb-6">
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
-              Generation Settings
+              Content Settings
             </CardTitle>
           </CardHeader>
           <CardContent>
@@ -829,11 +829,11 @@ Detailed solutions and explanations will be provided during the review session.`
                 {isGenerating ? (
                   <>
                     <RefreshCw className="w-4 h-4 mr-2 animate-spin" />
-                    Generating...
+                    Creating...
                   </>
                 ) : (
                                   <>
-                  Generate Content
+                  Create Content
                 </>
                 )}
               </Button>
@@ -866,7 +866,7 @@ Detailed solutions and explanations will be provided during the review session.`
             <CardTitle className="flex items-center gap-2">
               Additional Instructions
             </CardTitle>
-            <CardDescription>Provide specific instructions to customize the generated content</CardDescription>
+                            <CardDescription>Provide specific instructions to customize the content</CardDescription>
           </CardHeader>
           <CardContent>
             <div>
@@ -883,11 +883,11 @@ Detailed solutions and explanations will be provided during the review session.`
           </CardContent>
         </Card>
 
-        {/* Full-Width Generated Content */}
+        {/* Full-Width Content */}
         <Card>
           <CardHeader>
             <div className="flex items-center justify-between">
-              <CardTitle>Generated Content</CardTitle>
+              <CardTitle>Content</CardTitle>
               {generatedContent && (
                 <div className="flex gap-2">
                   <Button size="sm" variant="outline">
@@ -907,7 +907,7 @@ Detailed solutions and explanations will be provided during the review session.`
               <div className="flex items-center justify-center py-12">
                 <div className="text-center space-y-4">
                   <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#47624f] mx-auto"></div>
-                  <h3 className="text-lg font-semibold text-[#000000]">Generating Content</h3>
+                  <h3 className="text-lg font-semibold text-[#000000]">Creating Content</h3>
                   <p className="text-[#707D7F]">Creating your {type.replace("-", " ")} content...</p>
                 </div>
               </div>
@@ -919,7 +919,7 @@ Detailed solutions and explanations will be provided during the review session.`
               </div>
             ) : (
                              <div className="text-center py-12 text-[#707D7F]">
-                 <p>Select a unit and click "Generate Content" to create course materials.</p>
+                 <p>Select a unit and click "Create Content" to create course materials.</p>
                </div>
             )}
           </CardContent>

@@ -1,36 +1,36 @@
 # Uncover Learning - Course Management Application
 
-A modern, AI-powered course management platform designed to help professors create dynamic, textbook-free learning experiences.
+A modern course management platform designed to help professors create dynamic, textbook-free learning experiences.
 
 ## About
 
-Uncover Learning is building a course management application that removes the need for expensive textbooks while providing dynamic, customizable content generation through AI. Our platform empowers professors to create comprehensive course materials including lesson plans, reading content, homework problems, and assessments.
+Uncover Learning is building a course management application that removes the need for expensive textbooks while providing dynamic, customizable content creation. Our platform empowers professors to create comprehensive course materials including lesson plans, reading content, homework problems, and assessments.
 
 ## Features
 
 ### 🎯 Core Course Management
-- **Course Setup Wizard**: Multi-step process to configure new courses with AI-generated units
+- **Course Setup Wizard**: Multi-step process to configure new courses with automatically created units
 - **Course Dashboard**: Comprehensive overview with units, calendar, and content management
 - **Course Deletion**: Secure course removal with confirmation dialogs
 - **Real-time Updates**: Automatic refresh after course creation and content generation
 
-### 🤖 AI Content Generation
-- **Dynamic Content Creation**: Generate lesson plans, readings, homework, and exams
-- **Custom Prompts**: Tailored content generation with professor input
-- **Content Saving**: Persistent storage of generated content in database
+### 📚 Content Creation
+- **Dynamic Content Creation**: Create lesson plans, readings, homework, and exams
+- **Custom Prompts**: Tailored content creation with professor input
+- **Content Saving**: Persistent storage of created content in database
 - **Content Organization**: Automatic organization by units and content types
 
 ### 📅 Interactive Calendar & Content Management
 - **Visual Timeline**: Drag-and-drop calendar interface for course planning
-- **Generated Content Labels**: Clear indicators for AI-generated materials
-- **Content Integration**: Saved content appears in calendar blocks
+- **Content Labels**: Clear indicators for created materials
+- **Content Integration**: Created content appears in calendar blocks
 - **Unit-based Organization**: Toggle units to view associated content
 
 ### 📚 Content Management System
 - **Horizontal Content Layout**: Organized content display in horizontal sections
 - **Content Preview**: Truncated previews with full content access
 - **Content Types**: Reading materials, homework problems, lesson plans, and exams
-- **Content Actions**: View and edit capabilities for all saved content
+- **Content Actions**: View and edit capabilities for all created content
 
 ### 🔐 Authentication & Security
 - **User Authentication**: Secure login and session management
@@ -102,14 +102,14 @@ npm run dev
 ### Creating a Course
 1. Navigate to the dashboard and click "Create New Course"
 2. Fill out course details (name, subject, level, dates)
-3. AI generates course units automatically
+3. Course units are created automatically
 4. Course appears in "My Courses" with full functionality
 
 ### Generating Content
 1. Select a course from "My Courses"
 2. Navigate to the "Content" tab
 3. Choose content type (Reading, Homework, Lesson Plan, Exam)
-4. Customize generation with prompts
+4. Customize creation with prompts
 5. Save content to database with confirmation
 6. Content appears in both generator and main dashboard
 
