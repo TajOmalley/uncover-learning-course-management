@@ -34,7 +34,7 @@ export function ContentGenerator({ type, courseData, onBack }: ContentGeneratorP
   // Homework problem specifications
   const [totalProblems, setTotalProblems] = useState(5)
   const [wordProblems, setWordProblems] = useState(3)
-    const [multipleChoiceProblems, setMultipleChoiceProblems] = useState(2)
+  const [multipleChoiceProblems, setMultipleChoiceProblems] = useState(2)
   
   // Exam specifications
   const [examSpecs, setExamSpecs] = useState({
@@ -291,7 +291,7 @@ export function ContentGenerator({ type, courseData, onBack }: ContentGeneratorP
         }),
         ...(type === "lesson-plan" && {
           lectureLength: defaultLectureLength
-          }),
+        }),
         ...(type === "exam" && {
           examSpecs: {
             ...examSpecs,
@@ -315,11 +315,11 @@ export function ContentGenerator({ type, courseData, onBack }: ContentGeneratorP
           courseId: courseData.courseId,
           unitId: selectedUnitData.id,
           type: type,
-           content: generatedContent,
-           specifications: {
-             ...specifications,
-             citations: generatedCitations
-           }
+          content: generatedContent,
+          specifications: {
+            ...specifications,
+            citations: generatedCitations
+          }
         }),
       })
 
@@ -822,8 +822,6 @@ Detailed solutions and explanations will be provided during the review session.`
                 </div>
               )}
 
-
-
               <Button
                 onClick={handleGenerate}
                 disabled={!selectedUnit || isGenerating || 
@@ -878,130 +876,129 @@ Detailed solutions and explanations will be provided during the review session.`
 
         {/* Full-Width Generated Content */}
         <Card>
-            <CardHeader>
-              <div className="flex items-center justify-between">
-                <CardTitle>Generated Content</CardTitle>
-                {generatedContent && (
-                  <div className="flex gap-2">
-                    <Button size="sm" variant="outline">
-                      <Copy className="w-4 h-4 mr-2" />
-                      Copy
-                    </Button>
-                    <Button size="sm" variant="outline">
-                      <Download className="w-4 h-4 mr-2" />
-                      Export
-                    </Button>
-                  </div>
-                )}
-              </div>
-            </CardHeader>
-            <CardContent>
-              {isGenerating ? (
-                <div className="flex items-center justify-center py-12">
-                  <div className="text-center space-y-4">
-                                      <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#47624f] mx-auto"></div>
+          <CardHeader>
+            <div className="flex items-center justify-between">
+              <CardTitle>Generated Content</CardTitle>
+              {generatedContent && (
+                <div className="flex gap-2">
+                  <Button size="sm" variant="outline">
+                    <Copy className="w-4 h-4 mr-2" />
+                    Copy
+                  </Button>
+                  <Button size="sm" variant="outline">
+                    <Download className="w-4 h-4 mr-2" />
+                    Export
+                  </Button>
+                </div>
+              )}
+            </div>
+          </CardHeader>
+          <CardContent>
+            {isGenerating ? (
+              <div className="flex items-center justify-center py-12">
+                <div className="text-center space-y-4">
+                  <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#47624f] mx-auto"></div>
                   <h3 className="text-lg font-semibold text-[#000000]">Generating Content</h3>
                   <p className="text-[#707D7F]">AI is creating your {type.replace("-", " ")} content...</p>
-                  </div>
                 </div>
-              ) : generatedContent ? (
-                <div className="prose max-w-none">
-                  <div className="bg-white rounded-lg border border-[#B2A29E]/20 p-6 shadow-sm">
-                    <CitedMarkdown content={generatedContent} citations={generatedCitations} />
-                  </div>
+              </div>
+            ) : generatedContent ? (
+              <div className="prose max-w-none">
+                <div className="bg-white rounded-lg border border-[#B2A29E]/20 p-6 shadow-sm">
+                  <CitedMarkdown content={generatedContent} citations={generatedCitations} />
+                </div>
+              </div>
+            ) : (
+              <div className="text-center py-12 text-[#707D7F]">
+                <Sparkles className="w-12 h-12 mx-auto mb-4 text-[#B2A29E]" />
+                <p>Select a unit and click "Generate Content" to create AI-powered course materials.</p>
+              </div>
+            )}
+          </CardContent>
+        </Card>
+        
+        {/* Saved Content Section */}
+        {savedContent.length > 0 && (
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Download className="w-5 h-5 text-[#47624f]" />
+                Saved Content
+              </CardTitle>
+              <CardDescription>
+                Your previously saved content organized by units
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              {loadingSavedContent ? (
+                <div className="flex items-center justify-center py-8">
+                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#47624f]"></div>
+                  <span className="ml-2 text-[#707D7F]">Loading saved content...</span>
                 </div>
               ) : (
-                <div className="text-center py-12 text-[#707D7F]">
-                  <Sparkles className="w-12 h-12 mx-auto mb-4 text-[#B2A29E]" />
-                  <p>Select a unit and click "Generate Content" to create AI-powered course materials.</p>
+                <div className="space-y-6">
+                  {courseData.calendar?.map((unit: any) => {
+                    const unitContent = savedContent.filter(content => content.unitId === unit.id)
+                    
+                    if (unitContent.length === 0) return null
+                    
+                    return (
+                      <div key={unit.id} className="border border-[#B2A29E]/20 rounded-lg p-4">
+                        <h3 className="text-lg font-semibold text-[#47624f] mb-4 flex items-center gap-2">
+                          <div className={`w-3 h-3 rounded-full ${unit.color}`}></div>
+                          {unit.title} - Week {unit.week}
+                        </h3>
+                        <div className="space-y-4">
+                          {unitContent.map((content: any) => (
+                            <div key={content.id} className="bg-white rounded-lg border border-[#C9F2C7]/30 p-4">
+                              <div className="flex items-center justify-between mb-3">
+                                <div className="flex items-center gap-2">
+                                  <Badge variant="secondary" className="bg-[#C9F2C7]/20 text-[#47624f]">
+                                    {content.type.replace('-', ' ')}
+                                  </Badge>
+                                  <span className="text-sm text-[#707D7F]">
+                                    Saved {new Date(content.createdAt).toLocaleDateString()}
+                                  </span>
+                                </div>
+                                <Button 
+                                  size="sm" 
+                                  variant="outline" 
+                                  className="border-[#47624f] text-[#47624f] hover:bg-[#47624f] hover:text-white"
+                                  onClick={() => {
+                                    setSelectedContentId(content.id)
+                                    setContentModalOpen(true)
+                                  }}
+                                >
+                                  View Content
+                                </Button>
+                              </div>
+                              <div className="bg-[#C9F2C7]/10 rounded-lg p-3">
+                                <p className="text-[#000000] leading-relaxed text-sm">
+                                  {String(content.content).substring(0, 300)}...
+                                </p>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )
+                  })}
                 </div>
               )}
             </CardContent>
           </Card>
-          
-        {/* Saved Content Section */}
-        {savedContent.length > 0 && (
-          <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <Download className="w-5 h-5 text-[#47624f]" />
-                  Saved Content
-                </CardTitle>
-                <CardDescription>
-                  Your previously saved content organized by units
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                {loadingSavedContent ? (
-                  <div className="flex items-center justify-center py-8">
-                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#47624f]"></div>
-                    <span className="ml-2 text-[#707D7F]">Loading saved content...</span>
-                  </div>
-                ) : (
-                  <div className="space-y-6">
-                    {courseData.calendar?.map((unit: any) => {
-                      const unitContent = savedContent.filter(content => content.unitId === unit.id)
-                      
-                      if (unitContent.length === 0) return null
-                      
-                      return (
-                        <div key={unit.id} className="border border-[#B2A29E]/20 rounded-lg p-4">
-                          <h3 className="text-lg font-semibold text-[#47624f] mb-4 flex items-center gap-2">
-                            <div className={`w-3 h-3 rounded-full ${unit.color}`}></div>
-                            {unit.title} - Week {unit.week}
-                          </h3>
-                          <div className="space-y-4">
-                            {unitContent.map((content: any) => (
-                              <div key={content.id} className="bg-white rounded-lg border border-[#C9F2C7]/30 p-4">
-                                <div className="flex items-center justify-between mb-3">
-                                  <div className="flex items-center gap-2">
-                                    <Badge variant="secondary" className="bg-[#C9F2C7]/20 text-[#47624f]">
-                                      {content.type.replace('-', ' ')}
-                                    </Badge>
-                                    <span className="text-sm text-[#707D7F]">
-                                      Saved {new Date(content.createdAt).toLocaleDateString()}
-                                    </span>
-                                  </div>
-                                  <Button 
-                                    size="sm" 
-                                    variant="outline" 
-                                    className="border-[#47624f] text-[#47624f] hover:bg-[#47624f] hover:text-white"
-                                                                       onClick={() => {
-                                     setSelectedContentId(content.id)
-                                     setContentModalOpen(true)
-                                   }}
-                                  >
-                                    View Content
-                                  </Button>
-                                </div>
-                                <div className="bg-[#C9F2C7]/10 rounded-lg p-3">
-                                  <p className="text-[#000000] leading-relaxed text-sm">
-                                    {String(content.content).substring(0, 300)}...
-                                  </p>
-                                </div>
-                              </div>
-                            ))}
-                          </div>
-                        </div>
-                      )
-                    })}
-                  </div>
-                )}
-              </CardContent>
-            </Card>
-          )}
-        </div>
+        )}
+        
+        {/* Content Modal */}
+        <ContentModal
+          isOpen={contentModalOpen}
+          onClose={() => {
+            setContentModalOpen(false)
+            setSelectedContentId(null)
+          }}
+          contentId={selectedContentId}
+        />
       </div>
-      
-      {/* Content Modal */}
-      <ContentModal
-        isOpen={contentModalOpen}
-        onClose={() => {
-          setContentModalOpen(false)
-          setSelectedContentId(null)
-        }}
-        contentId={selectedContentId}
-      />
     </div>
   )
-}
+} 
