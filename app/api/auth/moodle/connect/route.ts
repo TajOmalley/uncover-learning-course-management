@@ -19,7 +19,7 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'Moodle client ID not configured' }, { status: 500 })
     }
 
-    // Required scopes for Moodle API
+    // Required scopes for Moodle API (comma-separated for plugin)
     const scopes = [
       'core_course_create_courses',
       'core_course_get_courses',
@@ -33,13 +33,13 @@ export async function GET(request: NextRequest) {
       'mod_page_update_page',
       'mod_quiz_create_quiz',
       'mod_quiz_update_quiz'
-    ].join(' ')
+    ].join(',')
 
     // Store user ID in state parameter for security
     const state = Buffer.from(JSON.stringify({ userId: session.user.id })).toString('base64')
 
-    // Build Moodle authorization URL
-    const authUrl = new URL(`${moodleUrl}/admin/oauth2/login.php`)
+    // Build Moodle authorization URL (plugin endpoint)
+    const authUrl = new URL(`${moodleUrl}/local/oauth2/login.php`)
     authUrl.searchParams.set('client_id', moodleClientId)
     authUrl.searchParams.set('response_type', 'code')
     authUrl.searchParams.set('redirect_uri', redirectUri)
