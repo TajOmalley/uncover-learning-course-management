@@ -47,8 +47,8 @@ export async function GET(request: NextRequest) {
       return NextResponse.redirect(`${process.env.NEXTAUTH_URL}/integrations?error=configuration_error`)
     }
 
-    // Exchange authorization code for access token
-    const tokenResponse = await fetch(`${moodleUrl}/login/token.php`, {
+    // Exchange authorization code for access token (plugin endpoint)
+    const tokenResponse = await fetch(`${moodleUrl}/local/oauth2/token.php`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/x-www-form-urlencoded',
