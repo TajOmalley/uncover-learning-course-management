@@ -37,7 +37,7 @@ function cleanConcatenatedText(text: string): string {
     .trim()
 }
 
-// Intelligently detect and underline factual claims based on citations
+// Simple citation highlighting - highlight every sentence that contains key terms
 function transformTextWithIntelligentCitations(text: string, citations: CitationItem[]) {
   if (!citations || citations.length === 0) {
     return [cleanConcatenatedText(text)]
@@ -46,48 +46,33 @@ function transformTextWithIntelligentCitations(text: string, citations: Citation
   const cleanedText = cleanConcatenatedText(text)
   const nodes: React.ReactNode[] = []
   
-  // Create a map of citation IDs to citation objects
-  const citationMap = new Map<string, CitationItem>()
-  citations.forEach(citation => {
-    citationMap.set(citation.id, citation)
-  })
-
-  // Define common factual claim patterns to look for
-  const factualPatterns = [
-    // Definitions
-    /\b(?:is|are|refers to|means|defined as)\s+[^.!?]+/gi,
-    // Statistics and numbers
-    /\b\d+(?:\.\d+)?\s+(?:percent|%|million|billion|thousand|hundred)/gi,
-    // Dates
-    /\b(?:in|during|since|from|between)\s+\d{4}/gi,
-    // Named entities and concepts
-    /\b(?:the|a|an)\s+[A-Z][a-z]+(?:\s+[A-Z][a-z]+)*\s+(?:is|are|refers to|means)/gi,
-    // Economic concepts (for economics content)
-    /\b(?:demand|supply|price|market|economy|economic|law of|principle of)/gi,
-  ]
-
+  // Split text into sentences
+  const sentences = cleanedText.split(/(?<=[.!?])\s+/)
   let currentText = cleanedText
-  let citationIndex = 0
-
-  // For each citation, try to find a matching factual claim in the text
+  
+  // For each citation, find sentences that might be related
   citations.forEach((citation, index) => {
-    // Extract key terms from the citation title
-    const titleWords = citation.title.toLowerCase().split(/\s+/).filter(word => word.length > 3)
+    // Extract key terms from the citation title (more lenient)
+    const titleWords = citation.title.toLowerCase()
+      .split(/\s+/)
+      .filter(word => word.length > 2) // Include shorter words
+      .map(word => word.replace(/[^\w]/g, '')) // Remove punctuation
     
-    // Look for sentences that contain these key terms
-    const sentences = currentText.split(/(?<=[.!?])\s+/)
-    
+    // Look for sentences that contain any of these terms
     for (let i = 0; i < sentences.length; i++) {
       const sentence = sentences[i]
       const sentenceLower = sentence.toLowerCase()
       
-      // Check if this sentence contains key terms from the citation
-      const hasKeyTerms = titleWords.some(word => sentenceLower.includes(word))
+      // Check if this sentence contains any key terms from the citation
+      const hasKeyTerms = titleWords.some(word => 
+        word.length > 2 && sentenceLower.includes(word)
+      )
       
-      // Check if this sentence matches any factual patterns
-      const hasFactualPattern = factualPatterns.some(pattern => pattern.test(sentence))
+      // Also check for common economic terms if this is economics content
+      const economicTerms = ['consumer', 'choice', 'demand', 'supply', 'price', 'market', 'budget', 'constraint', 'indifference', 'curve', 'utility', 'preference']
+      const hasEconomicTerms = economicTerms.some(term => sentenceLower.includes(term))
       
-      if (hasKeyTerms || hasFactualPattern) {
+      if (hasKeyTerms || hasEconomicTerms) {
         // Find the position of this sentence in the original text
         const sentenceStart = currentText.indexOf(sentence)
         const sentenceEnd = sentenceStart + sentence.length
@@ -102,7 +87,7 @@ function transformTextWithIntelligentCitations(text: string, citations: Citation
           <TooltipProvider key={`citation-${citation.id}-${index}`}>
             <Tooltip>
               <TooltipTrigger asChild>
-                <span className="underline underline-offset-4 decoration-dotted cursor-help">
+                <span className="underline underline-offset-4 decoration-dotted cursor-help bg-yellow-50">
                   {sentence}
                 </span>
               </TooltipTrigger>
@@ -139,9 +124,19 @@ function transformTextWithIntelligentCitations(text: string, citations: Citation
 }
 
 export function CitedMarkdown({ content, citations }: CitedMarkdownProps) {
+  console.log('CitedMarkdown rendering with citations:', citations)
 
   return (
     <div className="prose max-w-none">
+      {/* Citation Debug Info */}
+      {citations && citations.length > 0 && (
+        <div className="mb-4 p-3 bg-blue-50 border border-blue-200 rounded-lg">
+          <p className="text-sm text-blue-800">
+            <strong>Citations Found:</strong> {citations.length} sources available for this content.
+          </p>
+        </div>
+      )}
+
       <ReactMarkdown
         remarkPlugins={[remarkGfm]}
         components={{

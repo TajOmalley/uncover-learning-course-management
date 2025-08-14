@@ -46,6 +46,13 @@ export async function POST(request: NextRequest) {
 
     const citationsEnabled = String(process.env.CITATIONS_ENABLED || 'true').toLowerCase() === 'true'
     const citationsEnforce = String(process.env.CITATIONS_ENFORCE || 'true').toLowerCase() === 'true'
+    
+    console.log('Citation settings:', {
+      citationsEnabled,
+      citationsEnforce,
+      CITATIONS_ENABLED: process.env.CITATIONS_ENABLED,
+      CITATIONS_ENFORCE: process.env.CITATIONS_ENFORCE
+    })
 
     // Step 1: Retrieval for citations (mandatory)
     let sources: Array<{ id: string; title: string; url: string; snippet?: string }> = []
@@ -58,6 +65,8 @@ export async function POST(request: NextRequest) {
           unitDescription: unit.description,
         })
         sources = await searchWeb(query)
+        console.log('Search query:', query)
+        console.log('Sources found:', sources)
       } catch (err) {
         console.error('Citation retrieval failed:', err)
         if (citationsEnforce) {
@@ -200,12 +209,15 @@ Remember: Write clean, natural text without any citation syntax. The citation sy
 
     try {
       // Create the reading content object
+      const finalCitations = (sources || []).map(s => ({ id: s.id, title: s.title, url: s.url }))
+      console.log('Final citations being returned:', finalCitations)
+      
       const generatedReading: GeneratedReading = {
         title: `Reading: ${unit.title}`,
         content: text,
         unitId: unit.id,
         unitTitle: unit.title,
-        citations: (sources || []).map(s => ({ id: s.id, title: s.title, url: s.url }))
+        citations: finalCitations
       }
 
       return NextResponse.json({

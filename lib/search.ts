@@ -49,6 +49,9 @@ export function buildSearchQuery(params: BuildQueryParams): string {
 
 export async function searchWeb(query: string): Promise<SearchSource[]> {
   const provider = (process.env.CITATIONS_SEARCH_PROVIDER || 'tavily').toLowerCase()
+  
+  console.log('SearchWeb called with query:', query)
+  console.log('Search provider:', provider)
 
   let rawResults: Array<{ title: string; url: string; snippet?: string }> = []
 
@@ -125,6 +128,7 @@ export async function searchWeb(query: string): Promise<SearchSource[]> {
     snippet: r.snippet
   }))
 
+  console.log('SearchWeb returning sources:', sources)
   return sources
 }
 

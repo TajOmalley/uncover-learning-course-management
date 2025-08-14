@@ -1,6 +1,7 @@
 "use client"
 
 import { signOut } from "next-auth/react"
+import { useEffect } from "react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
 import { BookOpen, GraduationCap, Home, LogOut, X, Plus } from "lucide-react"
@@ -22,13 +23,14 @@ interface Course {
 interface NavigationSidebarProps {
   isOpen: boolean
   onClose: () => void
-  currentPage: string
+  currentPage?: string
   courses?: Course[]
+  currentCourseId?: string
   onCourseSelect?: (course: Course) => void
   onAddCourse?: () => void
 }
 
-export function NavigationSidebar({ isOpen, onClose, currentPage, courses = [], onCourseSelect, onAddCourse }: NavigationSidebarProps) {
+export function NavigationSidebar({ isOpen, onClose, currentPage, courses = [], currentCourseId, onCourseSelect, onAddCourse }: NavigationSidebarProps) {
   const navigationItems = [
     {
       label: "My Courses",
@@ -42,14 +44,40 @@ export function NavigationSidebar({ isOpen, onClose, currentPage, courses = [], 
     signOut({ callbackUrl: '/' })
   }
 
+  const handleMouseLeave = () => {
+    onClose()
+  }
+
+  // Handle clicks outside the sidebar
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      const sidebar = document.querySelector('[data-sidebar]')
+      if (sidebar && !sidebar.contains(event.target as Node) && isOpen) {
+        onClose()
+      }
+    }
+
+    if (isOpen) {
+      document.addEventListener('mousedown', handleClickOutside)
+    }
+
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside)
+    }
+  }, [isOpen, onClose])
+
   return (
     <>
       {/* Sidebar - Toggleable on All Screen Sizes */}
-      <div className={`
-        fixed top-0 left-0 h-screen w-80 shadow-xl z-50 transform transition-transform duration-300 ease-in-out
-        ${isOpen ? 'translate-x-0' : '-translate-x-full'}
-        bg-white/40 backdrop-blur-md border border-white/30
-      `}>
+      <div 
+        data-sidebar
+        className={`
+          fixed top-0 left-0 h-screen w-80 shadow-xl z-40 transform transition-transform duration-300 ease-in-out
+          ${isOpen ? 'translate-x-0' : '-translate-x-full'}
+          bg-white/40 backdrop-blur-md border border-white/30
+        `}
+        onMouseLeave={handleMouseLeave}
+      >
         <div className="flex flex-col h-full">
           {/* Header */}
           <div className="p-3 border-b border-gray-200">
@@ -81,7 +109,7 @@ export function NavigationSidebar({ isOpen, onClose, currentPage, courses = [], 
             <nav className="space-y-2">
               {navigationItems.map((item) => {
                 const Icon = item.icon
-                const isActive = currentPage === item.label
+                const isActive = currentPage === item.label || (currentCourseId && item.label === "My Courses")
                 
                 return (
                   <Button

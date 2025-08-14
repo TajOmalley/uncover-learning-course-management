@@ -16,9 +16,11 @@ interface ContentGeneratorProps {
   type: string
   courseData: any
   onBack: () => void
+  onContentGenerated?: (content: any) => void
+  onContentSaved?: (savedContent: any) => void
 }
 
-export function ContentGenerator({ type, courseData, onBack }: ContentGeneratorProps) {
+export function ContentGenerator({ type, courseData, onBack, onContentGenerated, onContentSaved }: ContentGeneratorProps) {
   const router = useRouter()
   const [isGenerating, setIsGenerating] = useState(false)
   const [generatedContent, setGeneratedContent] = useState("")
@@ -76,6 +78,11 @@ export function ContentGenerator({ type, courseData, onBack }: ContentGeneratorP
       loadSavedContent()
     }
   }, [courseData.courseId])
+
+  // Debug citations
+  useEffect(() => {
+    console.log('Citations state changed:', generatedCitations)
+  }, [generatedCitations])
 
   const loadSavedContent = async () => {
     setLoadingSavedContent(true)
@@ -148,8 +155,18 @@ export function ContentGenerator({ type, courseData, onBack }: ContentGeneratorP
           throw new Error(result.error || 'Failed to create reading content')
         }
 
+        console.log('Generated content received:', result.reading.content.substring(0, 100) + '...')
+        console.log('Citations received:', result.reading.citations)
         setGeneratedContent(result.reading.content)
         setGeneratedCitations(result.reading.citations || [])
+        if (onContentGenerated) {
+          onContentGenerated({
+            content: result.reading.content,
+            citations: result.reading.citations || [],
+            type: 'reading',
+            unitTitle: selectedUnit
+          })
+        }
       } else if (type === "homework") {
         // Call the homework creation API
         const selectedUnitData = courseData.calendar?.find((unit: any) => unit.title === selectedUnit)
@@ -186,6 +203,13 @@ export function ContentGenerator({ type, courseData, onBack }: ContentGeneratorP
         }
 
         setGeneratedContent(result.homework.content)
+        if (onContentGenerated) {
+          onContentGenerated({
+            content: result.homework.content,
+            type: 'homework',
+            unitTitle: selectedUnit
+          })
+        }
       } else if (type === "lesson-plan") {
         // Call the lesson plan creation API
         const selectedUnitData = courseData.calendar?.find((unit: any) => unit.title === selectedUnit)
@@ -224,6 +248,13 @@ export function ContentGenerator({ type, courseData, onBack }: ContentGeneratorP
         }
 
         setGeneratedContent(result.lessonPlan.content)
+        if (onContentGenerated) {
+          onContentGenerated({
+            content: result.lessonPlan.content,
+            type: 'lesson-plan',
+            unitTitle: selectedUnit
+          })
+        }
       } else if (type === "exam") {
         // Call the exam creation API
         const selectedUnitData = courseData.calendar?.find((unit: any) => unit.title === selectedUnit)
@@ -267,10 +298,24 @@ export function ContentGenerator({ type, courseData, onBack }: ContentGeneratorP
         }
 
         setGeneratedContent(result.exam.content)
+        if (onContentGenerated) {
+          onContentGenerated({
+            content: result.exam.content,
+            type: 'exam',
+            unitTitle: selectedUnit
+          })
+        }
       } else {
         // For other content types, use mock content for now
         const mockContent = generateMockContent(type, selectedUnit, storedInstructions)
         setGeneratedContent(mockContent)
+        if (onContentGenerated) {
+          onContentGenerated({
+            content: mockContent,
+            type: type,
+            unitTitle: selectedUnit
+          })
+        }
       }
     } catch (error) {
       console.error('Error generating content:', error)
@@ -278,6 +323,13 @@ export function ContentGenerator({ type, courseData, onBack }: ContentGeneratorP
       // Fallback to mock content if API fails
       const mockContent = generateMockContent(type, selectedUnit, storedInstructions)
       setGeneratedContent(mockContent)
+      if (onContentGenerated) {
+        onContentGenerated({
+          content: mockContent,
+          type: type,
+          unitTitle: selectedUnit
+        })
+      }
     } finally {
       setIsGenerating(false)
     }
@@ -371,6 +423,11 @@ export function ContentGenerator({ type, courseData, onBack }: ContentGeneratorP
       
       // Add the saved content to the list
       setSavedContent(prev => [...prev, result.content])
+      
+      // Notify parent component about the saved content
+      if (onContentSaved) {
+        onContentSaved(result.content)
+      }
       
       // Show a link to view the saved content
       const viewLink = `#saved-content-${result.content.id}`
@@ -553,509 +610,476 @@ Detailed solutions and explanations will be provided during the review session.`
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-[#C9F2C7] via-[#B2A29E] to-[#707D7F]">
-      <div className="max-w-6xl mx-auto px-4 py-8">
-        {/* Header */}
-        <div className="flex items-center gap-4 mb-8">
-          <Button variant="outline" onClick={onBack}>
-            <ArrowLeft className="w-4 h-4 mr-2" />
-            Back to Dashboard
-          </Button>
-          <div>
-            <h1 className="text-2xl font-bold text-[#000000]">{currentType.title}</h1>
-            <p className="text-[#707D7F]">{currentType.description}</p>
-          </div>
-        </div>
-
-        {/* Content Settings */}
-        <Card className="mb-6">
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              Content Settings
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 items-end">
-              <div>
-                <Label htmlFor="unit">Select Course Unit</Label>
-                <Select value={selectedUnit} onValueChange={setSelectedUnit}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Choose a unit" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {courseData.calendar?.map((unit: any) => (
-                      <SelectItem key={unit.id} value={unit.title}>
-                        Week {unit.week}: {unit.title}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-
-              {/* Homework Problem Specifications */}
-              {type === "homework" && (
-                <div className="space-y-4">
-                  <div>
-                    <Label htmlFor="totalProblems">Total Problems</Label>
-                    <input
-                      id="totalProblems"
-                      type="number"
-                      min="1"
-                      max="20"
-                      value={totalProblems}
-                      onChange={(e) => {
-                        const total = parseInt(e.target.value) || 0
-                        setTotalProblems(total)
-                        // Auto-adjust other values to maintain consistency
-                        if (total < wordProblems + multipleChoiceProblems) {
-                          setWordProblems(Math.max(1, Math.floor(total / 2)))
-                          setMultipleChoiceProblems(total - Math.max(1, Math.floor(total / 2)))
-                        }
-                      }}
-                      className="w-full px-3 py-2 border border-[#B2A29E] rounded-md focus:outline-none focus:ring-2 focus:ring-[#47624f]"
-                    />
-                  </div>
-                  
-                  <div className="grid grid-cols-2 gap-4">
-                    <div>
-                      <Label htmlFor="wordProblems">Word Problems</Label>
-                      <input
-                        id="wordProblems"
-                        type="number"
-                        min="0"
-                        max={totalProblems}
-                        value={wordProblems}
-                        onChange={(e) => {
-                          const word = parseInt(e.target.value) || 0
-                          setWordProblems(word)
-                          setMultipleChoiceProblems(totalProblems - word)
-                        }}
-                        className="w-full px-3 py-2 border border-[#B2A29E] rounded-md focus:outline-none focus:ring-2 focus:ring-[#47624f]"
-                      />
-                    </div>
-                    
-                    <div>
-                      <Label htmlFor="multipleChoiceProblems">Multiple Choice</Label>
-                      <input
-                        id="multipleChoiceProblems"
-                        type="number"
-                        min="0"
-                        max={totalProblems}
-                        value={multipleChoiceProblems}
-                        onChange={(e) => {
-                          const mc = parseInt(e.target.value) || 0
-                          setMultipleChoiceProblems(mc)
-                          setWordProblems(totalProblems - mc)
-                        }}
-                        className="w-full px-3 py-2 border border-[#B2A29E] rounded-md focus:outline-none focus:ring-2 focus:ring-[#47624f]"
-                      />
-                    </div>
-                  </div>
-                  
-                  {wordProblems + multipleChoiceProblems !== totalProblems && (
-                    <p className="text-sm text-red-600">
-                      Word problems + Multiple choice must equal total problems
-                    </p>
-                  )}
-                </div>
-              )}
-
-              {/* Exam Specifications */}
-              {type === "exam" && (
-                <div className="space-y-4">
-                  <div className="p-3 bg-[#C9F2C7]/20 rounded-lg border border-[#B2A29E]/20">
-                    <p className="text-sm text-[#707D7F]">
-                      <strong>Exam Duration:</strong> Based on your lecture schedule ({(() => {
-                        const lectureDurations = Object.values(courseData.lectureSchedule || {}) as string[]
-                        const lectureLength = lectureDurations.length > 0 ? 
-                          parseInt(lectureDurations[0].replace(/\D/g, '')) || 90 : 90
-                        return lectureLength
-                      })()} minutes)
-                    </p>
-                  </div>
-
-                  <div className="grid grid-cols-1 gap-4">
-                    <div>
-                      <Label htmlFor="wordProblems">Word Problems</Label>
-                      <div className="grid grid-cols-2 gap-2">
-                        <div>
-                          <Label htmlFor="wordProblemsCount" className="text-xs text-[#707D7F]">Number of Questions</Label>
-                          <input
-                            id="wordProblemsCount"
-                            type="number"
-                            min="0"
-                            max="20"
-                            placeholder="Count"
-                            value={examSpecs.wordProblems.count}
-                            onChange={(e) => {
-                              const count = parseInt(e.target.value) || 0
-                              setExamSpecs(prev => ({
-                                ...prev,
-                                wordProblems: { ...prev.wordProblems, count }
-                              }))
-                            }}
-                            className="w-full px-3 py-2 border border-[#B2A29E] rounded-md focus:outline-none focus:ring-2 focus:ring-[#47624f]"
-                          />
-                        </div>
-                        <div>
-                          <Label htmlFor="wordProblemsTime" className="text-xs text-[#707D7F]">Minutes per Question</Label>
-                          <input
-                            id="wordProblemsTime"
-                            type="number"
-                            min="1"
-                            max="60"
-                            placeholder="Minutes each"
-                            value={examSpecs.wordProblems.timePerQuestion}
-                            onChange={(e) => {
-                              const time = parseInt(e.target.value) || 15
-                              setExamSpecs(prev => ({
-                                ...prev,
-                                wordProblems: { ...prev.wordProblems, timePerQuestion: time }
-                              }))
-                            }}
-                            className="w-full px-3 py-2 border border-[#B2A29E] rounded-md focus:outline-none focus:ring-2 focus:ring-[#47624f]"
-                          />
-                        </div>
-                      </div>
-                    </div>
-
-                    <div>
-                      <Label htmlFor="essayProblems">Essay Problems</Label>
-                      <div className="grid grid-cols-2 gap-2">
-                        <div>
-                          <Label htmlFor="essayProblemsCount" className="text-xs text-[#707D7F]">Number of Questions</Label>
-                          <input
-                            id="essayProblemsCount"
-                            type="number"
-                            min="0"
-                            max="10"
-                            placeholder="Count"
-                            value={examSpecs.essayProblems.count}
-                            onChange={(e) => {
-                              const count = parseInt(e.target.value) || 0
-                              setExamSpecs(prev => ({
-                                ...prev,
-                                essayProblems: { ...prev.essayProblems, count }
-                              }))
-                            }}
-                            className="w-full px-3 py-2 border border-[#B2A29E] rounded-md focus:outline-none focus:ring-2 focus:ring-[#47624f]"
-                          />
-                        </div>
-                        <div>
-                          <Label htmlFor="essayProblemsTime" className="text-xs text-[#707D7F]">Minutes per Question</Label>
-                          <input
-                            id="essayProblemsTime"
-                            type="number"
-                            min="5"
-                            max="60"
-                            placeholder="Minutes each"
-                            value={examSpecs.essayProblems.timePerQuestion}
-                            onChange={(e) => {
-                              const time = parseInt(e.target.value) || 30
-                              setExamSpecs(prev => ({
-                                ...prev,
-                                essayProblems: { ...prev.essayProblems, timePerQuestion: time }
-                              }))
-                            }}
-                            className="w-full px-3 py-2 border border-[#B2A29E] rounded-md focus:outline-none focus:ring-2 focus:ring-[#47624f]"
-                          />
-                        </div>
-                      </div>
-                    </div>
-
-                    <div>
-                      <Label htmlFor="multipleChoice">Multiple Choice</Label>
-                      <div className="grid grid-cols-2 gap-2">
-                        <div>
-                          <Label htmlFor="multipleChoiceCount" className="text-xs text-[#707D7F]">Number of Questions</Label>
-                          <input
-                            id="multipleChoiceCount"
-                            type="number"
-                            min="0"
-                            max="50"
-                            placeholder="Count"
-                            value={examSpecs.multipleChoice.count}
-                            onChange={(e) => {
-                              const count = parseInt(e.target.value) || 0
-                              setExamSpecs(prev => ({
-                                ...prev,
-                                multipleChoice: { ...prev.multipleChoice, count }
-                              }))
-                            }}
-                            className="w-full px-3 py-2 border border-[#B2A29E] rounded-md focus:outline-none focus:ring-2 focus:ring-[#47624f]"
-                          />
-                        </div>
-                        <div>
-                          <Label htmlFor="multipleChoiceTime" className="text-xs text-[#707D7F]">Minutes per Question</Label>
-                          <input
-                            id="multipleChoiceTime"
-                            type="number"
-                            min="1"
-                            max="10"
-                            placeholder="Minutes each"
-                            value={examSpecs.multipleChoice.timePerQuestion}
-                            onChange={(e) => {
-                              const time = parseInt(e.target.value) || 2
-                              setExamSpecs(prev => ({
-                                ...prev,
-                                multipleChoice: { ...prev.multipleChoice, timePerQuestion: time }
-                              }))
-                            }}
-                            className="w-full px-3 py-2 border border-[#B2A29E] rounded-md focus:outline-none focus:ring-2 focus:ring-[#47624f]"
-                          />
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Time validation */}
-                  {(() => {
-                    const lectureDurations = Object.values(courseData.lectureSchedule || {}) as string[]
-                    const lectureLength = lectureDurations.length > 0 ? 
-                      parseInt(lectureDurations[0].replace(/\D/g, '')) || 90 : 90
-                    
-                    const calculatedTime = (examSpecs.wordProblems.count * examSpecs.wordProblems.timePerQuestion) +
-                                          (examSpecs.essayProblems.count * examSpecs.essayProblems.timePerQuestion) +
-                                          (examSpecs.multipleChoice.count * examSpecs.multipleChoice.timePerQuestion)
-                    const difference = Math.abs(calculatedTime - lectureLength)
-                    
-                    return difference > 5 ? (
-                      <p className="text-sm text-red-600">
-                        Calculated time ({calculatedTime} min) doesn't match exam duration ({lectureLength} min)
-                      </p>
-                    ) : (
-                      <p className="text-sm text-green-600">
-                        Time allocation: {calculatedTime} minutes
-                      </p>
-                    )
-                  })()}
-                </div>
-              )}
-
-              <Button
-                onClick={handleGenerate}
-                disabled={!selectedUnit || isGenerating || 
-                  (type === "homework" && wordProblems + multipleChoiceProblems !== totalProblems) ||
-                  (type === "exam" && (() => {
-                    const lectureDurations = Object.values(courseData.lectureSchedule || {}) as string[]
-                    const lectureLength = lectureDurations.length > 0 ? 
-                      parseInt(lectureDurations[0].replace(/\D/g, '')) || 90 : 90
-                    
-                    const calculatedTime = (examSpecs.wordProblems.count * examSpecs.wordProblems.timePerQuestion) +
-                                          (examSpecs.essayProblems.count * examSpecs.essayProblems.timePerQuestion) +
-                                          (examSpecs.multipleChoice.count * examSpecs.multipleChoice.timePerQuestion)
-                    return Math.abs(calculatedTime - lectureLength) > 5
-                  })())
-                }
-                className="w-full bg-gradient-to-r from-[#47624f] to-[#707D7F] hover:from-[#000000] hover:to-[#47624f]"
-              >
-                {isGenerating ? (
-                  <>
-                    <RefreshCw className="w-4 h-4 mr-2 animate-spin" />
-                    Creating...
-                  </>
-                ) : (
-                                  <>
-                  Create Content
-                </>
-                )}
-              </Button>
-
-              <Button
-                onClick={handleSave}
-                disabled={!generatedContent || isSaving}
-                variant="outline"
-                className="w-full border-[#47624f] text-[#47624f] hover:bg-[#47624f] hover:text-white"
-              >
-                {isSaving ? (
-                  <>
-                    <RefreshCw className="w-4 h-4 mr-2 animate-spin" />
-                    Saving...
-                  </>
-                ) : (
-                  <>
-                    <Download className="w-4 h-4 mr-2" />
-                    Save
-                  </>
-                )}
-              </Button>
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* Additional Instructions Section */}
-        <Card className="mb-6">
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              Additional Instructions
-            </CardTitle>
-                            <CardDescription>Provide specific instructions to customize the content</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-3">
-              <div className="flex items-center justify-between">
-                <Label htmlFor="prompt">Custom Instructions</Label>
-                {instructionsAdded && (
-                  <Badge variant="secondary" className="bg-green-100 text-green-800">
-                    Instructions Active
-                  </Badge>
-                )}
-              </div>
-              <Textarea
-                id="prompt"
-                placeholder={instructionsAdded ? "Instructions have been added. Click 'Reset Instructions' to add new ones." : currentType.placeholder}
-                value={customPrompt}
-                onChange={(e) => setCustomPrompt(e.target.value)}
-                rows={4}
-                className="w-full"
-                disabled={instructionsAdded}
-              />
-              <div className="flex justify-end">
-                <Button
-                  onClick={handleAddInstructions}
-                  disabled={!customPrompt.trim() || instructionsAdded}
-                  variant={instructionsAdded ? "secondary" : "default"}
-                  className={instructionsAdded ? "bg-green-100 text-green-800 hover:bg-green-200" : ""}
-                >
-                  {instructionsAdded ? "Instructions Added" : "Add Instructions"}
-                </Button>
-                <Button
-                  onClick={handleResetInstructions}
-                  disabled={!instructionsAdded}
-                  variant="outline"
-                  className="ml-2 border-[#47624f] text-[#47624f] hover:bg-[#47624f] hover:text-white"
-                >
-                  Reset Instructions
-                </Button>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* Full-Width Content */}
-        <Card>
-          <CardHeader>
-            <div className="flex items-center justify-between">
-              <CardTitle>Content</CardTitle>
-              {generatedContent && (
-                <div className="flex gap-2">
-                  <Button size="sm" variant="outline">
-                    <Copy className="w-4 h-4 mr-2" />
-                    Copy
-                  </Button>
-                  <Button size="sm" variant="outline">
-                    <Download className="w-4 h-4 mr-2" />
-                    Export
-                  </Button>
-                </div>
-              )}
-            </div>
-          </CardHeader>
-          <CardContent>
-            {isGenerating ? (
-              <div className="flex items-center justify-center py-12">
-                <div className="text-center space-y-4">
-                  <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#47624f] mx-auto"></div>
-                  <h3 className="text-lg font-semibold text-[#000000]">Creating Content</h3>
-                  <p className="text-[#707D7F]">Creating your {type.replace("-", " ")} content...</p>
-                </div>
-              </div>
-            ) : generatedContent ? (
-              <div className="prose max-w-none">
-                <div className="bg-white rounded-lg border border-[#B2A29E]/20 p-6 shadow-sm">
-                  <CitedMarkdown content={generatedContent} citations={generatedCitations} />
-                </div>
-              </div>
-            ) : (
-                             <div className="text-center py-12 text-[#707D7F]">
-                 <p>Select a unit and click "Create Content" to create course materials.</p>
-               </div>
-            )}
-          </CardContent>
-        </Card>
-        
-        {/* Saved Content Section */}
-        {savedContent.length > 0 && (
-          <Card>
+    <div className="space-y-6">
+          {/* Content Settings */}
+          <Card className="bg-[#47624f]/20 backdrop-blur-sm border-2 border-[#47624f] rounded-lg">
             <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Download className="w-5 h-5 text-[#47624f]" />
-                Saved Content
+              <CardTitle className="flex items-center gap-2 text-[#47624f]">
+                Content Settings
               </CardTitle>
-              <CardDescription>
-                Your previously saved content organized by units
-              </CardDescription>
             </CardHeader>
             <CardContent>
-              {loadingSavedContent ? (
-                <div className="flex items-center justify-center py-8">
-                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#47624f]"></div>
-                  <span className="ml-2 text-[#707D7F]">Loading saved content...</span>
+              <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 items-end">
+                <div>
+                  <Label htmlFor="unit">Select Course Unit</Label>
+                  <Select value={selectedUnit} onValueChange={setSelectedUnit}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Choose a unit" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {courseData.calendar?.map((unit: any) => (
+                        <SelectItem key={unit.id} value={unit.title}>
+                          Week {unit.week}: {unit.title}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
                 </div>
-              ) : (
-                <div className="space-y-6">
-                  {courseData.calendar?.map((unit: any) => {
-                    const unitContent = savedContent.filter(content => content.unitId === unit.id)
+
+                {/* Homework Problem Specifications */}
+                {type === "homework" && (
+                  <div className="space-y-4">
+                    <div>
+                      <Label htmlFor="totalProblems">Total Problems</Label>
+                      <input
+                        id="totalProblems"
+                        type="number"
+                        min="1"
+                        max="20"
+                        value={totalProblems}
+                        onChange={(e) => {
+                          const total = parseInt(e.target.value) || 0
+                          setTotalProblems(total)
+                          // Auto-adjust other values to maintain consistency
+                          if (total < wordProblems + multipleChoiceProblems) {
+                            setWordProblems(Math.max(1, Math.floor(total / 2)))
+                            setMultipleChoiceProblems(total - Math.max(1, Math.floor(total / 2)))
+                          }
+                        }}
+                        className="w-full px-3 py-2 border border-[#B2A29E] rounded-md focus:outline-none focus:ring-2 focus:ring-[#47624f]"
+                      />
+                    </div>
                     
-                    if (unitContent.length === 0) return null
+                    <div className="grid grid-cols-2 gap-4">
+                      <div>
+                        <Label htmlFor="wordProblems">Word Problems</Label>
+                        <input
+                          id="wordProblems"
+                          type="number"
+                          min="0"
+                          max={totalProblems}
+                          value={wordProblems}
+                          onChange={(e) => {
+                            const word = parseInt(e.target.value) || 0
+                            setWordProblems(word)
+                            setMultipleChoiceProblems(totalProblems - word)
+                          }}
+                          className="w-full px-3 py-2 border border-[#B2A29E] rounded-md focus:outline-none focus:ring-2 focus:ring-[#47624f]"
+                        />
+                      </div>
+                      
+                      <div>
+                        <Label htmlFor="multipleChoiceProblems">Multiple Choice</Label>
+                        <input
+                          id="multipleChoiceProblems"
+                          type="number"
+                          min="0"
+                          max={totalProblems}
+                          value={multipleChoiceProblems}
+                          onChange={(e) => {
+                            const mc = parseInt(e.target.value) || 0
+                            setMultipleChoiceProblems(mc)
+                            setWordProblems(totalProblems - mc)
+                          }}
+                          className="w-full px-3 py-2 border border-[#B2A29E] rounded-md focus:outline-none focus:ring-2 focus:ring-[#47624f]"
+                        />
+                      </div>
+                    </div>
                     
-                    return (
-                      <div key={unit.id} className="border border-[#B2A29E]/20 rounded-lg p-4">
-                        <h3 className="text-lg font-semibold text-[#47624f] mb-4 flex items-center gap-2">
-                          <div className={`w-3 h-3 rounded-full ${unit.color}`}></div>
-                          {unit.title} - Week {unit.week}
-                        </h3>
-                        <div className="space-y-4">
-                          {unitContent.map((content: any) => (
-                            <div key={content.id} className="bg-white rounded-lg border border-[#C9F2C7]/30 p-4">
-                              <div className="flex items-center justify-between mb-3">
-                                <div className="flex items-center gap-2">
-                                  <Badge variant="secondary" className="bg-[#C9F2C7]/20 text-[#47624f]">
-                                    {content.type.replace('-', ' ')}
-                                  </Badge>
-                                  <span className="text-sm text-[#707D7F]">
-                                    Saved {new Date(content.createdAt).toLocaleDateString()}
-                                  </span>
-                                </div>
-                                <Button 
-                                  size="sm" 
-                                  variant="outline" 
-                                  className="border-[#47624f] text-[#47624f] hover:bg-[#47624f] hover:text-white"
-                                  onClick={() => {
-                                    setSelectedContentId(content.id)
-                                    setContentModalOpen(true)
-                                  }}
-                                >
-                                  View Content
-                                </Button>
-                              </div>
-                              <div className="bg-[#C9F2C7]/10 rounded-lg p-3">
-                                <p className="text-[#000000] leading-relaxed text-sm">
-                                  {String(content.content).substring(0, 300)}...
-                                </p>
-                              </div>
-                            </div>
-                          ))}
+                    {wordProblems + multipleChoiceProblems !== totalProblems && (
+                      <p className="text-sm text-red-600">
+                        Word problems + Multiple choice must equal total problems
+                      </p>
+                    )}
+                  </div>
+                )}
+
+                {/* Exam Specifications */}
+                {type === "exam" && (
+                  <div className="space-y-4">
+                    <div className="p-3 bg-[#C9F2C7]/20 rounded-lg border border-[#B2A29E]/20">
+                      <p className="text-sm text-[#707D7F]">
+                        <strong>Exam Duration:</strong> Based on your lecture schedule ({(() => {
+                          const lectureDurations = Object.values(courseData.lectureSchedule || {}) as string[]
+                          const lectureLength = lectureDurations.length > 0 ? 
+                            parseInt(lectureDurations[0].replace(/\D/g, '')) || 90 : 90
+                          return lectureLength
+                        })()} minutes)
+                      </p>
+                    </div>
+
+                    <div className="grid grid-cols-1 gap-4">
+                      <div>
+                        <Label htmlFor="wordProblems">Word Problems</Label>
+                        <div className="grid grid-cols-2 gap-2">
+                          <div>
+                            <Label htmlFor="wordProblemsCount" className="text-xs text-[#707D7F]">Number of Questions</Label>
+                            <input
+                              id="wordProblemsCount"
+                              type="number"
+                              min="0"
+                              max="20"
+                              placeholder="Count"
+                              value={examSpecs.wordProblems.count}
+                              onChange={(e) => {
+                                const count = parseInt(e.target.value) || 0
+                                setExamSpecs(prev => ({
+                                  ...prev,
+                                  wordProblems: { ...prev.wordProblems, count }
+                                }))
+                              }}
+                              className="w-full px-3 py-2 border border-[#B2A29E] rounded-md focus:outline-none focus:ring-2 focus:ring-[#47624f]"
+                            />
+                          </div>
+                          <div>
+                            <Label htmlFor="wordProblemsTime" className="text-xs text-[#707D7F]">Minutes per Question</Label>
+                            <input
+                              id="wordProblemsTime"
+                              type="number"
+                              min="1"
+                              max="60"
+                              placeholder="Minutes each"
+                              value={examSpecs.wordProblems.timePerQuestion}
+                              onChange={(e) => {
+                                const time = parseInt(e.target.value) || 15
+                                setExamSpecs(prev => ({
+                                  ...prev,
+                                  wordProblems: { ...prev.wordProblems, timePerQuestion: time }
+                                }))
+                              }}
+                              className="w-full px-3 py-2 border border-[#B2A29E] rounded-md focus:outline-none focus:ring-2 focus:ring-[#47624f]"
+                            />
+                          </div>
                         </div>
                       </div>
-                    )
-                  })}
-                </div>
-              )}
+
+                      <div>
+                        <Label htmlFor="essayProblems">Essay Problems</Label>
+                        <div className="grid grid-cols-2 gap-2">
+                          <div>
+                            <Label htmlFor="essayProblemsCount" className="text-xs text-[#707D7F]">Number of Questions</Label>
+                            <input
+                              id="essayProblemsCount"
+                              type="number"
+                              min="0"
+                              max="10"
+                              placeholder="Count"
+                              value={examSpecs.essayProblems.count}
+                              onChange={(e) => {
+                                const count = parseInt(e.target.value) || 0
+                                setExamSpecs(prev => ({
+                                  ...prev,
+                                  essayProblems: { ...prev.essayProblems, count }
+                                }))
+                              }}
+                              className="w-full px-3 py-2 border border-[#B2A29E] rounded-md focus:outline-none focus:ring-2 focus:ring-[#47624f]"
+                            />
+                          </div>
+                          <div>
+                            <Label htmlFor="essayProblemsTime" className="text-xs text-[#707D7F]">Minutes per Question</Label>
+                            <input
+                              id="essayProblemsTime"
+                              type="number"
+                              min="5"
+                              max="60"
+                              placeholder="Minutes each"
+                              value={examSpecs.essayProblems.timePerQuestion}
+                              onChange={(e) => {
+                                const time = parseInt(e.target.value) || 30
+                                setExamSpecs(prev => ({
+                                  ...prev,
+                                  essayProblems: { ...prev.essayProblems, timePerQuestion: time }
+                                }))
+                              }}
+                              className="w-full px-3 py-2 border border-[#B2A29E] rounded-md focus:outline-none focus:ring-2 focus:ring-[#47624f]"
+                            />
+                          </div>
+                        </div>
+                      </div>
+
+                      <div>
+                        <Label htmlFor="multipleChoice">Multiple Choice</Label>
+                        <div className="grid grid-cols-2 gap-2">
+                          <div>
+                            <Label htmlFor="multipleChoiceCount" className="text-xs text-[#707D7F]">Number of Questions</Label>
+                            <input
+                              id="multipleChoiceCount"
+                              type="number"
+                              min="0"
+                              max="50"
+                              placeholder="Count"
+                              value={examSpecs.multipleChoice.count}
+                              onChange={(e) => {
+                                const count = parseInt(e.target.value) || 0
+                                setExamSpecs(prev => ({
+                                  ...prev,
+                                  multipleChoice: { ...prev.multipleChoice, count }
+                                }))
+                              }}
+                              className="w-full px-3 py-2 border border-[#B2A29E] rounded-md focus:outline-none focus:ring-2 focus:ring-[#47624f]"
+                            />
+                          </div>
+                          <div>
+                            <Label htmlFor="multipleChoiceTime" className="text-xs text-[#707D7F]">Minutes per Question</Label>
+                            <input
+                              id="multipleChoiceTime"
+                              type="number"
+                              min="1"
+                              max="10"
+                              placeholder="Minutes each"
+                              value={examSpecs.multipleChoice.timePerQuestion}
+                              onChange={(e) => {
+                                const time = parseInt(e.target.value) || 2
+                                setExamSpecs(prev => ({
+                                  ...prev,
+                                  multipleChoice: { ...prev.multipleChoice, timePerQuestion: time }
+                                }))
+                              }}
+                              className="w-full px-3 py-2 border border-[#B2A29E] rounded-md focus:outline-none focus:ring-2 focus:ring-[#47624f]"
+                            />
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Time validation */}
+                    {(() => {
+                      const lectureDurations = Object.values(courseData.lectureSchedule || {}) as string[]
+                      const lectureLength = lectureDurations.length > 0 ? 
+                        parseInt(lectureDurations[0].replace(/\D/g, '')) || 90 : 90
+                      
+                      const calculatedTime = (examSpecs.wordProblems.count * examSpecs.wordProblems.timePerQuestion) +
+                                            (examSpecs.essayProblems.count * examSpecs.essayProblems.timePerQuestion) +
+                                            (examSpecs.multipleChoice.count * examSpecs.multipleChoice.timePerQuestion)
+                      const difference = Math.abs(calculatedTime - lectureLength)
+                      
+                      return difference > 5 ? (
+                        <p className="text-sm text-red-600">
+                          Calculated time ({calculatedTime} min) doesn't match exam duration ({lectureLength} min)
+                        </p>
+                      ) : (
+                        <p className="text-sm text-green-600">
+                          Time allocation: {calculatedTime} minutes
+                        </p>
+                      )
+                    })()}
+                  </div>
+                )}
+
+                <Button
+                  onClick={handleGenerate}
+                  disabled={!selectedUnit || isGenerating || 
+                    (type === "homework" && wordProblems + multipleChoiceProblems !== totalProblems) ||
+                    (type === "exam" && (() => {
+                      const lectureDurations = Object.values(courseData.lectureSchedule || {}) as string[]
+                      const lectureLength = lectureDurations.length > 0 ? 
+                        parseInt(lectureDurations[0].replace(/\D/g, '')) || 90 : 90
+                      
+                      const calculatedTime = (examSpecs.wordProblems.count * examSpecs.wordProblems.timePerQuestion) +
+                                            (examSpecs.essayProblems.count * examSpecs.essayProblems.timePerQuestion) +
+                                            (examSpecs.multipleChoice.count * examSpecs.multipleChoice.timePerQuestion)
+                      return Math.abs(calculatedTime - lectureLength) > 5
+                    })())
+                  }
+                  className="w-full bg-gradient-to-r from-[#47624f] to-[#707D7F] hover:from-[#000000] hover:to-[#47624f] text-white"
+                >
+                  {isGenerating ? (
+                    <>
+                      <RefreshCw className="w-4 h-4 mr-2 animate-spin" />
+                      Creating...
+                    </>
+                  ) : (
+                    <>
+                      Create Content
+                    </>
+                  )}
+                </Button>
+              </div>
             </CardContent>
           </Card>
-        )}
-        
-        {/* Content Modal */}
-        <ContentModal
-          isOpen={contentModalOpen}
-          onClose={() => {
-            setContentModalOpen(false)
-            setSelectedContentId(null)
-          }}
-          contentId={selectedContentId}
-        />
-      </div>
-    </div>
-  )
-} 
+
+          {/* Additional Instructions Section */}
+          <Card className="bg-[#47624f]/20 backdrop-blur-sm border-2 border-[#47624f] rounded-lg">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2 text-[#47624f]">
+                Additional Instructions
+              </CardTitle>
+              <CardDescription className="text-[#47624f]/80">Provide specific instructions to customize the content</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-3">
+                <div className="flex items-center justify-between">
+                  <Label htmlFor="prompt" className="text-[#47624f]">Custom Instructions</Label>
+                  {instructionsAdded && (
+                    <Badge variant="secondary" className="bg-green-100 text-green-800">
+                      Instructions Active
+                    </Badge>
+                  )}
+                </div>
+                <Textarea
+                  id="prompt"
+                  placeholder={instructionsAdded ? "Instructions have been added. Click 'Reset Instructions' to add new ones." : currentType.placeholder}
+                  value={customPrompt}
+                  onChange={(e) => setCustomPrompt(e.target.value)}
+                  rows={4}
+                  className="w-full"
+                  disabled={instructionsAdded}
+                />
+                <div className="flex justify-end">
+                  <Button
+                    onClick={handleAddInstructions}
+                    disabled={!customPrompt.trim() || instructionsAdded}
+                    variant={instructionsAdded ? "secondary" : "default"}
+                    className={instructionsAdded ? "bg-green-100 text-green-800 hover:bg-green-200" : "bg-gradient-to-r from-[#47624f] to-[#707D7F] hover:from-[#000000] hover:to-[#47624f] text-white"}
+                  >
+                    {instructionsAdded ? "Instructions Added" : "Add Instructions"}
+                  </Button>
+                  <Button
+                    onClick={handleResetInstructions}
+                    disabled={!instructionsAdded}
+                    variant="outline"
+                    className="ml-2 border-[#47624f] text-[#47624f] hover:bg-[#47624f] hover:text-white"
+                  >
+                    Reset Instructions
+                  </Button>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Generated Content Display */}
+          {generatedContent && (
+            <Card className="bg-white/80 backdrop-blur-sm border-2 border-[#47624f] rounded-lg">
+              <CardHeader>
+                <CardTitle className="flex items-center justify-between text-[#47624f]">
+                  <span>Generated Content</span>
+                  <div className="flex items-center gap-2">
+                    {generatedCitations.length > 0 && (
+                      <Badge variant="secondary" className="bg-[#C9F2C7]/20 text-[#47624f]">
+                        {generatedCitations.length} Citation{generatedCitations.length !== 1 ? 's' : ''}
+                      </Badge>
+                    )}
+                    <Button
+                      onClick={async () => {
+                        navigator.clipboard.writeText(generatedContent)
+                        // Show toast notification
+                        try {
+                          const { toast } = await import("@/hooks/use-toast")
+                          toast({
+                            title: "Content copied",
+                            description: "Content has been copied to clipboard.",
+                          })
+                        } catch (_) {}
+                      }}
+                      variant="outline"
+                      size="sm"
+                      className="border-[#47624f] text-[#47624f] hover:bg-[#47624f] hover:text-white"
+                    >
+                      <Copy className="w-4 h-4 mr-1" />
+                      Copy
+                    </Button>
+                  </div>
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="prose max-w-none">
+                  <CitedMarkdown content={generatedContent} citations={generatedCitations} />
+                  
+                  {/* Debug: Show citations info */}
+                  {generatedCitations.length > 0 && (
+                    <div className="mt-4 p-4 bg-gray-100 rounded-lg">
+                      <h4 className="font-semibold mb-2">Debug: Citations Found ({generatedCitations.length})</h4>
+                      <ul className="text-sm space-y-1">
+                        {generatedCitations.map((citation, index) => (
+                          <li key={index}>
+                            <strong>{citation.id}:</strong> {citation.title} - <a href={citation.url} target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:underline">{citation.url}</a>
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                  )}
+                </div>
+                
+                {/* Save Content Button */}
+                <div className="mt-6 flex justify-end">
+                  <Button
+                    onClick={handleSave}
+                    disabled={isSaving}
+                    className="bg-gradient-to-r from-[#47624f] to-[#707D7F] hover:from-[#000000] hover:to-[#47624f] text-white"
+                  >
+                    {isSaving ? (
+                      <>
+                        <RefreshCw className="w-4 h-4 mr-2 animate-spin" />
+                        Saving...
+                      </>
+                    ) : (
+                      <>
+                        Save Content
+                      </>
+                    )}
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
+          )}
+
+          {/* Saved Content Section */}
+          {savedContent.length > 0 && (
+            <Card className="bg-white/80 backdrop-blur-sm border-2 border-[#47624f] rounded-lg">
+              <CardHeader>
+                <CardTitle className="text-[#47624f]">Saved Content</CardTitle>
+                <CardDescription className="text-[#47624f]/80">
+                  Previously saved content for this unit
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-4">
+                  {savedContent.map((content: any) => (
+                    <div
+                      key={content.id}
+                      className="p-4 border border-gray-200 rounded-lg cursor-pointer hover:bg-gray-50"
+                      onClick={() => {
+                        setSelectedContentId(content.id)
+                        setContentModalOpen(true)
+                      }}
+                    >
+                      <div className="flex items-center justify-between">
+                        <h4 className="font-medium text-gray-900">
+                          {content.unitTitle || `${type.replace('-', ' ')} content`}
+                        </h4>
+                        <Badge variant="secondary" className="bg-green-100 text-green-800">
+                          Saved
+                        </Badge>
+                      </div>
+                      <p className="text-sm text-gray-600 mt-1">
+                        {content.content.substring(0, 150)}...
+                      </p>
+                    </div>
+                  ))}
+                </div>
+              </CardContent>
+            </Card>
+          )}
+
+          {/* Content Modal */}
+          <ContentModal
+            isOpen={contentModalOpen}
+            onClose={() => {
+              setContentModalOpen(false)
+              setSelectedContentId(null)
+            }}
+            contentId={selectedContentId}
+          />
+        </div>
+      )
+    } 
