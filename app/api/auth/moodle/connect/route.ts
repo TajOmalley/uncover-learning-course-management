@@ -19,20 +19,47 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'Moodle client ID not configured' }, { status: 500 })
     }
 
-    // Required scopes for Moodle API (comma-separated for plugin)
+    // Required scopes for Moodle API - bidirectional sync capabilities
     const scopes = [
+      // Core course management
       'core_course_create_courses',
-      'core_course_get_courses',
       'core_course_update_courses',
+      'core_course_get_courses',
+      'core_course_get_contents',
       'core_course_get_course_module',
-      'core_course_create_course_module',
-      'core_course_update_course_module',
-      'mod_assign_save_assignment',
+      'core_course_get_course_module_by_instance',
+      
+      // Assignment management (read + write)
       'mod_assign_get_assignments',
-      'mod_page_create_page',
-      'mod_page_update_page',
-      'mod_quiz_create_quiz',
-      'mod_quiz_update_quiz'
+      'mod_assign_save_submission',
+      'mod_assign_save_grade',
+      'mod_assign_get_submissions',
+      'mod_assign_view_assign',
+      
+      // Quiz management (read + write)
+      'mod_quiz_get_quizzes_by_courses',
+      'mod_quiz_get_quiz_access_information',
+      'mod_quiz_save_attempt',
+      'mod_quiz_update_grade_items',
+      'mod_quiz_view_quiz',
+      
+      // Page/content management
+      'mod_page_get_pages_by_courses',
+      'mod_page_view_page',
+      
+      // Calendar management
+      'core_calendar_get_calendar_events',
+      'core_calendar_get_action_events_by_course',
+      'core_calendar_create_calendar_events',
+      'core_calendar_submit_create_update_form',
+      
+      // Course module management
+      'core_courseformat_new_module',
+      'core_courseformat_update_course',
+      
+      // User/enrollment context
+      'core_enrol_get_enrolled_users',
+      'core_user_get_course_user_profiles'
     ].join(',')
 
     // Store user ID in state parameter for security
