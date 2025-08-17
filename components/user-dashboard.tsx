@@ -1,12 +1,12 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import { useSession } from "next-auth/react"
+import { useSession, signOut } from "next-auth/react"
 import { useRouter } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
-import { Plus, BookOpen, Calendar, GraduationCap, Menu, MoreVertical, Trash2 } from "lucide-react"
+import { Plus, BookOpen, Calendar, GraduationCap, Menu, MoreVertical, Trash2, LogOut } from "lucide-react"
 import { CourseDashboard } from "@/components/course-dashboard"
 import { NavigationSidebar } from "@/components/navigation-sidebar"
 import {
@@ -25,6 +25,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog"
+import DynamicActionBar from "@/components/ui/dynamic-action"
 
 interface Course {
   id: string
@@ -96,6 +97,12 @@ export function UserDashboard() {
 
   const handleCreateCourse = () => {
     router.push('/setup')
+  }
+
+  const handleSignOut = () => {
+    if (typeof window !== 'undefined') {
+      window.location.href = '/api/auth/signout'
+    }
   }
 
   const handleSelectCourse = (course: Course) => {
@@ -216,150 +223,177 @@ export function UserDashboard() {
       calendar: selectedCourse.units,
       courseId: selectedCourse.id,
     }
-    return <CourseDashboard courseData={courseData} onBack={handleBackToCourses} />
+    return <CourseDashboard courseData={courseData} onBack={handleBackToCourses} onCourseSelect={handleSelectCourse} />
   }
 
   return (
-    <div className="min-h-screen flex">
-      <NavigationSidebar 
-        isOpen={sidebarOpen} 
-        onClose={() => setSidebarOpen(false)}
-        currentPage="My Courses"
-        courses={courses}
-        onCourseSelect={handleSelectCourse}
-        onAddCourse={handleCreateCourse}
-      />
-      
-      <div className={`flex-1 bg-gradient-to-br from-[#C9F2C7] via-white to-[#C9F2C7] relative transition-all duration-300 ${sidebarOpen ? 'lg:ml-80' : ''}`}>
-        {/* Header */}
-        <div className="bg-gradient-to-r from-[#47624f] via-[#707D7F] to-[#47624f] text-white relative">
-        <button
-          onClick={() => setSidebarOpen(!sidebarOpen)}
-          className="absolute top-1/2 left-8 z-10 text-white hover:text-[#C9F2C7] transition-colors transform -translate-y-1/2"
-        >
-          <Menu className="w-6 h-6" />
-        </button>
-        <div className="max-w-7xl mx-auto px-4 py-8">
-          <div className="flex items-center justify-between">
-            <div className="ml-20">
-              <h1 className="text-3xl font-bold">My Courses</h1>
-              <p className="text-[#C9F2C7] mt-2">
-                Welcome back, {session?.user?.name || session?.user?.email}
-              </p>
+    <div className="min-h-screen bg-gradient-to-br from-[#C9F2C7]/40 via-white to-[#47624f]/20">
+      <div 
+        className={`flex h-screen transition-all duration-300 ${sidebarOpen ? 'ml-80' : ''}`}
+      >
+        {/* Canvas Area */}
+        <div className={`flex-1 transition-all duration-300 ${sidebarOpen ? 'w-[calc(100vw-320px)]' : 'w-full'}`}>
+          {/* Welcome Section */}
+          <div className="px-6 py-4 transition-all duration-300">
+            <div className="bg-black/5 backdrop-blur-xl border-2 border-[#47624f] rounded-lg p-6 shadow-lg">
+              <div className="flex items-center justify-between">
+                <div>
+                  <h1 className="text-5xl font-bold text-[#47624f] mb-2">My Courses</h1>
+                  <div className="flex items-center gap-6 text-gray-600">
+                    <span className="flex items-center gap-2">
+                      <span className="font-semibold">Welcome back,</span>
+                      <span>{session?.user?.name || session?.user?.email}</span>
+                    </span>
+                    <span className="flex items-center gap-2">
+                      <span className="font-semibold">Total Courses:</span>
+                      <span>{courses.length}</span>
+                    </span>
+                  </div>
+                </div>
+                <div className="text-right">
+                  <Button
+                    onClick={handleCreateCourse}
+                    className="bg-[#47624f] hover:bg-[#47624f]/90 text-white mr-3"
+                  >
+                    <Plus className="w-4 h-4 mr-2" />
+                    Create New Course
+                  </Button>
+                  <Button
+                    onClick={handleSignOut}
+                    variant="outline"
+                    className="border-[#47624f] text-[#47624f] hover:bg-[#47624f] hover:text-white"
+                  >
+                    <LogOut className="w-4 h-4 mr-2" />
+                    Sign Out
+                  </Button>
+                </div>
+              </div>
             </div>
+          </div>
 
+          {/* Courses Grid */}
+          <div className="px-6 h-[calc(100vh-200px)]">
+            {courses.length === 0 ? (
+              <div className="h-full flex items-center justify-center">
+                <div className="bg-black/5 backdrop-blur-xl border-2 border-[#47624f] rounded-lg p-12 shadow-lg text-center max-w-md">
+                  <div className="mx-auto w-16 h-16 bg-[#47624f] rounded-full flex items-center justify-center mb-6">
+                    <BookOpen className="w-8 h-8 text-white" />
+                  </div>
+                  <h3 className="text-3xl font-bold text-[#47624f] mb-4">No courses yet</h3>
+                  <p className="text-gray-600 mb-6">
+                    Create your first course to get started with course management
+                  </p>
+                  <Button
+                    onClick={handleCreateCourse}
+                    className="bg-[#47624f] hover:bg-[#47624f]/90 text-white"
+                  >
+                    <Plus className="w-4 h-4 mr-2" />
+                    Create Your First Course
+                  </Button>
+                </div>
+              </div>
+            ) : (
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 h-full overflow-y-auto">
+                {courses.map((course) => (
+                  <div
+                    key={course.id}
+                    className="group relative bg-black/5 backdrop-blur-xl border-2 border-[#47624f] rounded-xl shadow-lg p-6 cursor-pointer hover:bg-[#47624f] hover:border-[#47624f] transition-all duration-300 overflow-hidden"
+                    onClick={() => handleSelectCourse(course)}
+                  >
+                    {/* Diagonal shimmer effect */}
+                    <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none">
+                      <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent transform -skew-x-12 -translate-x-full group-hover:translate-x-full transition-transform duration-700 ease-out"></div>
+                    </div>
+
+                    {/* Dropdown Menu */}
+                    <div className="absolute top-2 right-2 z-10">
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className="h-8 w-8 p-0 hover:bg-white/20 text-[#47624f] group-hover:text-white"
+                            onClick={(e) => e.stopPropagation()}
+                          >
+                            <MoreVertical className="h-4 w-4" />
+                          </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end">
+                          <DropdownMenuItem
+                            onClick={(e) => {
+                              e.stopPropagation()
+                              handleDeleteCourse(course)
+                            }}
+                            className="text-red-600 focus:text-red-600"
+                          >
+                            <Trash2 className="mr-2 h-4 w-4" />
+                            Delete Course
+                          </DropdownMenuItem>
+                        </DropdownMenuContent>
+                      </DropdownMenu>
+                    </div>
+
+                    {/* Course Content */}
+                    <div className="relative z-10">
+                      <div className="flex items-center gap-3 mb-4">
+                        <GraduationCap className="w-10 h-10 text-[#47624f] group-hover:text-white transition-colors duration-300" />
+                        <h3 className="text-2xl font-bold text-[#47624f] group-hover:text-white transition-colors duration-300">
+                          {course.title}
+                        </h3>
+                      </div>
+                      
+                      <div className="space-y-3 mb-4">
+                        <div className="flex items-center gap-2">
+                          <Calendar className="w-4 h-4 text-gray-600 group-hover:text-white/80 transition-colors duration-300" />
+                          <span className="text-sm text-gray-600 group-hover:text-white/80 transition-colors duration-300">
+                            {new Date(course.startDate).toLocaleDateString()} - {new Date(course.endDate).toLocaleDateString()}
+                          </span>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <BookOpen className="w-4 h-4 text-gray-600 group-hover:text-white/80 transition-colors duration-300" />
+                          <span className="text-sm text-gray-600 group-hover:text-white/80 transition-colors duration-300">
+                            {course.numberOfUnits} Units
+                          </span>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <GraduationCap className="w-4 h-4 text-gray-600 group-hover:text-white/80 transition-colors duration-300" />
+                          <span className="text-sm text-gray-600 group-hover:text-white/80 transition-colors duration-300">
+                            {course.subject} • {course.level}
+                          </span>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <Calendar className="w-4 h-4 text-gray-600 group-hover:text-white/80 transition-colors duration-300" />
+                          <span className="text-sm text-gray-600 group-hover:text-white/80 transition-colors duration-300">
+                            Created {new Date(course.createdAt).toLocaleDateString()}
+                          </span>
+                        </div>
+                      </div>
+
+                      <div className="flex items-center justify-between">
+                        <span className="text-sm text-gray-600 group-hover:text-white/80 transition-colors duration-300">
+                          {course.subject} • {course.level}
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
         </div>
       </div>
 
-      <div className="max-w-7xl mx-auto px-4 py-8">
-        {courses.length === 0 ? (
-          <Card className="text-center py-12">
-            <CardContent>
-              <div className="mx-auto w-16 h-16 bg-gradient-to-br from-[#47624f] to-[#707D7F] rounded-full flex items-center justify-center mb-6">
-                <BookOpen className="w-8 h-8 text-white" />
-              </div>
-              <h3 className="text-2xl font-bold text-[#000000] mb-4">No courses yet</h3>
-              <p className="text-[#707D7F] mb-6">
-                Create your first course to get started with course management
-              </p>
-              <Button
-                onClick={handleCreateCourse}
-                className="bg-gradient-to-r from-[#47624f] to-[#707D7F] hover:from-[#000000] hover:to-[#47624f]"
-              >
-                <Plus className="w-4 h-4 mr-2" />
-                Create Your First Course
-              </Button>
-            </CardContent>
-          </Card>
-        ) : (
-          <div className="space-y-6">
-            <div className="flex items-center justify-between">
-              <h2 className="text-2xl font-bold text-[#000000]">Your Courses</h2>
-              <Button
-                onClick={handleCreateCourse}
-                className="bg-gradient-to-r from-[#47624f] to-[#707D7F] hover:from-[#000000] hover:to-[#47624f]"
-              >
-                <Plus className="w-4 h-4 mr-2" />
-                Create New Course
-              </Button>
-            </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {courses.map((course) => (
-                <Card
-                  key={course.id}
-                  className="hover:shadow-lg transition-all duration-200 border-2 hover:border-[#47624f]/20 relative"
-                >
-                  <div className="absolute top-2 right-2 z-10">
-                    <DropdownMenu>
-                      <DropdownMenuTrigger asChild>
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          className="h-8 w-8 p-0 hover:bg-gray-100"
-                          onClick={(e) => e.stopPropagation()}
-                        >
-                          <MoreVertical className="h-4 w-4" />
-                        </Button>
-                      </DropdownMenuTrigger>
-                      <DropdownMenuContent align="end">
-                        <DropdownMenuItem
-                          onClick={(e) => {
-                            e.stopPropagation()
-                            handleDeleteCourse(course)
-                          }}
-                          className="text-red-600 focus:text-red-600"
-                        >
-                          <Trash2 className="mr-2 h-4 w-4" />
-                          Delete Course
-                        </DropdownMenuItem>
-                      </DropdownMenuContent>
-                    </DropdownMenu>
-                  </div>
-                  <CardHeader>
-                    <CardTitle className="flex items-center gap-2">
-                      <GraduationCap className="w-5 h-5 text-[#47624f]" />
-                      {course.title}
-                    </CardTitle>
-                    <CardDescription>
-                      {course.subject} • {course.level}
-                    </CardDescription>
-                  </CardHeader>
-                  <CardContent 
-                    className="cursor-pointer"
-                    onClick={() => handleSelectCourse(course)}
-                  >
-                    <div className="space-y-3">
-                      <div className="flex items-center gap-2">
-                        <Calendar className="w-4 h-4 text-[#707D7F]" />
-                        <span className="text-sm text-[#707D7F]">
-                          {course.startDate} - {course.endDate}
-                        </span>
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <BookOpen className="w-4 h-4 text-[#707D7F]" />
-                        <span className="text-sm text-[#707D7F]">
-                          {course.numberOfUnits} Units
-                        </span>
-                      </div>
-                      <div className="flex items-center justify-between pt-2">
-                        <Badge variant="secondary" className="bg-[#C9F2C7]/20 text-[#47624f]">
-                          Created {new Date(course.createdAt).toLocaleDateString()}
-                        </Badge>
-                        <Button size="sm" variant="outline" className="border-[#47624f] text-[#47624f] hover:bg-[#47624f] hover:text-white">
-                          Open Course
-                        </Button>
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
-              ))}
-            </div>
-          </div>
-        )}
-      </div>
-    </div>
+      {/* Navigation Sidebar */}
+      <NavigationSidebar 
+        isOpen={sidebarOpen}
+        onClose={() => {
+          setSidebarOpen(false);
+        }}
+        courses={courses}
+        currentPage="My Courses"
+        onCourseSelect={handleSelectCourse}
+        onAddCourse={handleCreateCourse}
+      />
     
     {/* Delete Confirmation Dialog */}
     <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>

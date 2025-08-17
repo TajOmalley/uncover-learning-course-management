@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
-import { ChevronRight, ChevronDown, Menu, Download, Plus, Upload, Calendar, Link, BookOpen, FileText, Settings, ArrowLeft } from "lucide-react"
+import { ChevronRight, ChevronDown, Menu, Download, Plus, Upload, Calendar, Link, BookOpen, FileText, Settings, ArrowLeft, PenTool, GraduationCap } from "lucide-react"
 import { CourseCalendar } from "@/components/course-calendar"
 import { ContentGenerator } from "@/components/content-generator"
 import { NavigationSidebar } from "@/components/navigation-sidebar"
@@ -17,9 +17,10 @@ import { CitedMarkdown } from "@/components/CitedMarkdown"
 interface CourseDashboardProps {
   courseData: any
   onBack?: () => void
+  onCourseSelect?: (course: any) => void
 }
 
-export function CourseDashboard({ courseData, onBack }: CourseDashboardProps) {
+export function CourseDashboard({ courseData, onBack, onCourseSelect }: CourseDashboardProps) {
   const router = useRouter()
   const [sidebarOpen, setSidebarOpen] = useState(false)
   const [sidebarHovered, setSidebarHovered] = useState(false)
@@ -86,6 +87,37 @@ export function CourseDashboard({ courseData, onBack }: CourseDashboardProps) {
     fetchCourses()
   }, [])
 
+  // Helper functions for course information
+  const getCourseDuration = () => {
+    if (!courseData.startDate || !courseData.endDate) return "Duration not set"
+    const start = new Date(courseData.startDate)
+    const end = new Date(courseData.endDate)
+    const diffTime = Math.abs(end.getTime() - start.getTime())
+    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24))
+    const weeks = Math.ceil(diffDays / 7)
+    return `${weeks} weeks`
+  }
+
+  const getLectureSchedule = () => {
+    if (!courseData.lectureSchedule) return "Schedule not set"
+    
+    // If it's already a string, return it
+    if (typeof courseData.lectureSchedule === 'string') {
+      return courseData.lectureSchedule
+    }
+    
+    // If it's an object, format it as a string
+    if (typeof courseData.lectureSchedule === 'object') {
+      const schedule = courseData.lectureSchedule
+      const days = Object.keys(schedule)
+      if (days.length === 0) return "Schedule not set"
+      
+      return days.map(day => `${day}: ${schedule[day]}`).join(', ')
+    }
+    
+    return "Schedule not set"
+  }
+
   const handleCreateClick = (contentType: string) => {
     setSelectedContentType(contentType)
     setCurrentView("create")
@@ -112,8 +144,17 @@ export function CourseDashboard({ courseData, onBack }: CourseDashboardProps) {
   }
 
   const handleContentTypeClick = (contentType: string) => {
-    setCurrentView("content-list")
+    // This now opens the viewing window for saved content
     setSelectedContentType(contentType)
+    setCurrentView("content-list")
+    setSelectedUnit("")
+  }
+
+  const handleCourseSelect = (course: any) => {
+    router.push(`/?courseId=${course.id}`)
+    setSidebarOpen(false)
+    setSidebarHovered(false)
+    onCourseSelect?.(course)
   }
 
   const handleBackClick = () => {
@@ -187,27 +228,27 @@ export function CourseDashboard({ courseData, onBack }: CourseDashboardProps) {
           actions={[
             {
               id: "nav",
-              label: courseData.courseName,
+              label: "",
               icon: Menu,
-              content: <div className="p-4 text-center">Navigation menu</div>,
-              dimensions: { width: 300, height: 100 },
               onClick: () => setSidebarOpen(true),
               onMouseEnter: () => {
                 setSidebarOpen(true);
                 setSidebarHovered(true);
               },
+              content: <div className="p-4 text-center">Navigation menu</div>,
+              dimensions: { width: 300, height: 100 },
             },
             {
               id: "upload",
-              label: "Upload",
+              label: "Manage Uploads",
               icon: Upload,
               content: <div className="p-4 text-center">Upload functionality coming soon...</div>,
               dimensions: { width: 300, height: 100 },
             },
             {
               id: "create",
-              label: "Create",
-              icon: Plus,
+              label: "View Materials",
+              icon: BookOpen,
               content: (
                 <div className="flex flex-col items-center gap-1 py-4 px-6">
                   {[
@@ -219,7 +260,7 @@ export function CourseDashboard({ courseData, onBack }: CourseDashboardProps) {
                     <div key={item.name} className="group w-full">
                       <div 
                         className="mx-auto flex w-full cursor-pointer items-center justify-between gap-3 rounded-2xl py-2 duration-300 group-hover:w-[95%] group-hover:bg-black/5 group-hover:px-3"
-                        onClick={() => handleCreateClick(item.type)}
+                        onClick={() => handleContentTypeClick(item.type)}
                       >
                         <div className="flex items-center gap-3">
                           <span className="font-bold">{item.name}</span>
@@ -262,37 +303,148 @@ export function CourseDashboard({ courseData, onBack }: CourseDashboardProps) {
       >
 
         {/* Canvas Area */}
-        <div className="flex-1 p-6">
+        <div className={`flex-1 transition-all duration-300 ${sidebarOpen ? 'w-[calc(100vw-320px)]' : 'w-full'}`}>
+          {/* Course Title Section - Always visible in default state */}
+          <div className={`px-6 py-4 transition-all duration-300`}>
+            <div className="bg-black/5 backdrop-blur-xl border-2 border-[#47624f] rounded-lg p-6 shadow-lg">
+              <div className="flex items-center justify-between">
+                <div>
+                  <h1 className="text-4xl font-bold text-[#47624f] mb-2">{courseData.courseName}</h1>
+                  <div className="flex items-center gap-6 text-gray-600">
+                    <span className="flex items-center gap-2">
+                      <span className="font-semibold">Professor:</span>
+                      <span>{courseData.professor || "User Name"}</span>
+                    </span>
+                    <span className="flex items-center gap-2">
+                      <span className="font-semibold">Duration:</span>
+                      <span>{getCourseDuration()}</span>
+                    </span>
+                    <span className="flex items-center gap-2">
+                      <span className="font-semibold">Schedule:</span>
+                      <span>{getLectureSchedule()}</span>
+                    </span>
+                  </div>
+                </div>
+                <div className="text-right">
+                  <Badge variant="secondary" className="bg-[#47624f] text-white">
+                    {courseData.subject} • {courseData.level}
+                  </Badge>
+                </div>
+              </div>
+            </div>
+          </div>
+
           {currentView === "default" && (
-            <div className="p-6 h-full">
-              <BentoGrid className="lg:grid-rows-3 h-full">
+            <div className="px-6 h-[calc(100vh-280px)]">
+              <BentoGrid className="lg:grid-rows-4 h-full">
+                <BentoCard
+                  name="Upload"
+                  description="Add Previous Materials, Syllabi, and Curriculum Standards to Shape Course"
+                  href="#"
+                  cta=""
+                  background={<div className="absolute -right-20 -top-20 opacity-60" />}
+                  className="lg:col-start-1 lg:col-end-2 lg:row-start-1 lg:row-end-3"
+                  Icon={Upload}
+                  onClick={() => {}}
+                />
+                <BentoCard
+                  name="Create Materials"
+                  description="Click to Create Personalized Readings, Lesson Plans, Assignments, and Exams"
+                  href="#"
+                  cta=""
+                  background={<div className="absolute -right-20 -top-20 opacity-60" />}
+                  className="lg:col-start-2 lg:col-end-3 lg:row-start-1 lg:row-end-5"
+                  Icon={BookOpen}
+                  onClick={() => setCurrentView("content-expanded")}
+                />
+                <BentoCard
+                  name="Manage"
+                  description="Manage Learning and Content Distribution"
+                  href="#"
+                  cta=""
+                  background={<div className="absolute -right-20 -top-20 opacity-60" />}
+                  className="lg:col-start-1 lg:col-end-2 lg:row-start-3 lg:row-end-5"
+                  Icon={Settings}
+                  onClick={() => {}}
+                />
+                <BentoCard
+                  name="Calendar"
+                  description="View Course Calendar"
+                  href="#"
+                  cta=""
+                  background={<div className="absolute -right-20 -top-20 opacity-60" />}
+                  className="lg:col-start-3 lg:col-end-4 lg:row-start-1 lg:row-end-5"
+                  Icon={Calendar}
+                  onClick={handleCalendarClick}
+                />
+              </BentoGrid>
+            </div>
+          )}
+
+          {currentView === "content-expanded" && (
+            <div className="px-6 h-[calc(100vh-280px)]">
+              <BentoGrid className="lg:grid-rows-4 h-full">
                 <BentoCard
                   name="Uploads"
                   description=""
                   href="#"
                   cta="View and Manage Uploads"
                   background={<div className="absolute -right-20 -top-20 opacity-60" />}
-                  className="lg:col-start-1 lg:col-end-2 lg:row-start-1 lg:row-end-2"
+                  className="lg:col-start-1 lg:col-end-2 lg:row-start-1 lg:row-end-3"
                   Icon={Upload}
                   onClick={() => {}}
                 />
-                <BentoCard
-                  name="Content"
-                  description=""
-                  href="#"
-                  cta="View Created Content"
-                  background={<div className="absolute -right-20 -top-20 opacity-60" />}
-                  className="lg:col-start-2 lg:col-end-3 lg:row-start-1 lg:row-end-4"
-                  Icon={BookOpen}
-                  onClick={handleBentoContentClick}
-                />
+                <div className="lg:col-start-2 lg:col-end-3 lg:row-start-1 lg:row-end-5 bg-black/5 backdrop-blur-xl border-2 border-[#47624f] rounded-xl shadow-lg p-4 overflow-hidden">
+                  <div className="h-full flex flex-col">
+                    <div className="flex items-center justify-between mb-4">
+                      <h3 className="text-2xl font-bold text-[#47624f]">Create Materials</h3>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => setCurrentView("default")}
+                        className="text-[#47624f] hover:bg-[#47624f] hover:text-white"
+                      >
+                        <ArrowLeft className="w-4 h-4" />
+                      </Button>
+                    </div>
+                    <div className="flex flex-col gap-3 flex-1">
+                      {[
+                        { name: "Readings", type: "reading", icon: FileText },
+                        { name: "Lesson Plans", type: "lesson-plan", icon: BookOpen },
+                        { name: "Homework", type: "homework", icon: PenTool },
+                        { name: "Exams", type: "exam", icon: GraduationCap },
+                      ].map((item) => {
+                        const Icon = item.icon
+                        return (
+                          <div 
+                            key={item.type}
+                            className="group relative bg-white/20 backdrop-blur-sm border border-[#47624f]/30 rounded-lg p-3 cursor-pointer hover:bg-[#47624f] hover:border-[#47624f] transition-all duration-300 overflow-hidden"
+                            onClick={() => handleCreateClick(item.type)}
+                          >
+                            {/* Diagonal shimmer effect */}
+                            <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none">
+                              <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent transform -skew-x-12 -translate-x-full group-hover:translate-x-full transition-transform duration-700 ease-out"></div>
+                            </div>
+                            
+                            <div className="relative z-10 flex items-center gap-3">
+                              <Icon className="w-6 h-6 text-[#47624f] group-hover:text-white transition-colors duration-300" />
+                              <h4 className="font-semibold text-[#47624f] group-hover:text-white transition-colors duration-300">
+                                {item.name}
+                              </h4>
+                            </div>
+                          </div>
+                        )
+                      })}
+                    </div>
+                  </div>
+                </div>
                 <BentoCard
                   name="Manage"
                   description=""
                   href="#"
                   cta="Manage Learning and Content Distribution"
                   background={<div className="absolute -right-20 -top-20 opacity-60" />}
-                  className="lg:col-start-1 lg:col-end-2 lg:row-start-2 lg:row-end-4"
+                  className="lg:col-start-1 lg:col-end-2 lg:row-start-3 lg:row-end-5"
                   Icon={Settings}
                   onClick={() => {}}
                 />
@@ -302,7 +454,7 @@ export function CourseDashboard({ courseData, onBack }: CourseDashboardProps) {
                   href="#"
                   cta="View Course Calendar"
                   background={<div className="absolute -right-20 -top-20 opacity-60" />}
-                  className="lg:col-start-3 lg:col-end-4 lg:row-start-1 lg:row-end-4"
+                  className="lg:col-start-3 lg:col-end-4 lg:row-start-1 lg:row-end-5"
                   Icon={Calendar}
                   onClick={handleCalendarClick}
                 />
@@ -322,7 +474,7 @@ export function CourseDashboard({ courseData, onBack }: CourseDashboardProps) {
                   Back
                 </Button>
               </div>
-              <div className="bg-white/80 backdrop-blur-sm border-2 border-[#47624f] rounded-lg p-6 shadow-lg">
+              <div className="bg-black/5 backdrop-blur-xl border-2 border-[#47624f] rounded-lg p-6 shadow-lg">
                 <ContentGenerator 
                   type={selectedContentType}
                   courseData={courseData}
@@ -333,63 +485,6 @@ export function CourseDashboard({ courseData, onBack }: CourseDashboardProps) {
                   }}
                 />
               </div>
-            </div>
-          )}
-
-          {currentView === "bento" && bentoView === "content-types" && (
-            <div className="p-6 h-full">
-              <BentoGrid className="lg:grid-rows-3 h-full">
-                <BentoCard
-                  name="Readings"
-                  description=""
-                  href="#"
-                  cta="View Readings"
-                  background={<div className="absolute -right-20 -top-20 opacity-60" />}
-                  className="lg:col-start-1 lg:col-end-2 lg:row-start-1 lg:row-end-2"
-                  Icon={FileText}
-                  onClick={() => handleContentTypeClick("reading")}
-                />
-                <BentoCard
-                  name="Return"
-                  description=""
-                  href="#"
-                  cta="Return to Course Dashboard"
-                  background={<div className="absolute -right-20 -top-20 opacity-60" />}
-                  className="lg:col-start-2 lg:col-end-3 lg:row-start-1 lg:row-end-4"
-                  Icon={ArrowLeft}
-                  onClick={handleBentoReturnClick}
-                />
-                <BentoCard
-                  name="Lesson Plans"
-                  description=""
-                  href="#"
-                  cta="View Lesson Plans"
-                  background={<div className="absolute -right-20 -top-20 opacity-60" />}
-                  className="lg:col-start-1 lg:col-end-2 lg:row-start-2 lg:row-end-3"
-                  Icon={BookOpen}
-                  onClick={() => handleContentTypeClick("lesson-plan")}
-                />
-                <BentoCard
-                  name="Homework"
-                  description=""
-                  href="#"
-                  cta="View Homework"
-                  background={<div className="absolute -right-20 -top-20 opacity-60" />}
-                  className="lg:col-start-3 lg:col-end-4 lg:row-start-1 lg:row-end-2"
-                  Icon={FileText}
-                  onClick={() => handleContentTypeClick("homework")}
-                />
-                <BentoCard
-                  name="Exams"
-                  description=""
-                  href="#"
-                  cta="View Exams"
-                  background={<div className="absolute -right-20 -top-20 opacity-60" />}
-                  className="lg:col-start-3 lg:col-end-4 lg:row-start-2 lg:row-end-4"
-                  Icon={FileText}
-                  onClick={() => handleContentTypeClick("exam")}
-                />
-              </BentoGrid>
             </div>
           )}
 
@@ -546,6 +641,8 @@ export function CourseDashboard({ courseData, onBack }: CourseDashboardProps) {
           setSidebarHovered(false);
         }}
         courses={allCourses}
+        currentPage={courseData.courseName}
+        onCourseSelect={handleCourseSelect}
         currentCourseId={courseData.courseId}
       />
 

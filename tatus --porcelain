@@ -1,0 +1,5 @@
+[33m7ee561c[m[33m ([m[1;36mHEAD[m[33m -> [m[1;32mmain[m[33m, [m[1;31morigin/main[m[33m)[m Add 'Add Instructions' button functionality for custom instructions
+[33m167aa25[m Make Custom Instructions textbox functional - integrate user input into LLM prompts with proper labeling and context preservation
+[33m2504345[m Remove AI mentions and star icons, update content generation terminology to content creation
+[33mbfeafa9[m Remove star icons and AI mentions from all pages - clean up UI text
+[33m9b8427b[m Improve content generation page layout - move additional instructions to separate section and make generation settings more compact

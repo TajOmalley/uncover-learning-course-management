@@ -159,16 +159,21 @@ export function NavigationSidebar({ isOpen, onClose, currentPage, courses = [], 
                       <Button
                         key={course.id}
                         variant="ghost"
-                        className={`w-full justify-start text-left h-auto p-3 text-sm ${
+                        className={`group relative w-full justify-start text-left h-auto p-3 text-sm overflow-hidden ${
                           currentPage === course.title
                             ? 'bg-[#47624f] text-white hover:bg-[#47624f]' 
-                            : 'text-[#707D7F] hover:bg-[#C9F2C7]/20 hover:text-[#47624f]'
-                        }`}
+                            : 'text-[#707D7F] hover:bg-[#47624f] hover:text-white'
+                        } transition-all duration-300`}
                         onClick={() => onCourseSelect?.(course)}
                       >
-                        <GraduationCap className="w-4 h-4 mr-3" />
-                        <div className="flex flex-col items-start">
-                          <span className="font-medium truncate">{course.title}</span>
+                        {/* Diagonal shimmer effect for course list items */}
+                        <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none">
+                          <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent transform -skew-x-12 -translate-x-full group-hover:translate-x-full transition-transform duration-700 ease-out"></div>
+                        </div>
+                        
+                        <GraduationCap className="w-4 h-4 mr-3 relative z-10" />
+                        <div className="flex flex-col items-start relative z-10">
+                          <span className="font-medium truncate text-base">{course.title}</span>
                           <span className="text-xs opacity-75">{course.subject}</span>
                         </div>
                       </Button>

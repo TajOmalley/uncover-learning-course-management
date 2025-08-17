@@ -40,7 +40,7 @@ const DynamicActionBar = React.forwardRef<
         height: BUTTON_BAR_HEIGHT,
       };
 
-  const transition = { type: "spring", stiffness: 400, damping: 35 };
+  const transition = { type: "spring" as const, stiffness: 400, damping: 35 };
 
   return (
     <div
@@ -50,7 +50,7 @@ const DynamicActionBar = React.forwardRef<
       {...props}
     >
       <motion.div
-        className="flex flex-col overflow-hidden rounded-2xl bg-black/5 backdrop-blur-xl"
+        className="flex flex-col overflow-hidden rounded-2xl bg-black/5 backdrop-blur-xl border-2 border-[#47624f] shadow-lg"
         animate={containerAnimate}
         transition={transition}
         initial={{ width: "100%", height: BUTTON_BAR_HEIGHT }}
@@ -69,10 +69,15 @@ const DynamicActionBar = React.forwardRef<
                   action.onMouseEnter?.();
                 }}
                 onClick={action.onClick}
-                className="flex items-center justify-center gap-2 rounded-xl py-2 px-4 text-zinc-800 transition-colors duration-300 hover:bg-zinc-950 hover:text-white"
+                className="group relative flex items-center justify-center gap-2 rounded-xl py-2 px-4 text-zinc-800 transition-all duration-300 hover:bg-[#47624f] hover:text-white overflow-hidden"
               >
-                <Icon className="size-5" />
-                <span className="font-medium">{action.label}</span>
+                {/* Diagonal shimmer effect for action bar buttons */}
+                <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none">
+                  <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent transform -skew-x-12 -translate-x-full group-hover:translate-x-full transition-transform duration-700 ease-out"></div>
+                </div>
+                
+                <Icon className="size-5 relative z-10" />
+                <span className="font-medium relative z-10">{action.label}</span>
               </button>
             );
           })}
