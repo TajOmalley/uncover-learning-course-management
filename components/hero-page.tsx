@@ -12,17 +12,40 @@ interface HeroPageProps {
 export function HeroPage({ onStartCourse }: HeroPageProps) {
   const router = useRouter()
   const [scrollY, setScrollY] = useState(0)
+  const [mousePosition, setMousePosition] = useState({ x: 0, y: 0 })
 
   useEffect(() => {
     const handleScroll = () => {
       setScrollY(window.scrollY)
     }
+    
+    const handleMouseMove = (e: MouseEvent) => {
+      const { clientX, clientY } = e
+      const { innerWidth, innerHeight } = window
+      
+      // Normalize mouse position to -1 to 1 range
+      const x = (clientX / innerWidth) * 2 - 1
+      const y = (clientY / innerHeight) * 2 - 1
+      
+      console.log('Mouse position:', { x, y, clientX, clientY })
+      setMousePosition({ x, y })
+    }
+    
     window.addEventListener("scroll", handleScroll, { passive: true })
-    return () => window.removeEventListener("scroll", handleScroll)
+    window.addEventListener("mousemove", handleMouseMove, { passive: true })
+    
+    return () => {
+      window.removeEventListener("scroll", handleScroll)
+      window.removeEventListener("mousemove", handleMouseMove)
+    }
   }, [])
 
-  const handleSignIn = () => {
+  const handleProfessorSignIn = () => {
     router.push("/auth/signin")
+  }
+
+  const handleStudentSignIn = () => {
+    router.push("/auth/student-signin")
   }
 
   const handleSignUp = () => {
@@ -30,16 +53,20 @@ export function HeroPage({ onStartCourse }: HeroPageProps) {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-[#C9F2C7]/20 via-white to-[#B2A29E]/10">
+         <div className="min-h-screen bg-gradient-to-br from-[#C9F2C7]/40 via-white to-[#B2A29E]/30">
       {/* Decorative parallax blobs */}
       <div className="pointer-events-none absolute inset-0 -z-10 overflow-hidden">
         <div
-          className="absolute -top-20 -left-20 w-[420px] h-[420px] rounded-full bg-gradient-to-br from-[#C9F2C7] to-[#47624f] opacity-30 blur-3xl"
-          style={{ transform: `translateY(${scrollY * 0.15}px)` }}
+          className="absolute -top-20 -left-20 w-[600px] h-[600px] rounded-full bg-gradient-to-br from-[#4ade80] to-[#16a34a] opacity-60 blur-3xl transition-transform duration-300 ease-out"
+          style={{ 
+            transform: `translate(${scrollY * 0.15 + mousePosition.x * 300}px, ${scrollY * 0.15 + mousePosition.y * 300}px)` 
+          }}
         />
         <div
-          className="absolute -bottom-24 -right-24 w-[380px] h-[380px] rounded-full bg-gradient-to-tr from-[#707D7F] to-[#000000] opacity-20 blur-3xl"
-          style={{ transform: `translateY(${scrollY * -0.1}px)` }}
+          className="absolute -bottom-24 -right-24 w-[550px] h-[550px] rounded-full bg-gradient-to-tr from-[#4ade80] to-[#16a34a] opacity-50 blur-3xl transition-transform duration-300 ease-out"
+          style={{ 
+            transform: `translate(${scrollY * -0.1 + mousePosition.x * -250}px, ${scrollY * -0.1 + mousePosition.y * -250}px)` 
+          }}
         />
       </div>
 
@@ -67,17 +94,24 @@ export function HeroPage({ onStartCourse }: HeroPageProps) {
         {/* Action Buttons */}
         <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
           <Button
-            onClick={handleSignIn}
+            onClick={handleProfessorSignIn}
             size="lg"
-            className="bg-[#47624f] hover:bg-[#000000] text-white px-8 py-3 text-lg font-semibold transition-all duration-200 shadow-lg hover:shadow-xl"
+            className="bg-[#47624f] hover:bg-[#000000] text-white px-8 py-3 text-lg font-semibold transition-all duration-200 shadow-lg hover:shadow-xl transform hover:scale-105"
           >
-            Sign In
+            Professor Sign-In
+          </Button>
+          <Button
+            onClick={handleStudentSignIn}
+            size="lg"
+            className="bg-[#47624f] hover:bg-[#000000] text-white px-8 py-3 text-lg font-semibold transition-all duration-200 shadow-lg hover:shadow-xl transform hover:scale-105"
+          >
+            Student Sign-In
           </Button>
           <Button
             onClick={handleSignUp}
             variant="outline"
             size="lg"
-            className="border-2 border-[#47624f] text-[#47624f] hover:bg-[#47624f] hover:text-white px-8 py-3 text-lg font-semibold transition-all duration-200"
+            className="border-2 border-[#47624f] text-[#47624f] hover:bg-[#47624f] hover:text-white px-8 py-3 text-lg font-semibold transition-all duration-200 shadow-lg hover:shadow-xl transform hover:scale-105"
           >
             Sign Up
           </Button>

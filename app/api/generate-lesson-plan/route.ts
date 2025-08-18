@@ -61,7 +61,28 @@ export async function POST(request: NextRequest) {
 - Balanced between lecture, discussion, and activities
 - Educational and aligned with learning objectives
 
-Your response should be formatted as a detailed lesson plan with specific time allocations, clear sections for different activities, and engaging content that promotes active learning.`
+Your response should be formatted as a detailed lesson plan with specific time allocations, clear sections for different activities, and engaging content that promotes active learning.
+
+MATH FORMATTING INSTRUCTIONS:
+- For inline mathematical expressions, wrap them in single dollar signs: $expression$
+- For block/display mathematical expressions, wrap them in double dollar signs: $$expression$$
+- Use proper LaTeX syntax for all mathematical notation
+- Examples:
+  - Inline: "Introduce the derivative $f'(x) = \lim_{h \to 0} \frac{f(x+h) - f(x)}{h}$"
+  - Block: "$$f'(x) = \lim_{h \to 0} \frac{f(x+h) - f(x)}{h}$$"
+  - Functions: "$f(x) = x^2 \cdot \sin(x)$"
+  - Fractions: "$\frac{a}{b}$"
+  - Greek letters: "$\alpha$, $\beta$, $\gamma$"
+  - Subscripts/superscripts: "$x_1$, $x^2$"
+  - Equations: "$2x + 3y = 7$"
+  - Inequalities: "$x > 5$"
+  - Sets: "$A = \{1, 2, 3\}$"
+  - Limits: "$\lim_{x \to \infty} f(x)$"
+  - Integrals: "$\int_0^1 x^2 dx$"
+  - Summations: "$\sum_{i=1}^n x_i$"
+  - Matrices: "$\begin{pmatrix} a & b \\ c & d \end{pmatrix}$"
+  - Derivatives: "$\frac{d}{dx}f(x)$"
+  - Partial derivatives: "$\frac{\partial f}{\partial x}$"`
 
     const userPrompt = `Please create a detailed lesson plan for the following unit:
 

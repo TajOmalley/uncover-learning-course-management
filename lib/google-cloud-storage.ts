@@ -78,7 +78,8 @@ export class GoogleCloudStorageService {
       return finalFilename
     } catch (error) {
       console.error('Error uploading to Google Cloud Storage:', error)
-      throw new Error(`Failed to upload content to cloud storage: ${error.message}`)
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error'
+      throw new Error(`Failed to upload content to cloud storage: ${errorMessage}`)
     }
   }
 

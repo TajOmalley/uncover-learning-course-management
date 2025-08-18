@@ -7,12 +7,20 @@ const prisma = process.env.DATABASE_URL ? new PrismaClient() : null
 
 export async function POST(request: NextRequest) {
   try {
-    const { email, password, name } = await request.json()
+    const { email, password, name, role } = await request.json()
 
     // Validate input
-    if (!email || !password) {
+    if (!email || !password || !role) {
       return NextResponse.json(
-        { error: "Email and password are required" },
+        { error: "Email, password, and role are required" },
+        { status: 400 }
+      )
+    }
+
+    // Validate role
+    if (!['professor', 'student'].includes(role)) {
+      return NextResponse.json(
+        { error: "Role must be either 'professor' or 'student'" },
         { status: 400 }
       )
     }
@@ -44,7 +52,8 @@ export async function POST(request: NextRequest) {
       data: {
         email,
         password: hashedPassword,
-        name: name || null
+        name: name || null,
+        role
       }
     })
 

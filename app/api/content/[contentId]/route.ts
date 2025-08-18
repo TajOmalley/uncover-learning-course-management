@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server"
 import { getServerSession } from "next-auth"
-import { authOptions } from "../../auth/[...nextauth]/route"
+import { authOptions } from "@/lib/auth"
 import { googleCloudStorage } from "@/lib/google-cloud-storage"
 import { prisma } from "@/lib/prisma"
 
@@ -69,8 +69,8 @@ export async function GET(
         courseId: content.courseId,
         unitId: content.unitId,
         type: content.type,
-        content: parsedContent.content,
-        specifications: parsedContent.specifications,
+        content: parsedContent.content || content.content, // Fallback to original content if parsing fails
+        specifications: parsedContent.specifications || {},
         storageFilename: content.storageFilename,
         createdAt: content.createdAt,
         course: content.course,

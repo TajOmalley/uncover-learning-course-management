@@ -18,6 +18,7 @@ model User {
   email     String   @unique
   password  String
   name      String?
+  role      String   @default("professor")
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
   

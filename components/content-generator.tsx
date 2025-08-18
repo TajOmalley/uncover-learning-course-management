@@ -612,13 +612,11 @@ Detailed solutions and explanations will be provided during the review session.`
   return (
     <div className="space-y-6">
           {/* Content Settings */}
-          <Card className="bg-[#47624f]/20 backdrop-blur-sm border-2 border-[#47624f] rounded-lg">
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2 text-[#47624f]">
-                Content Settings
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
+          <div className="bg-black/5 backdrop-blur-xl border-2 border-[#47624f] rounded-lg p-6 shadow-lg">
+            <div className="mb-4">
+              <h3 className="text-2xl font-bold text-[#47624f]">Content Settings</h3>
+            </div>
+            <div>
               <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 items-end">
                 <div>
                   <Label htmlFor="unit">Select Course Unit</Label>
@@ -905,18 +903,16 @@ Detailed solutions and explanations will be provided during the review session.`
                   )}
                 </Button>
               </div>
-            </CardContent>
-          </Card>
+            </div>
+          </div>
 
           {/* Additional Instructions Section */}
-          <Card className="bg-[#47624f]/20 backdrop-blur-sm border-2 border-[#47624f] rounded-lg">
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2 text-[#47624f]">
-                Additional Instructions
-              </CardTitle>
-              <CardDescription className="text-[#47624f]/80">Provide specific instructions to customize the content</CardDescription>
-            </CardHeader>
-            <CardContent>
+          <div className="bg-black/5 backdrop-blur-xl border-2 border-[#47624f] rounded-lg p-6 shadow-lg">
+            <div className="mb-4">
+              <h3 className="text-2xl font-bold text-[#47624f]">Additional Instructions</h3>
+              <p className="text-[#47624f]/80">Provide specific instructions to customize the content</p>
+            </div>
+            <div>
               <div className="space-y-3">
                 <div className="flex items-center justify-between">
                   <Label htmlFor="prompt" className="text-[#47624f]">Custom Instructions</Label>
@@ -954,15 +950,15 @@ Detailed solutions and explanations will be provided during the review session.`
                   </Button>
                 </div>
               </div>
-            </CardContent>
-          </Card>
+            </div>
+          </div>
 
           {/* Generated Content Display */}
           {generatedContent && (
-            <Card className="bg-white/80 backdrop-blur-sm border-2 border-[#47624f] rounded-lg">
-              <CardHeader>
-                <CardTitle className="flex items-center justify-between text-[#47624f]">
-                  <span>Generated Content</span>
+            <div className="bg-black/5 backdrop-blur-xl border-2 border-[#47624f] rounded-lg p-6 shadow-lg">
+              <div className="mb-4">
+                <div className="flex items-center justify-between">
+                  <h3 className="text-2xl font-bold text-[#47624f]">Generated Content</h3>
                   <div className="flex items-center gap-2">
                     {generatedCitations.length > 0 && (
                       <Badge variant="secondary" className="bg-[#C9F2C7]/20 text-[#47624f]">
@@ -989,9 +985,9 @@ Detailed solutions and explanations will be provided during the review session.`
                       Copy
                     </Button>
                   </div>
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
+                </div>
+              </div>
+              <div>
                 <div className="prose max-w-none">
                   <CitedMarkdown content={generatedContent} citations={generatedCitations} />
                   
@@ -1029,20 +1025,20 @@ Detailed solutions and explanations will be provided during the review session.`
                     )}
                   </Button>
                 </div>
-              </CardContent>
-            </Card>
+              </div>
+            </div>
           )}
 
           {/* Saved Content Section */}
           {savedContent.length > 0 && (
-            <Card className="bg-white/80 backdrop-blur-sm border-2 border-[#47624f] rounded-lg">
-              <CardHeader>
-                <CardTitle className="text-[#47624f]">Saved Content</CardTitle>
-                <CardDescription className="text-[#47624f]/80">
+            <div className="bg-black/5 backdrop-blur-xl border-2 border-[#47624f] rounded-lg p-6 shadow-lg">
+              <div className="mb-4">
+                <h3 className="text-2xl font-bold text-[#47624f]">Saved Content</h3>
+                <p className="text-[#47624f]/80">
                   Previously saved content for this unit
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
+                </p>
+              </div>
+              <div>
                 <div className="space-y-4">
                   {savedContent.map((content: any) => (
                     <div
@@ -1067,8 +1063,8 @@ Detailed solutions and explanations will be provided during the review session.`
                     </div>
                   ))}
                 </div>
-              </CardContent>
-            </Card>
+              </div>
+            </div>
           )}
 
           {/* Content Modal */}

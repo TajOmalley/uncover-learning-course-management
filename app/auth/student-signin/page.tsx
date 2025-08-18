@@ -5,7 +5,7 @@ import { signIn } from "next-auth/react"
 import { useRouter } from "next/navigation"
 import Link from "next/link"
 
-export default function SignIn() {
+export default function StudentSignIn() {
   const [email, setEmail] = useState("")
   const [password, setPassword] = useState("")
   const [error, setError] = useState("")
@@ -37,11 +37,11 @@ export default function SignIn() {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-[#47624f] to-[#B2A29E]">
+    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-[#707D7F] to-[#B2A29E]">
       <div className="bg-white p-8 rounded-lg shadow-lg w-full max-w-md">
         <div className="text-center mb-8">
-          <h1 className="text-3xl font-bold text-[#47624f] mb-2">Professor Sign In</h1>
-          <p className="text-gray-600">Welcome back to your course management dashboard</p>
+          <h1 className="text-3xl font-bold text-[#707D7F] mb-2">Student Sign In</h1>
+          <p className="text-gray-600">Access your course materials and assignments</p>
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-6">
@@ -54,7 +54,7 @@ export default function SignIn() {
               id="email"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#47624f] focus:border-transparent"
+              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#707D7F] focus:border-transparent"
               required
             />
           </div>
@@ -68,7 +68,7 @@ export default function SignIn() {
               id="password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#47624f] focus:border-transparent"
+              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#707D7F] focus:border-transparent"
               required
             />
           </div>
@@ -80,7 +80,7 @@ export default function SignIn() {
           <button
             type="submit"
             disabled={isLoading}
-            className="w-full bg-[#47624f] text-white py-2 px-4 rounded-md hover:bg-[#3a4f3f] focus:outline-none focus:ring-2 focus:ring-[#47624f] focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed"
+            className="w-full bg-[#707D7F] text-white py-2 px-4 rounded-md hover:bg-[#5a6668] focus:outline-none focus:ring-2 focus:ring-[#707D7F] focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed"
           >
             {isLoading ? "Signing in..." : "Sign In"}
           </button>
@@ -89,18 +89,18 @@ export default function SignIn() {
         <div className="mt-6 text-center">
           <p className="text-gray-600">
             Don't have an account?{" "}
-            <Link href="/auth/signup" className="text-[#47624f] hover:underline">
+            <Link href="/auth/signup" className="text-[#707D7F] hover:underline">
               Sign up
             </Link>
           </p>
         </div>
 
         <div className="mt-4 text-center">
-          <Link href="/" className="text-[#47624f] hover:underline">
+          <Link href="/" className="text-[#707D7F] hover:underline">
             ← Back to home
           </Link>
         </div>
       </div>
     </div>
   )
-} 
+}

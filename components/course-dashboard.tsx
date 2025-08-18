@@ -463,7 +463,7 @@ export function CourseDashboard({ courseData, onBack, onCourseSelect }: CourseDa
           )}
 
           {currentView === "create" && selectedContentType && (
-            <div className="space-y-6">
+            <div className="px-6 space-y-6">
               <div className="flex items-center gap-4">
                 <Button
                   variant="ghost"
@@ -474,17 +474,15 @@ export function CourseDashboard({ courseData, onBack, onCourseSelect }: CourseDa
                   Back
                 </Button>
               </div>
-              <div className="bg-black/5 backdrop-blur-xl border-2 border-[#47624f] rounded-lg p-6 shadow-lg">
-                <ContentGenerator 
-                  type={selectedContentType}
-                  courseData={courseData}
-                  onBack={() => setCurrentView("default")}
-                  onContentGenerated={(content) => {
-                    setCurrentContent(content)
-                    setCurrentView("content")
-                  }}
-                />
-              </div>
+              <ContentGenerator 
+                type={selectedContentType}
+                courseData={courseData}
+                onBack={() => setCurrentView("default")}
+                onContentGenerated={(content) => {
+                  setCurrentContent(content)
+                  setCurrentView("content")
+                }}
+              />
             </div>
           )}
 
@@ -600,7 +598,7 @@ export function CourseDashboard({ courseData, onBack, onCourseSelect }: CourseDa
                             >
                               <h4 className="font-medium text-gray-900">{content.unitTitle || `${selectedContentType.replace('-', ' ')} content`}</h4>
                               <div className="text-sm text-gray-600 mt-1 prose prose-sm max-w-none">
-                                <CitedMarkdown content={content.content.substring(0, 200) + '...'} />
+                                <CitedMarkdown content={content.content.substring(0, 200) + '...'} citations={content.specifications?.citations || []} />
                               </div>
                             </div>
                           ))}
@@ -626,7 +624,7 @@ export function CourseDashboard({ courseData, onBack, onCourseSelect }: CourseDa
                 </Button>
               </div>
               <div className="bg-white/90 backdrop-blur-sm border border-gray-200 rounded-lg p-8 min-h-full shadow-lg">
-                <CitedMarkdown content={currentContent.content} />
+                <CitedMarkdown content={currentContent.content} citations={currentContent.specifications?.citations || []} />
               </div>
             </div>
           )}
