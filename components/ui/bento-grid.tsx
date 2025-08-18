@@ -1,5 +1,4 @@
 import { ReactNode } from "react";
-import { ArrowRightIcon } from "@radix-ui/react-icons";
 
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
@@ -60,12 +59,12 @@ const BentoCard = ({
     </div>
     
     <div>{background}</div>
-    <div className="pointer-events-none z-10 flex transform-gpu flex-col gap-1 p-6 transition-all duration-300 group-hover:-translate-y-10">
-      <Icon className="h-16 w-16 origin-left transform-gpu text-[#47624f] transition-all duration-300 ease-in-out group-hover:scale-75 group-hover:text-white" />
-      <h3 className="text-3xl font-medium text-[#47624f] transition-colors duration-300 group-hover:text-white">
+    <div className="pointer-events-none z-10 flex transform-gpu flex-col items-center justify-center gap-4 p-6 transition-all duration-300 group-hover:items-start group-hover:justify-start group-hover:gap-1 group-hover:-translate-y-4">
+      <Icon className="h-20 w-20 origin-center transform-gpu text-[#47624f] transition-all duration-300 ease-in-out group-hover:text-white" />
+      <h3 className="text-4xl font-bold text-[#47624f] transition-colors duration-300 group-hover:text-white text-center group-hover:text-left">
         {name}
       </h3>
-      <p className="max-w-lg text-gray-600 transition-colors duration-300 group-hover:text-white/80">{description}</p>
+      <p className="max-w-lg text-gray-600 transition-all duration-300 group-hover:text-white/80 opacity-0 group-hover:opacity-100 transform translate-y-2 group-hover:translate-y-0">{description}</p>
     </div>
 
     <div
@@ -73,12 +72,11 @@ const BentoCard = ({
         "pointer-events-none absolute bottom-0 flex w-full translate-y-10 transform-gpu flex-row items-center p-4 opacity-0 transition-all duration-300 group-hover:translate-y-0 group-hover:opacity-100",
       )}
     >
-      <Button variant="ghost" asChild size="sm" className="pointer-events-auto group-hover:text-white">
-        <a href={href || "#"} onClick={(e) => e.preventDefault()}>
-          {cta}
-          <ArrowRightIcon className="ml-2 h-4 w-4" />
-        </a>
-      </Button>
+              <Button variant="ghost" asChild size="sm" className="pointer-events-auto group-hover:text-white">
+          <a href={href || "#"} onClick={(e) => e.preventDefault()}>
+            {cta}
+          </a>
+        </Button>
     </div>
     <div className="pointer-events-none absolute inset-0 transform-gpu transition-all duration-300 group-hover:bg-[#47624f]/5" />
   </div>

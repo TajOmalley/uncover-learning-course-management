@@ -370,9 +370,6 @@ export function UserDashboard() {
                       </div>
 
                       <div className="flex items-center justify-between">
-                        <span className="text-sm text-gray-600 group-hover:text-white/80 transition-colors duration-300">
-                          {course.subject} • {course.level}
-                        </span>
                       </div>
                     </div>
                   </div>
