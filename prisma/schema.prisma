@@ -18,9 +18,19 @@ model User {
   email     String   @unique
   password  String
   name      String?
-  role      String   @default("professor")
+  role      String   @default("user")  // Add back the role field that exists in DB
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+  
+  // Canvas OAuth fields (encrypted)
+  canvasAccessToken    String?
+  canvasRefreshToken   String?
+  canvasTokenExpiresAt DateTime?
+  
+  // Moodle OAuth fields (encrypted)
+  moodleAccessToken    String?
+  moodleRefreshToken   String?
+  moodleTokenExpiresAt DateTime?
   
   courses Course[]
   generatedContent GeneratedContent[]
@@ -37,6 +47,10 @@ model Course {
   numberOfUnits   Int
   createdAt       DateTime @default(now())
   updatedAt       DateTime @updatedAt
+  
+  // LMS Integration fields
+  canvasCourseId  String?  // Store Canvas course ID after export
+  moodleCourseId  String?  // Store Moodle course ID after export
   
   userId String
   user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
@@ -65,7 +79,7 @@ model GeneratedContent {
   id        String   @id @default(uuid())
   type      String   // "reading", "homework", "lesson-plan", "exam"
   content   String   // JSON string
-  storageFilename String? // Google Cloud Storage filename
+  storageFilename String? // Google Cloud Storage filename (may not exist in current DB)
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
   

@@ -183,3 +183,43 @@ This is the founding engineer's development repository for Uncover Learning. The
 ## License
 
 Proprietary - Uncover Learning
+
+## LMS OAuth Setup (Phase 1)
+
+Create a `.env.local` file with the following (replace placeholders):
+
+```
+# App URLs
+NEXTAUTH_URL=http://localhost:3000
+
+# Database
+DATABASE_URL="postgresql://USER:PASSWORD@HOST:PORT/DBNAME?schema=public"
+
+# Encryption (32-byte key recommended). You can generate one with: node -e "console.log(require('crypto').randomBytes(32).toString('base64'))"
+ENCRYPTION_SECRET=REPLACE_WITH_32_BYTE_BASE64
+
+# Canvas
+CANVAS_URL=https://canvas.instructure.com
+CANVAS_CLIENT_ID=your_canvas_client_id
+CANVAS_CLIENT_SECRET=your_canvas_client_secret
+
+# Moodle (if using local Moodle, adjust URL)
+MOODLE_URL=http://localhost:8888/moodle
+MOODLE_CLIENT_ID=your_moodle_client_id
+MOODLE_CLIENT_SECRET=your_moodle_client_secret
+
+# Temporary testing override: provide a Moodle Web Service token directly
+# If set, the app will use this token for all Moodle WS calls (wstoken)
+# You can create a token in Moodle at: Site administration > Server > Web services > Manage tokens
+# Select your External service (e.g., ucl_service) and the target user
+MOODLE_WS_TOKEN=your_moodle_ws_token
+```
+
+Then run the database and start the app:
+
+```
+pnpm prisma migrate dev
+pnpm dev
+```
+
+Visit `/integrations` after signing in to connect your Canvas or Moodle accounts.
