@@ -13,6 +13,7 @@ import { ContentModal } from "@/components/content-modal"
 import DynamicActionBar, { type ActionItem } from "@/components/ui/dynamic-action"
 import { BentoCard, BentoGrid } from "@/components/ui/bento-grid"
 import { SourcedContent } from "@/components/SourcedContent"
+import { CourseExport } from "@/components/course-export"
 
 interface CourseDashboardProps {
   courseData: any
@@ -31,7 +32,7 @@ export function CourseDashboard({ courseData, onBack, onCourseSelect }: CourseDa
   // View state
   const [selectedContentType, setSelectedContentType] = useState("")
   const [selectedUnit, setSelectedUnit] = useState("")
-  const [currentView, setCurrentView] = useState("default") // default, create, calendar, content, bento, content-types, content-list
+  const [currentView, setCurrentView] = useState("default") // default, create, calendar, content, bento, content-types, content-list, export
   const [currentContent, setCurrentContent] = useState<any>(null)
   const [isSaving, setIsSaving] = useState(false)
   const [bentoView, setBentoView] = useState("main") // main, content-types
@@ -167,7 +168,7 @@ export function CourseDashboard({ courseData, onBack, onCourseSelect }: CourseDa
     } else if (currentView === "bento" && bentoView === "main") {
       setCurrentView("default")
       setBentoView("main")
-    } else if (currentView === "create" || currentView === "calendar" || currentView === "content") {
+    } else if (currentView === "create" || currentView === "calendar" || currentView === "content" || currentView === "export") {
       setCurrentView("default")
       setBentoView("main")
     } else {
@@ -278,11 +279,7 @@ export function CourseDashboard({ courseData, onBack, onCourseSelect }: CourseDa
               label: "Integrate",
               icon: Link,
               onClick: () => {
-                if (courseData?.courseId) {
-                  router.push(`/courses/${courseData.courseId}/export`)
-                } else {
-                  router.push('/integrations')
-                }
+                setCurrentView("export")
               },
               content: null,
               dimensions: { width: 0, height: 0 },
@@ -466,6 +463,25 @@ export function CourseDashboard({ courseData, onBack, onCourseSelect }: CourseDa
                   onClick={handleCalendarClick}
                 />
               </BentoGrid>
+            </div>
+          )}
+
+          {currentView === "export" && (
+            <div className="space-y-6 px-6">
+              <div className="flex items-center gap-4">
+                <Button
+                  variant="ghost"
+                  onClick={handleBackClick}
+                  className="flex items-center gap-2"
+                >
+                  <ArrowLeft className="w-4 h-4" />
+                  Back
+                </Button>
+              </div>
+              <CourseExport 
+                courseId={courseData.courseId}
+                courseName={courseData.courseName}
+              />
             </div>
           )}
 
