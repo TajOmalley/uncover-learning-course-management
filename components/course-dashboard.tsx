@@ -12,7 +12,7 @@ import { NavigationSidebar } from "@/components/navigation-sidebar"
 import { ContentModal } from "@/components/content-modal"
 import DynamicActionBar, { type ActionItem } from "@/components/ui/dynamic-action"
 import { BentoCard, BentoGrid } from "@/components/ui/bento-grid"
-import { CitedMarkdown } from "@/components/CitedMarkdown"
+import { SourcedContent } from "@/components/SourcedContent"
 
 interface CourseDashboardProps {
   courseData: any
@@ -478,10 +478,6 @@ export function CourseDashboard({ courseData, onBack, onCourseSelect }: CourseDa
                 type={selectedContentType}
                 courseData={courseData}
                 onBack={() => setCurrentView("default")}
-                onContentGenerated={(content) => {
-                  setCurrentContent(content)
-                  setCurrentView("content")
-                }}
               />
             </div>
           )}
@@ -598,7 +594,7 @@ export function CourseDashboard({ courseData, onBack, onCourseSelect }: CourseDa
                             >
                               <h4 className="font-medium text-gray-900">{content.unitTitle || `${selectedContentType.replace('-', ' ')} content`}</h4>
                               <div className="text-sm text-gray-600 mt-1 prose prose-sm max-w-none">
-                                <CitedMarkdown content={content.content.substring(0, 200) + '...'} citations={content.specifications?.citations || []} />
+                                <SourcedContent content={content.content.substring(0, 200) + '...'} citations={content.specifications?.citations || []} sources={content.specifications?.sources || []} />
                               </div>
                             </div>
                           ))}
@@ -624,7 +620,7 @@ export function CourseDashboard({ courseData, onBack, onCourseSelect }: CourseDa
                 </Button>
               </div>
               <div className="bg-white/90 backdrop-blur-sm border border-gray-200 rounded-lg p-8 min-h-full shadow-lg">
-                <CitedMarkdown content={currentContent.content} citations={currentContent.specifications?.citations || []} />
+                                    <SourcedContent content={currentContent.content} citations={currentContent.specifications?.citations || []} sources={currentContent.specifications?.sources || []} />
               </div>
             </div>
           )}

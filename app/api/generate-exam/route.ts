@@ -205,13 +205,12 @@ Format the exam with clear sections, time allocations, and detailed instructions
         })
 
                     const completion = await openai.chat.completions.create({
-              model: process.env.OPENAI_MODEL || "gpt-4.1-mini",
-              messages: [
-                { role: "system", content: systemPrompt },
-                { role: "user", content: userPrompt }
-              ],
-              temperature: 0.7,
-            })
+                      model: process.env.OPENAI_MODEL || "gpt-4.1-mini",
+                      messages: [
+                        { role: "system", content: systemPrompt },
+                        { role: "user", content: userPrompt }
+                      ],
+                    })
 
         text = completion.choices[0]?.message?.content || ''
       } catch (error) {

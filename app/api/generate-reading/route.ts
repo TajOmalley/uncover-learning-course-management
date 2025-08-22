@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { GoogleGenerativeAI } from '@google/generative-ai'
-import OpenAI from 'openai'
 import { buildSearchQuery, searchWeb } from '@/lib/search'
+import { analyzeSources } from '@/lib/source-processor'
+import { generateSourcedContent } from '@/lib/content-generator'
 
 interface ReadingRequestData {
   courseData: {
@@ -28,7 +28,17 @@ interface GeneratedReading {
   content: string
   unitId: number
   unitTitle: string
-  citations?: Array<{ id: string; title: string; url: string }>
+  citations: Array<{
+    id: string
+    sourceId: string
+    sourceTitle: string
+    sourceUrl: string
+    factId: string
+    text: string
+    startIndex: number
+    endIndex: number
+  }>
+  sources: Array<{ id: string; title: string; url: string }>
 }
 
 export async function POST(request: NextRequest) {
@@ -44,242 +54,53 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    const citationsEnabled = String(process.env.CITATIONS_ENABLED || 'true').toLowerCase() === 'true'
-    const citationsEnforce = String(process.env.CITATIONS_ENFORCE || 'true').toLowerCase() === 'true'
-    
-    console.log('Citation settings:', {
-      citationsEnabled,
-      citationsEnforce,
-      CITATIONS_ENABLED: process.env.CITATIONS_ENABLED,
-      CITATIONS_ENFORCE: process.env.CITATIONS_ENFORCE
-    })
+    console.log('Starting source-first content generation for:', unit.title)
 
-    // Step 1: Retrieval for citations (mandatory)
-    let sources: Array<{ id: string; title: string; url: string; snippet?: string }> = []
-    if (citationsEnabled) {
-      try {
-        const query = buildSearchQuery({
+    // Step 1: Search for authoritative sources
+    const searchQuery = buildSearchQuery({
           subject: courseData.subject,
           level: courseData.level,
           unitTitle: unit.title,
           unitDescription: unit.description,
         })
-        sources = await searchWeb(query)
-        console.log('Search query:', query)
-        console.log('Sources found:', sources)
-      } catch (err) {
-        console.error('Citation retrieval failed:', err)
-        
-        // Provide fallback citations when search fails
-        if (!citationsEnforce) {
-          console.log('Search failed but citations not enforced, using fallback citations')
-          sources = [
-            {
-              id: 'S1',
-              title: `${courseData.subject} - ${unit.title} - Academic Resource`,
-              url: 'https://scholar.google.com/',
-              snippet: 'Academic research and educational materials'
-            },
-            {
-              id: 'S2', 
-              title: `${courseData.subject} Study Guide - ${courseData.level}`,
-              url: 'https://www.khanacademy.org/',
-              snippet: 'Educational content and study materials'
-            },
-            {
-              id: 'S3',
-              title: `${unit.title} - Educational Resources`,
-              url: 'https://www.edx.org/',
-              snippet: 'Online learning and educational content'
-            }
-          ]
-        } else {
-          return NextResponse.json(
-            { error: 'Citations are required but retrieval failed. Please check search provider configuration.' },
-            { status: 500 }
-          )
-        }
-      }
-    }
-
-    // If no sources found and citations are not enforced, provide fallback
-    if ((!sources || sources.length === 0) && !citationsEnforce) {
-      console.log('No sources found, providing fallback citations')
-      sources = [
-        {
-          id: 'S1',
-          title: `${courseData.subject} - ${unit.title} - Academic Resource`,
-          url: 'https://scholar.google.com/',
-          snippet: 'Academic research and educational materials'
-        },
-        {
-          id: 'S2', 
-          title: `${courseData.subject} Study Guide - ${courseData.level}`,
-          url: 'https://www.khanacademy.org/',
-          snippet: 'Educational content and study materials'
-        },
-        {
-          id: 'S3',
-          title: `${unit.title} - Educational Resources`,
-          url: 'https://www.edx.org/',
-          snippet: 'Online learning and educational content'
-        }
-      ]
-    }
-
-    if (citationsEnforce && (!sources || sources.length === 0)) {
-      return NextResponse.json(
-        { error: 'Citations are required but no sources were found.' },
-        { status: 500 }
-      )
-    }
-
-    // Step 2: Prompt Engineering for Reading Content
-    const systemPrompt = `You are an expert educational content creator and textbook author with deep knowledge of creating engaging, student-friendly reading materials. Your task is to create comprehensive reading content that is:
-
-- Engaging and accessible for the target student level
-- Well-structured with clear headings and sections
-- Educational and informative
-- Appropriate for the course subject and level
-- Tailored to the specific unit topic
-
-Your response should be formatted as a textbook chapter with proper headings, subheadings, and well-organized content. Use markdown formatting for structure.
-
-CRITICAL CONTENT INSTRUCTIONS:
-- Write clean, natural text without any citation syntax, brackets, or special formatting.
-- Use the provided sources for factual information, but write the content normally.
-- DO NOT include any citation markers like {{...}}, [...], or (...).
-- DO NOT duplicate or repeat any content.
-- Write each sentence or fact only once in natural, flowing prose.
-- Keep the content clear and suitable for the specified student level.
-- Ensure proper spacing and formatting - do not concatenate words or create run-on text.
-
-MATH FORMATTING INSTRUCTIONS:
-- For inline mathematical expressions, wrap them in single dollar signs: $expression$
-- For block/display mathematical expressions, wrap them in double dollar signs: $$expression$$
-- Use proper LaTeX syntax for all mathematical notation
-- Examples:
-  - Inline: "The derivative $f'(x) = \lim_{h \to 0} \frac{f(x+h) - f(x)}{h}$ shows..."
-  - Block: "$$f'(x) = \lim_{h \to 0} \frac{f(x+h) - f(x)}{h}$$"
-  - Functions: "$f(x) = x^2 \cdot \sin(x)$"
-  - Fractions: "$\frac{a}{b}$"
-  - Greek letters: "$\alpha$, $\beta$, $\gamma$"
-  - Subscripts/superscripts: "$x_1$, $x^2$"
-
-EXAMPLE OF CORRECT WRITING:
-❌ WRONG: "The YC application is {{detailed online form}}[S1]."
-❌ WRONG: "The YC application is detailed. (The YC application is a detailed online form) [S1]."
-✅ CORRECT: "The YC application is a detailed online form that asks about your startup, team, market, and progress."
-
-Write naturally as if you're creating a textbook chapter. The citation system will automatically identify and underline factual claims based on the sources provided.
-`
-
-    const userPrompt = `Please create reading content for the following unit:
-
-Course Information:
-- Subject: ${courseData.subject}
-- Course Name: ${courseData.courseName}
-- Level: ${courseData.level}
-- Unit: ${unit.title}
-- Unit Description: ${unit.description || 'No description provided'}
-
-Please create engaging reading content that:
-1. Introduces the unit topic clearly
-2. Provides comprehensive coverage of the subject matter
-3. Uses appropriate language for ${courseData.level} students
-4. Includes relevant examples and explanations
-5. Is structured with clear headings and sections
-6. Is engaging and educational
-
-${customPrompt ? `CUSTOM INSTRUCTIONS: ${customPrompt}
-These instructions should guide the style, length, and focus of the reading material. Please incorporate these requirements while maintaining the core educational content structure.` : ''}
-
-Format the content with markdown headings (# for main headings, ## for subheadings) and ensure it flows logically from introduction to conclusion.
-
-Sources:
-${(sources || []).map(s => `${s.id}: ${s.title} - ${s.url}`).join('\n')}
-
-Remember: Write clean, natural text without any citation syntax. The citation system will automatically handle the underlining and source links.`
-
-    // Step 3: LLM API Integration
-    const llmProvider = process.env.LLM_PROVIDER || 'gemini'
     
-    // Debug logging
-    console.log('=== LLM PROVIDER DEBUG (Reading) ===')
-    console.log('LLM_PROVIDER env var:', process.env.LLM_PROVIDER)
-    console.log('Selected provider:', llmProvider)
-    console.log('OpenAI API Key exists:', !!process.env.OPENAI_API_KEY)
-    console.log('Gemini API Key exists:', !!process.env.GEMINI_API_KEY)
-    console.log('====================================')
+    console.log('Search query:', searchQuery)
     
-    let text: string
+    let sources = await searchWeb(searchQuery)
+    console.log('Sources found:', sources.length)
+
+    // Step 2: Analyze sources and extract facts
+    console.log('Analyzing sources...')
+    const sourceAnalysis = await analyzeSources(sources)
+    console.log('Source analysis complete. Facts extracted:', sourceAnalysis.factBank.length)
+
+    // Step 3: Generate content with embedded citations
+    console.log('Generating content with embedded citations...')
+    const generatedContent = await generateSourcedContent(
+      unit.title,
+      courseData.subject,
+      courseData.level,
+      sourceAnalysis,
+      customPrompt
+    )
     
-    if (llmProvider === 'openai') {
-      // OpenAI Integration
-      const openaiApiKey = process.env.OPENAI_API_KEY
-      if (!openaiApiKey) {
-        console.error('OPENAI_API_KEY not found in environment variables')
-        return NextResponse.json(
-          { error: 'OpenAI API key not configured' },
-          { status: 500 }
-        )
-      }
+    console.log('Content generation complete. Citations embedded:', generatedContent.citations.length)
 
-      try {
-        const openai = new OpenAI({
-          apiKey: openaiApiKey,
-        })
-
-                    const completion = await openai.chat.completions.create({
-              model: process.env.OPENAI_MODEL || "gpt-4.1-mini",
-              messages: [
-                { role: "system", content: systemPrompt },
-                { role: "user", content: userPrompt }
-              ],
-              temperature: 0.7,
-            })
-
-        text = completion.choices[0]?.message?.content || ''
-      } catch (error) {
-        console.error('Error calling OpenAI API:', error)
-        throw error
-      }
-    } else {
-      // Gemini Integration (default)
-      const geminiApiKey = process.env.GEMINI_API_KEY
-      if (!geminiApiKey) {
-        console.error('GEMINI_API_KEY not found in environment variables')
-        return NextResponse.json(
-          { error: 'API key not configured' },
-          { status: 500 }
-        )
-      }
-
-      try {
-        const genAI = new GoogleGenerativeAI(geminiApiKey)
-        const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" })
-
-        const result = await model.generateContent(systemPrompt + "\n\n" + userPrompt)
-        const response = await result.response
-        text = response.text()
-      } catch (error) {
-        console.error('Error calling Gemini API:', error)
-        throw error
-      }
-    }
-
-    try {
-      // Create the reading content object
-      const finalCitations = (sources || []).map(s => ({ id: s.id, title: s.title, url: s.url }))
-      console.log('Final citations being returned:', finalCitations)
-      
+    // Step 4: Create the final reading object
       const generatedReading: GeneratedReading = {
         title: `Reading: ${unit.title}`,
-        content: text,
+      content: generatedContent.content,
         unitId: unit.id,
         unitTitle: unit.title,
-        citations: finalCitations
-      }
+      citations: generatedContent.citations,
+      sources: generatedContent.sources
+    }
+
+    console.log('Final reading object created with:', {
+      contentLength: generatedReading.content.length,
+      citationsCount: generatedReading.citations.length,
+      sourcesCount: generatedReading.sources.length
+    })
 
       return NextResponse.json({
         success: true,
@@ -288,46 +109,14 @@ Remember: Write clean, natural text without any citation syntax. The citation sy
       })
 
     } catch (error) {
-      console.error('Error calling LLM API:', error)
-      
-      // Fallback to mock reading content if API fails
-      const fallbackReading: GeneratedReading = {
-        title: `Reading: ${unit.title}`,
-        content: `# ${unit.title}
-
-## Introduction
-
-This reading provides an overview of the key concepts covered in ${unit.title}. 
-
-## Main Content
-
-The content for this unit will be generated based on the course context and unit objectives. This section will include detailed explanations, examples, and relevant information for ${courseData.level} students studying ${courseData.subject}.
-
-## Key Takeaways
-
-- Understanding of core concepts
-- Application of theoretical knowledge
-- Practical examples and case studies
-
-## Conclusion
-
-This reading has covered the essential elements of ${unit.title} and provides a foundation for further study and application.`,
-        unitId: unit.id,
-        unitTitle: unit.title
-      }
-
-      return NextResponse.json({
-        success: true,
-        reading: fallbackReading,
-        unit: unit,
-        error: 'LLM generation failed, using fallback content'
-      })
-    }
-
-  } catch (error) {
     console.error('Error generating reading content:', error)
+    
+    // Return a more detailed error response
     return NextResponse.json(
-      { error: 'Failed to generate reading content' },
+      { 
+        error: 'Failed to generate reading content',
+        details: error instanceof Error ? error.message : 'Unknown error'
+      },
       { status: 500 }
     )
   }

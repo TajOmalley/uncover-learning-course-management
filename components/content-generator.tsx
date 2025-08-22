@@ -9,22 +9,31 @@ import { Textarea } from "@/components/ui/textarea"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { ArrowLeft, Download, Copy, RefreshCw } from "lucide-react"
 import { ContentModal } from "@/components/content-modal"
-import { CitedMarkdown } from '@/components/CitedMarkdown'
+import { SourcedContent } from '@/components/SourcedContent'
 import { Badge } from "@/components/ui/badge"
 
 interface ContentGeneratorProps {
   type: string
   courseData: any
   onBack: () => void
-  onContentGenerated?: (content: any) => void
   onContentSaved?: (savedContent: any) => void
 }
 
-export function ContentGenerator({ type, courseData, onBack, onContentGenerated, onContentSaved }: ContentGeneratorProps) {
+export function ContentGenerator({ type, courseData, onBack, onContentSaved }: ContentGeneratorProps) {
   const router = useRouter()
   const [isGenerating, setIsGenerating] = useState(false)
   const [generatedContent, setGeneratedContent] = useState("")
-  const [generatedCitations, setGeneratedCitations] = useState<Array<{ id: string; title: string; url: string }>>([])
+  const [generatedCitations, setGeneratedCitations] = useState<Array<{
+    id: string
+    sourceId: string
+    sourceTitle: string
+    sourceUrl: string
+    factId: string
+    text: string
+    startIndex: number
+    endIndex: number
+  }>>([])
+  const [generatedSources, setGeneratedSources] = useState<Array<{ id: string; title: string; url: string }>>([])
   const [selectedUnit, setSelectedUnit] = useState("")
   const [customPrompt, setCustomPrompt] = useState("")
   const [instructionsAdded, setInstructionsAdded] = useState(false)
@@ -77,12 +86,9 @@ export function ContentGenerator({ type, courseData, onBack, onContentGenerated,
     if (courseData.courseId) {
       loadSavedContent()
     }
-  }, [courseData.courseId])
+  }, [courseData.courseId, type])
 
-  // Debug citations
-  useEffect(() => {
-    console.log('Citations state changed:', generatedCitations)
-  }, [generatedCitations])
+
 
   const loadSavedContent = async () => {
     setLoadingSavedContent(true)
@@ -96,6 +102,12 @@ export function ContentGenerator({ type, courseData, onBack, onContentGenerated,
       const result = await response.json()
       
       if (result.success) {
+        console.log('Loaded saved content:', result.content)
+        result.content.forEach((item: any, index: number) => {
+          console.log(`Content ${index} specifications:`, item.specifications)
+          console.log(`Content ${index} citations:`, item.specifications?.citations)
+          console.log(`Content ${index} citations count:`, item.specifications?.citations?.length || 0)
+        })
         setSavedContent(result.content)
       } else {
         console.error('Failed to fetch saved content:', result.error)
@@ -157,16 +169,13 @@ export function ContentGenerator({ type, courseData, onBack, onContentGenerated,
 
         console.log('Generated content received:', result.reading.content.substring(0, 100) + '...')
         console.log('Citations received:', result.reading.citations)
+        console.log('Citations length:', result.reading.citations?.length || 0)
+        console.log('Sources received:', result.reading.sources)
         setGeneratedContent(result.reading.content)
         setGeneratedCitations(result.reading.citations || [])
-        if (onContentGenerated) {
-          onContentGenerated({
-            content: result.reading.content,
-            citations: result.reading.citations || [],
-            type: 'reading',
-            unitTitle: selectedUnit
-          })
-        }
+        setGeneratedSources(result.reading.sources || [])
+        
+        // Removed onContentGenerated callback to prevent state reset issues
       } else if (type === "homework") {
         // Call the homework creation API
         const selectedUnitData = courseData.calendar?.find((unit: any) => unit.title === selectedUnit)
@@ -203,13 +212,7 @@ export function ContentGenerator({ type, courseData, onBack, onContentGenerated,
         }
 
         setGeneratedContent(result.homework.content)
-        if (onContentGenerated) {
-          onContentGenerated({
-            content: result.homework.content,
-            type: 'homework',
-            unitTitle: selectedUnit
-          })
-        }
+        // Removed onContentGenerated callback to prevent state reset issues
       } else if (type === "lesson-plan") {
         // Call the lesson plan creation API
         const selectedUnitData = courseData.calendar?.find((unit: any) => unit.title === selectedUnit)
@@ -248,13 +251,7 @@ export function ContentGenerator({ type, courseData, onBack, onContentGenerated,
         }
 
         setGeneratedContent(result.lessonPlan.content)
-        if (onContentGenerated) {
-          onContentGenerated({
-            content: result.lessonPlan.content,
-            type: 'lesson-plan',
-            unitTitle: selectedUnit
-          })
-        }
+        // Removed onContentGenerated callback to prevent state reset issues
       } else if (type === "exam") {
         // Call the exam creation API
         const selectedUnitData = courseData.calendar?.find((unit: any) => unit.title === selectedUnit)
@@ -298,38 +295,20 @@ export function ContentGenerator({ type, courseData, onBack, onContentGenerated,
         }
 
         setGeneratedContent(result.exam.content)
-        if (onContentGenerated) {
-          onContentGenerated({
-            content: result.exam.content,
-            type: 'exam',
-            unitTitle: selectedUnit
-          })
-        }
+        // Removed onContentGenerated callback to prevent state reset issues
       } else {
         // For other content types, use mock content for now
         const mockContent = generateMockContent(type, selectedUnit, storedInstructions)
         setGeneratedContent(mockContent)
-        if (onContentGenerated) {
-          onContentGenerated({
-            content: mockContent,
-            type: type,
-            unitTitle: selectedUnit
-          })
-        }
+        // Removed onContentGenerated callback to prevent state reset issues
       }
     } catch (error) {
       console.error('Error generating content:', error)
       
       // Fallback to mock content if API fails
       const mockContent = generateMockContent(type, selectedUnit, storedInstructions)
-      setGeneratedContent(mockContent)
-      if (onContentGenerated) {
-        onContentGenerated({
-          content: mockContent,
-          type: type,
-          unitTitle: selectedUnit
-        })
-      }
+              setGeneratedContent(mockContent)
+        // Removed onContentGenerated callback to prevent state reset issues
     } finally {
       setIsGenerating(false)
     }
@@ -378,21 +357,26 @@ export function ContentGenerator({ type, courseData, onBack, onContentGenerated,
       }
 
       // Save to database
+      const saveData = {
+        courseId: courseData.courseId,
+        unitId: selectedUnitData.id,
+        type: type,
+        content: generatedContent,
+        specifications: {
+          ...specifications,
+          citations: generatedCitations
+        }
+      }
+      
+      console.log('Saving content with citations:', saveData.specifications.citations)
+      console.log('Citations count being saved:', saveData.specifications.citations?.length || 0)
+      
       const response = await fetch('/api/content', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({
-          courseId: courseData.courseId,
-          unitId: selectedUnitData.id,
-          type: type,
-          content: generatedContent,
-          specifications: {
-            ...specifications,
-            citations: generatedCitations
-          }
-        }),
+        body: JSON.stringify(saveData),
       })
 
       if (!response.ok) {
@@ -406,6 +390,9 @@ export function ContentGenerator({ type, courseData, onBack, onContentGenerated,
       }
 
       console.log('Content saved successfully to database:', result.content)
+      console.log('Saved content specifications:', result.content.specifications)
+      console.log('Saved citations:', result.content.specifications?.citations)
+      console.log('Saved citations count:', result.content.specifications?.citations?.length || 0)
       
       // Show success toast (styled)
       try {
@@ -611,8 +598,9 @@ Detailed solutions and explanations will be provided during the review session.`
 
   return (
     <div className="space-y-6">
-          {/* Content Settings */}
-          <div className="bg-black/5 backdrop-blur-xl border-2 border-[#47624f] rounded-lg p-6 shadow-lg">
+          {/* Content Settings - Hidden when content is generated */}
+          {!generatedContent && (
+            <div className="bg-black/5 backdrop-blur-xl border-2 border-[#47624f] rounded-lg p-6 shadow-lg">
             <div className="mb-4">
               <h3 className="text-2xl font-bold text-[#47624f]">Content Settings</h3>
             </div>
@@ -905,8 +893,10 @@ Detailed solutions and explanations will be provided during the review session.`
               </div>
             </div>
           </div>
+          )}
 
-          {/* Additional Instructions Section */}
+          {/* Additional Instructions Section - Hidden when content is generated */}
+          {!generatedContent && (
           <div className="bg-black/5 backdrop-blur-xl border-2 border-[#47624f] rounded-lg p-6 shadow-lg">
             <div className="mb-4">
               <h3 className="text-2xl font-bold text-[#47624f]">Additional Instructions</h3>
@@ -952,6 +942,7 @@ Detailed solutions and explanations will be provided during the review session.`
               </div>
             </div>
           </div>
+          )}
 
           {/* Generated Content Display */}
           {generatedContent && (
@@ -989,21 +980,7 @@ Detailed solutions and explanations will be provided during the review session.`
               </div>
               <div>
                 <div className="prose max-w-none">
-                  <CitedMarkdown content={generatedContent} citations={generatedCitations} />
-                  
-                  {/* Debug: Show citations info */}
-                  {generatedCitations.length > 0 && (
-                    <div className="mt-4 p-4 bg-gray-100 rounded-lg">
-                      <h4 className="font-semibold mb-2">Debug: Citations Found ({generatedCitations.length})</h4>
-                      <ul className="text-sm space-y-1">
-                        {generatedCitations.map((citation, index) => (
-                          <li key={index}>
-                            <strong>{citation.id}:</strong> {citation.title} - <a href={citation.url} target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:underline">{citation.url}</a>
-                          </li>
-                        ))}
-                      </ul>
-                    </div>
-                  )}
+                  <SourcedContent content={generatedContent} citations={generatedCitations} sources={generatedSources} />
                 </div>
                 
                 {/* Save Content Button */}

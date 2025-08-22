@@ -79,7 +79,8 @@ export async function POST(request: NextRequest) {
         courseId: generatedContent.courseId,
         unitId: generatedContent.unitId,
         type: generatedContent.type,
-        content: JSON.parse(generatedContent.content),
+        content: content,
+        specifications: specifications,
         storageFilename,
         createdAt: generatedContent.createdAt
       }

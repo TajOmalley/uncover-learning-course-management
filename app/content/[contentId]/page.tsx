@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { ArrowLeft, BookOpen, FileText, PenTool, GraduationCap, Calendar, User, Menu } from "lucide-react"
 import { format } from "date-fns"
-import { CitedMarkdown } from "@/components/CitedMarkdown"
+import { SourcedContent } from "@/components/SourcedContent"
 import { NavigationSidebar } from "@/components/navigation-sidebar"
 
 interface ContentData {
@@ -228,7 +228,7 @@ export default function ContentViewPage() {
                 </CardTitle>
               </CardHeader>
               <CardContent>
-                <CitedMarkdown content={content.content} citations={content.specifications?.citations || []} />
+                <SourcedContent content={content.content} citations={content.specifications?.citations || []} sources={content.specifications?.sources || []} />
               </CardContent>
             </Card>
           </div>
