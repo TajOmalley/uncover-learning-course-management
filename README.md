@@ -207,6 +207,12 @@ CANVAS_CLIENT_SECRET=your_canvas_client_secret
 MOODLE_URL=http://localhost:8888/moodle
 MOODLE_CLIENT_ID=your_moodle_client_id
 MOODLE_CLIENT_SECRET=your_moodle_client_secret
+
+# Temporary testing override: provide a Moodle Web Service token directly
+# If set, the app will use this token for all Moodle WS calls (wstoken)
+# You can create a token in Moodle at: Site administration > Server > Web services > Manage tokens
+# Select your External service (e.g., ucl_service) and the target user
+MOODLE_WS_TOKEN=your_moodle_ws_token
 ```
 
 Then run the database and start the app:

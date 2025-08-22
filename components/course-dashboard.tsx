@@ -5,7 +5,8 @@ import { useRouter } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
-import { ChevronRight, ChevronDown, Menu, Download, Plus, Upload, Calendar, Link, BookOpen, FileText, Settings, ArrowLeft, PenTool, GraduationCap } from "lucide-react"
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import { BookOpen, FileText, PenTool, GraduationCap, Sparkles, Plus, Edit, Eye, Menu, Download } from "lucide-react"
 import { CourseCalendar } from "@/components/course-calendar"
 import { ContentGenerator } from "@/components/content-generator"
 import { NavigationSidebar } from "@/components/navigation-sidebar"
@@ -13,31 +14,27 @@ import { ContentModal } from "@/components/content-modal"
 import DynamicActionBar, { type ActionItem } from "@/components/ui/dynamic-action"
 import { BentoCard, BentoGrid } from "@/components/ui/bento-grid"
 import { SourcedContent } from "@/components/SourcedContent"
+import { CourseExport } from "@/components/course-export"
 
 interface CourseDashboardProps {
   courseData: any
   onBack?: () => void
-  onCourseSelect?: (course: any) => void
 }
 
-export function CourseDashboard({ courseData, onBack, onCourseSelect }: CourseDashboardProps) {
+export function CourseDashboard({ courseData, onBack }: CourseDashboardProps) {
   const router = useRouter()
+  const [activeTab, setActiveTab] = useState("overview")
+  const [showGenerator, setShowGenerator] = useState(false)
+  const [generatorType, setGeneratorType] = useState("")
+  const [expandedUnits, setExpandedUnits] = useState<Set<number>>(new Set())
+  const [savedReadingContent, setSavedReadingContent] = useState<any[]>([])
+  const [savedHomeworkContent, setSavedHomeworkContent] = useState<any[]>([])
+  const [savedLessonPlanContent, setSavedLessonPlanContent] = useState<any[]>([])
+  const [savedExamContent, setSavedExamContent] = useState<any[]>([])
   const [sidebarOpen, setSidebarOpen] = useState(false)
-  const [sidebarHovered, setSidebarHovered] = useState(false)
   const [allCourses, setAllCourses] = useState<any[]>([])
   const [contentModalOpen, setContentModalOpen] = useState(false)
   const [selectedContentId, setSelectedContentId] = useState<string | null>(null)
-  
-  // View state
-  const [selectedContentType, setSelectedContentType] = useState("")
-  const [selectedUnit, setSelectedUnit] = useState("")
-  const [currentView, setCurrentView] = useState("default") // default, create, calendar, content, bento, content-types, content-list
-  const [currentContent, setCurrentContent] = useState<any>(null)
-  const [isSaving, setIsSaving] = useState(false)
-  const [bentoView, setBentoView] = useState("main") // main, content-types
-  
-  // Saved content state
-  const [savedContent, setSavedContent] = useState<any[]>([])
 
   // Load saved content from database
   useEffect(() => {
@@ -54,7 +51,16 @@ export function CourseDashboard({ courseData, onBack, onCourseSelect }: CourseDa
         const result = await response.json()
         
         if (result.success) {
-          setSavedContent(result.content)
+          // Group content by type
+          const reading = result.content.filter((item: any) => item.type === 'reading')
+          const homework = result.content.filter((item: any) => item.type === 'homework')
+          const lessonPlans = result.content.filter((item: any) => item.type === 'lesson-plan')
+          const exams = result.content.filter((item: any) => item.type === 'exam')
+          
+          setSavedReadingContent(reading)
+          setSavedHomeworkContent(homework)
+          setSavedLessonPlanContent(lessonPlans)
+          setSavedExamContent(exams)
         }
       } catch (error) {
         console.error('Error fetching content:', error)
@@ -87,559 +93,642 @@ export function CourseDashboard({ courseData, onBack, onCourseSelect }: CourseDa
     fetchCourses()
   }, [])
 
-  // Helper functions for course information
-  const getCourseDuration = () => {
-    if (!courseData.startDate || !courseData.endDate) return "Duration not set"
-    const start = new Date(courseData.startDate)
-    const end = new Date(courseData.endDate)
-    const diffTime = Math.abs(end.getTime() - start.getTime())
-    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24))
-    const weeks = Math.ceil(diffDays / 7)
-    return `${weeks} weeks`
+  const contentTypes = [
+    {
+      id: "lesson-plan",
+      title: "Lesson Plans",
+      description: "Generate detailed lesson plans for your course units",
+      icon: BookOpen,
+      color: "from-[#47624f] to-[#707D7F]",
+      count: 12,
+    },
+    {
+      id: "reading",
+      title: "Reading Content",
+      description: "Create comprehensive reading materials and resources",
+      icon: FileText,
+      color: "from-[#C9F2C7] to-[#47624f]",
+      count: 8,
+    },
+    {
+      id: "homework",
+      title: "Homework Problems",
+      description: "Design practice problems and assignments",
+      icon: PenTool,
+      color: "from-[#B2A29E] to-[#707D7F]",
+      count: 15,
+    },
+    {
+      id: "exam",
+      title: "Exams",
+      description: "Generate comprehensive exams and assessments",
+      icon: GraduationCap,
+      color: "from-[#000000] to-[#707D7F]",
+      count: 4,
+    },
+  ]
+
+  const handleGenerateContent = (type: string) => {
+    setGeneratorType(type)
+    setShowGenerator(true)
   }
 
-  const getLectureSchedule = () => {
-    if (!courseData.lectureSchedule) return "Schedule not set"
-    
-    // If it's already a string, return it
-    if (typeof courseData.lectureSchedule === 'string') {
-      return courseData.lectureSchedule
-    }
-    
-    // If it's an object, format it as a string
-    if (typeof courseData.lectureSchedule === 'object') {
-      const schedule = courseData.lectureSchedule
-      const days = Object.keys(schedule)
-      if (days.length === 0) return "Schedule not set"
-      
-      return days.map(day => `${day}: ${schedule[day]}`).join(', ')
-    }
-    
-    return "Schedule not set"
-  }
-
-  const handleCreateClick = (contentType: string) => {
-    setSelectedContentType(contentType)
-    setCurrentView("create")
-    setSelectedUnit("")
-    setCurrentContent(null)
-  }
-
-
-
-  const handleCalendarClick = () => {
-    setCurrentView("calendar")
-    setSelectedContentType("")
-    setSelectedUnit("")
-    setCurrentContent(null)
-  }
-
-  const handleBentoContentClick = () => {
-    setCurrentView("bento")
-    setBentoView("content-types")
-  }
-
-  const handleBentoReturnClick = () => {
-    setBentoView("main")
-  }
-
-  const handleContentTypeClick = (contentType: string) => {
-    // This now opens the viewing window for saved content
-    setSelectedContentType(contentType)
-    setCurrentView("content-list")
-    setSelectedUnit("")
-  }
-
-  const handleCourseSelect = (course: any) => {
-    router.push(`/?courseId=${course.id}`)
-    setSidebarOpen(false)
-    setSidebarHovered(false)
-    onCourseSelect?.(course)
-  }
-
-  const handleBackClick = () => {
-    if (currentView === "content-list") {
-      setCurrentView("bento")
-      setBentoView("content-types")
-    } else if (currentView === "bento" && bentoView === "content-types") {
-      setCurrentView("default")
-      setBentoView("main")
-    } else if (currentView === "bento" && bentoView === "main") {
-      setCurrentView("default")
-      setBentoView("main")
-    } else if (currentView === "create" || currentView === "calendar" || currentView === "content") {
-      setCurrentView("default")
-      setBentoView("main")
-    } else {
-      setCurrentView("default")
-      setBentoView("main")
-    }
-  }
-
-  const handleContentClick = (content: any) => {
-    setCurrentContent(content)
-    setCurrentView("content")
-  }
-
-  const handleSave = async () => {
-    if (!currentContent) return
-    
-    setIsSaving(true)
-    try {
-      // Save logic here - similar to existing save functionality
-      console.log('Saving content:', currentContent)
-      
-      // Show success toast
-      try {
-        const { toast } = await import("@/hooks/use-toast")
-        toast({
-          title: "Content saved",
-          description: "Your content has been saved successfully.",
-        })
-      } catch (_) {}
-      
-    } catch (error) {
-      console.error('Error saving content:', error)
-      try {
-        const { toast } = await import("@/hooks/use-toast")
-        toast({
-          title: "Save failed",
-          description: 'Please try again.',
-        })
-      } catch (_) {}
-    } finally {
-      setIsSaving(false)
-    }
-  }
-
-  const getContentByType = (type: string) => {
-    return savedContent.filter(content => content.type === type)
-  }
-
-  const getContentByUnit = (unitId: number) => {
-    return savedContent.filter(content => content.unitId === unitId)
+  if (showGenerator) {
+    return <ContentGenerator type={generatorType} courseData={courseData} onBack={() => setShowGenerator(false)} />
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-[#C9F2C7]/40 via-white to-[#47624f]/20">
-      {/* Unified Header with DynamicActionBar */}
-      <div className={`px-6 py-4 transition-all duration-300 ${sidebarOpen ? 'ml-80' : ''} relative z-50`}>
-        <DynamicActionBar 
-          actions={[
-            {
-              id: "nav",
-              label: "",
-              icon: Menu,
-              onClick: () => setSidebarOpen(true),
-              onMouseEnter: () => {
-                setSidebarOpen(true);
-                setSidebarHovered(true);
-              },
-              content: <div className="p-4 text-center">Navigation menu</div>,
-              dimensions: { width: 300, height: 100 },
-            },
-            {
-              id: "upload",
-              label: "Manage Uploads",
-              icon: Upload,
-              content: <div className="p-4 text-center">Upload functionality coming soon...</div>,
-              dimensions: { width: 300, height: 100 },
-            },
-            {
-              id: "create",
-              label: "View Materials",
-              icon: BookOpen,
-              content: (
-                <div className="flex flex-col items-center gap-1 py-4 px-6">
-                  {[
-                    { name: "Readings", type: "reading" },
-                    { name: "Lesson Plans", type: "lesson-plan" },
-                    { name: "Homework", type: "homework" },
-                    { name: "Exams", type: "exam" },
-                  ].map((item) => (
-                    <div key={item.name} className="group w-full">
-                      <div 
-                        className="mx-auto flex w-full cursor-pointer items-center justify-between gap-3 rounded-2xl py-2 duration-300 group-hover:w-[95%] group-hover:bg-black/5 group-hover:px-3"
-                        onClick={() => handleContentTypeClick(item.type)}
-                      >
-                        <div className="flex items-center gap-3">
-                          <span className="font-bold">{item.name}</span>
-                        </div>
-                      </div>
-                    </div>
-                  ))}
-                  <div className="mt-4 h-[2px] w-full bg-black/10"></div>
-                </div>
-              ),
-              dimensions: { width: 300, height: 200 },
-            },
-            {
-              id: "integrate",
-              label: "Integrate",
-              icon: Link,
-              content: <div className="p-4 text-center">Integration functionality coming soon...</div>,
-              dimensions: { width: 300, height: 100 },
-            },
-          ]}
-          className="sticky top-0 z-50 relative"
-        />
-      </div>
+    <div className="min-h-screen flex">
+      <NavigationSidebar 
+        isOpen={sidebarOpen} 
+        onClose={() => setSidebarOpen(false)}
+        currentPage={courseData.courseName}
+        courses={allCourses}
+        onCourseSelect={(course) => {
+          // Navigate to the selected course
+          const courseData = {
+            courseName: course.title,
+            subject: course.subject,
+            level: course.level,
+            startDate: course.startDate,
+            endDate: course.endDate,
+            lectureSchedule: course.lectureSchedule,
+            calendar: course.units,
+            courseId: course.id,
+          }
+          // This would need to be handled by the parent component
+          // For now, we'll reload the page with the new course
+          window.location.href = `/?courseId=${course.id}`
+        }}
+        onAddCourse={() => {
+          window.location.href = '/setup'
+        }}
+      />
       
-      {/* Save button for content view */}
-      {currentView === "content" && currentContent && (
-        <div className="absolute top-4 right-4 z-50">
-          <Button
-            onClick={handleSave}
-            disabled={isSaving}
-            className="bg-gradient-to-r from-[#47624f] to-[#707D7F] hover:from-[#000000] hover:to-[#47624f] text-white"
+      <div className={`flex-1 relative transition-all duration-300 ${sidebarOpen ? 'ml-80' : ''}`}>
+                {/* Header */}
+        <div className="bg-gradient-to-r from-[#47624f] via-[#707D7F] to-[#47624f] text-white relative">
+          <button
+            onClick={() => setSidebarOpen(!sidebarOpen)}
+            className="absolute top-1/2 left-8 z-10 text-white hover:text-[#C9F2C7] transition-colors transform -translate-y-1/2"
           >
-            {isSaving ? "Saving..." : "Save"}
-          </Button>
-        </div>
-      )}
-
-      <div 
-        className={`flex h-[calc(100vh-80px)] transition-all duration-300 ${sidebarOpen ? 'ml-80' : ''}`}
-      >
-
-        {/* Canvas Area */}
-        <div className={`flex-1 transition-all duration-300 ${sidebarOpen ? 'w-[calc(100vw-320px)]' : 'w-full'}`}>
-          {/* Course Title Section - Always visible in default state */}
-          <div className={`px-6 py-4 transition-all duration-300`}>
-            <div className="bg-black/5 backdrop-blur-xl border-2 border-[#47624f] rounded-lg p-6 shadow-lg">
-              <div className="flex items-center justify-between">
-                <div>
-                  <h1 className="text-4xl font-bold text-[#47624f] mb-2">{courseData.courseName}</h1>
-                  <div className="flex items-center gap-6 text-gray-600">
-                    <span className="flex items-center gap-2">
-                      <span className="font-semibold">Professor:</span>
-                      <span>{courseData.professor || "User Name"}</span>
-                    </span>
-                    <span className="flex items-center gap-2">
-                      <span className="font-semibold">Duration:</span>
-                      <span>{getCourseDuration()}</span>
-                    </span>
-                    <span className="flex items-center gap-2">
-                      <span className="font-semibold">Schedule:</span>
-                      <span>{getLectureSchedule()}</span>
-                    </span>
-                  </div>
-                </div>
-                <div className="text-right">
-                  <Badge variant="secondary" className="bg-[#47624f] text-white">
-                    {courseData.subject} • {courseData.level}
-                  </Badge>
-                </div>
+            <Menu className="w-6 h-6" />
+          </button>
+          <div className="max-w-7xl mx-auto px-4 py-8">
+            <div className="flex items-center justify-between">
+              <div className="ml-20">
+                <h1 className="text-3xl font-bold">{courseData.courseName}</h1>
+              <p className="text-[#C9F2C7] mt-2">
+                {courseData.subject} • {courseData.level}
+              </p>
+              <div className="flex items-center gap-4 mt-4">
+                <Badge variant="secondary" className="bg-[#C9F2C7]/20 text-white">
+                  {courseData.startDate} - {courseData.endDate}
+                </Badge>
+                <Badge variant="secondary" className="bg-[#C9F2C7]/20 text-white">
+                  {courseData.calendar?.length || 0} Units
+                </Badge>
               </div>
             </div>
+
           </div>
+        </div>
+      </div>
 
-          {currentView === "default" && (
-            <div className="px-6 h-[calc(100vh-280px)]">
-              <BentoGrid className="lg:grid-rows-4 h-full">
-                <BentoCard
-                  name="Upload"
-                  description="Add Previous Materials, Syllabi, and Curriculum Standards to Shape Course"
-                  href="#"
-                  cta=""
-                  background={<div className="absolute -right-20 -top-20 opacity-60" />}
-                  className="lg:col-start-1 lg:col-end-2 lg:row-start-1 lg:row-end-3"
-                  Icon={Upload}
-                  onClick={() => {}}
-                />
-                <BentoCard
-                  name="Create Materials"
-                  description="Click to Create Personalized Readings, Lesson Plans, Assignments, and Exams"
-                  href="#"
-                  cta=""
-                  background={<div className="absolute -right-20 -top-20 opacity-60" />}
-                  className="lg:col-start-2 lg:col-end-3 lg:row-start-1 lg:row-end-5"
-                  Icon={BookOpen}
-                  onClick={() => setCurrentView("content-expanded")}
-                />
-                <BentoCard
-                  name="Manage"
-                  description="Manage Learning and Content Distribution"
-                  href="#"
-                  cta=""
-                  background={<div className="absolute -right-20 -top-20 opacity-60" />}
-                  className="lg:col-start-1 lg:col-end-2 lg:row-start-3 lg:row-end-5"
-                  Icon={Settings}
-                  onClick={() => {}}
-                />
-                <BentoCard
-                  name="Calendar"
-                  description="View Course Calendar"
-                  href="#"
-                  cta=""
-                  background={<div className="absolute -right-20 -top-20 opacity-60" />}
-                  className="lg:col-start-3 lg:col-end-4 lg:row-start-1 lg:row-end-5"
-                  Icon={Calendar}
-                  onClick={handleCalendarClick}
-                />
-              </BentoGrid>
-            </div>
-          )}
+      <div className="max-w-7xl mx-auto px-4 py-8 bg-[#F2F7F3] rounded-2xl border border-white/20">
+        <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
+          <TabsList className="grid w-full grid-cols-3 lg:w-auto lg:grid-cols-3">
+            <TabsTrigger value="overview">Overview</TabsTrigger>
+            <TabsTrigger value="calendar">Calendar</TabsTrigger>
+            <TabsTrigger value="content">Content</TabsTrigger>
+            <TabsTrigger value="export">Export</TabsTrigger>
+          </TabsList>
 
-          {currentView === "content-expanded" && (
-            <div className="px-6 h-[calc(100vh-280px)]">
-              <BentoGrid className="lg:grid-rows-4 h-full">
-                <BentoCard
-                  name="Uploads"
-                  description=""
-                  href="#"
-                  cta="View and Manage Uploads"
-                  background={<div className="absolute -right-20 -top-20 opacity-60" />}
-                  className="lg:col-start-1 lg:col-end-2 lg:row-start-1 lg:row-end-3"
-                  Icon={Upload}
-                  onClick={() => {}}
-                />
-                <div className="lg:col-start-2 lg:col-end-3 lg:row-start-1 lg:row-end-5 bg-black/5 backdrop-blur-xl border-2 border-[#47624f] rounded-xl shadow-lg p-4 overflow-hidden">
-                  <div className="h-full flex flex-col">
-                    <div className="flex items-center justify-between mb-4">
-                      <h3 className="text-2xl font-bold text-[#47624f]">Create Materials</h3>
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => setCurrentView("default")}
-                        className="text-[#47624f] hover:bg-[#47624f] hover:text-white"
+          <TabsContent value="overview" className="space-y-6">
+            {/* Quick Actions */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Sparkles className="w-5 h-5 text-[#47624f]" />
+                  Build Your Course, Your Way
+                </CardTitle>
+                <CardDescription>
+                  Create and organize course materials tailored to your teaching style
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                  {contentTypes.map((type) => {
+                    const Icon = type.icon
+                    return (
+                      <Card
+                        key={type.id}
+                        className="group hover:shadow-lg transition-all duration-200 cursor-pointer border-2 hover:border-[#47624f]/20"
                       >
-                        <ArrowLeft className="w-4 h-4" />
-                      </Button>
-                    </div>
-                    <div className="flex flex-col gap-3 flex-1">
-                      {[
-                        { name: "Readings", type: "reading", icon: FileText },
-                        { name: "Lesson Plans", type: "lesson-plan", icon: BookOpen },
-                        { name: "Homework", type: "homework", icon: PenTool },
-                        { name: "Exams", type: "exam", icon: GraduationCap },
-                      ].map((item) => {
-                        const Icon = item.icon
-                        return (
-                          <div 
-                            key={item.type}
-                            className="group relative bg-white/20 backdrop-blur-sm border border-[#47624f]/30 rounded-lg p-3 cursor-pointer hover:bg-[#47624f] hover:border-[#47624f] transition-all duration-300 overflow-hidden"
-                            onClick={() => handleCreateClick(item.type)}
+                        <CardContent className="p-6">
+                          <div
+                            className={`w-12 h-12 rounded-lg bg-gradient-to-r ${type.color} flex items-center justify-center mb-4 group-hover:scale-110 transition-transform`}
                           >
-                            {/* Diagonal shimmer effect */}
-                            <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none">
-                              <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent transform -skew-x-12 -translate-x-full group-hover:translate-x-full transition-transform duration-700 ease-out"></div>
+                            <Icon className="w-6 h-6 text-white" />
+                          </div>
+                                            <h3 className="font-semibold text-[#000000] mb-2">{type.title}</h3>
+                  <p className="text-sm text-[#707D7F] mb-4">{type.description}</p>
+                          <div className="flex items-center justify-between">
+                            <Badge variant="secondary">{type.count} items</Badge>
+                            <Button
+                              size="sm"
+                              onClick={() => handleGenerateContent(type.id)}
+                              className="bg-gradient-to-r from-[#47624f] to-[#707D7F] hover:from-[#000000] hover:to-[#47624f]"
+                            >
+                              <Plus className="w-4 h-4 mr-1" />
+                              Generate
+                            </Button>
+                          </div>
+                        </CardContent>
+                      </Card>
+                    )
+                  })}
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Course Overview */}
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+              <Card className="lg:col-span-2">
+                <CardHeader>
+                                  <CardTitle>Course Structure</CardTitle>
+                <CardDescription>Course units and timeline</CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-4">
+                    {courseData.calendar?.map((unit: any, index: number) => {
+                      const unitReadingContent = savedReadingContent.filter(content => content.unitId === unit.id)
+                      const unitHomeworkContent = savedHomeworkContent.filter(content => content.unitId === unit.id)
+                      const unitLessonPlanContent = savedLessonPlanContent.filter(content => content.unitId === unit.id)
+                      const unitExamContent = savedExamContent.filter(content => content.unitId === unit.id)
+                      const isExpanded = expandedUnits.has(unit.id)
+                      
+                      return (
+                        <div
+                          key={unit.id}
+                          className="rounded-lg bg-[#C9F2C7]/20 hover:bg-[#C9F2C7]/30 transition-colors"
+                        >
+                          <div className="flex items-center gap-4 p-4">
+                            <div className={`w-3 h-3 rounded-full ${unit.color}`}></div>
+                            <div className="flex-1">
+                              <h4 className="font-medium text-[#000000]">{unit.title}</h4>
+                              <p className="text-sm text-[#707D7F]">Week {unit.week}</p>
                             </div>
-                            
-                            <div className="relative z-10 flex items-center gap-3">
-                              <Icon className="w-6 h-6 text-[#47624f] group-hover:text-white transition-colors duration-300" />
-                              <h4 className="font-semibold text-[#47624f] group-hover:text-white transition-colors duration-300">
-                                {item.name}
-                              </h4>
+                            <div className="flex gap-2">
+                              <Button 
+                                size="sm" 
+                                variant="outline"
+                                onClick={() => {
+                                  const newExpanded = new Set(expandedUnits)
+                                  if (isExpanded) {
+                                    newExpanded.delete(unit.id)
+                                  } else {
+                                    newExpanded.add(unit.id)
+                                  }
+                                  setExpandedUnits(newExpanded)
+                                }}
+                              >
+                                {isExpanded ? '−' : '+'}
+                              </Button>
+                              <Button size="sm" variant="outline">
+                                <Eye className="w-4 h-4" />
+                              </Button>
+                              <Button size="sm" variant="outline">
+                                <Edit className="w-4 h-4" />
+                              </Button>
                             </div>
                           </div>
-                        )
-                      })}
-                    </div>
-                  </div>
-                </div>
-                <BentoCard
-                  name="Manage"
-                  description=""
-                  href="#"
-                  cta="Manage Learning and Content Distribution"
-                  background={<div className="absolute -right-20 -top-20 opacity-60" />}
-                  className="lg:col-start-1 lg:col-end-2 lg:row-start-3 lg:row-end-5"
-                  Icon={Settings}
-                  onClick={() => {}}
-                />
-                <BentoCard
-                  name="Calendar"
-                  description=""
-                  href="#"
-                  cta="View Course Calendar"
-                  background={<div className="absolute -right-20 -top-20 opacity-60" />}
-                  className="lg:col-start-3 lg:col-end-4 lg:row-start-1 lg:row-end-5"
-                  Icon={Calendar}
-                  onClick={handleCalendarClick}
-                />
-              </BentoGrid>
-            </div>
-          )}
+                          
+                          {/* Expandable content section */}
+                          {isExpanded && (
+                            <div className="px-4 pb-4 border-t border-[#B2A29E]/20">
+                              <div className="pt-4 space-y-4">
+                                {/* Reading Content Section */}
+                                <div className="space-y-3">
+                                  <h5 className="font-medium text-[#000000] text-sm">Reading Content</h5>
+                                  {unitReadingContent.length > 0 ? (
+                                    <div className="space-y-2">
+                                      {unitReadingContent.map((content) => (
+                                        <div key={content.id} className="flex items-center justify-between p-2 bg-white rounded border border-[#B2A29E]/20">
+                                          <div>
+                                            <p className="text-sm font-medium text-[#000000]">{content.title}</p>
+                                            <p className="text-xs text-[#707D7F]">
+                                              Created: {new Date(content.createdAt).toLocaleDateString()}
+                                            </p>
+                                          </div>
+                                          <Button size="sm" variant="outline">
+                                            <Eye className="w-3 h-3" />
+                                          </Button>
+                                        </div>
+                                      ))}
+                                    </div>
+                                  ) : (
+                                    <p className="text-sm text-[#707D7F] italic">No reading content generated yet</p>
+                                  )}
+                                </div>
 
-          {currentView === "create" && selectedContentType && (
-            <div className="px-6 space-y-6">
-              <div className="flex items-center gap-4">
-                <Button
-                  variant="ghost"
-                  onClick={handleBackClick}
-                  className="flex items-center gap-2"
-                >
-                  <ArrowLeft className="w-4 h-4" />
-                  Back
-                </Button>
-              </div>
-              <ContentGenerator 
-                type={selectedContentType}
-                courseData={courseData}
-                onBack={() => setCurrentView("default")}
-              />
-            </div>
-          )}
+                                {/* Homework Content Section */}
+                                <div className="space-y-3">
+                                  <h5 className="font-medium text-[#000000] text-sm">Homework Problems</h5>
+                                  {unitHomeworkContent.length > 0 ? (
+                                    <div className="space-y-2">
+                                      {unitHomeworkContent.map((content) => (
+                                        <div key={content.id} className="flex items-center justify-between p-2 bg-white rounded border border-[#B2A29E]/20">
+                                          <div>
+                                            <p className="text-sm font-medium text-[#000000]">{content.title}</p>
+                                            <p className="text-xs text-[#707D7F]">
+                                              Created: {new Date(content.createdAt).toLocaleDateString()}
+                                              {content.problemSpecs && (
+                                                <span className="ml-2">
+                                                  ({content.problemSpecs.totalProblems} problems: {content.problemSpecs.wordProblems} word, {content.problemSpecs.multipleChoiceProblems} multiple choice)
+                                                </span>
+                                              )}
+                                            </p>
+                                          </div>
+                                          <Button size="sm" variant="outline">
+                                            <Eye className="w-3 h-3" />
+                                          </Button>
+                                        </div>
+                                      ))}
+                                    </div>
+                                  ) : (
+                                    <p className="text-sm text-[#707D7F] italic">No homework problems generated yet</p>
+                                  )}
+                                </div>
 
-          {currentView === "bento" && bentoView === "main" && (
-            <div className="p-6 h-full">
-              <BentoGrid className="lg:grid-rows-3 h-full">
-                <BentoCard
-                  name="Uploads"
-                  description=""
-                  href="#"
-                  cta="View and Manage Uploads"
-                  background={<div className="absolute -right-20 -top-20 opacity-60" />}
-                  className="lg:col-start-1 lg:col-end-2 lg:row-start-1 lg:row-end-2"
-                  Icon={Upload}
-                  onClick={() => {}}
-                />
-                <BentoCard
-                  name="Content"
-                  description=""
-                  href="#"
-                  cta="View Created Content"
-                  background={<div className="absolute -right-20 -top-20 opacity-60" />}
-                  className="lg:col-start-2 lg:col-end-3 lg:row-start-1 lg:row-end-4"
-                  Icon={BookOpen}
-                  onClick={handleBentoContentClick}
-                />
-                <BentoCard
-                  name="Manage"
-                  description=""
-                  href="#"
-                  cta="Manage Learning and Content Distribution"
-                  background={<div className="absolute -right-20 -top-20 opacity-60" />}
-                  className="lg:col-start-1 lg:col-end-2 lg:row-start-2 lg:row-end-4"
-                  Icon={Settings}
-                  onClick={() => {}}
-                />
-                <BentoCard
-                  name="Calendar"
-                  description=""
-                  href="#"
-                  cta="View Course Calendar"
-                  background={<div className="absolute -right-20 -top-20 opacity-60" />}
-                  className="lg:col-start-3 lg:col-end-4 lg:row-start-1 lg:row-end-4"
-                  Icon={Calendar}
-                  onClick={handleCalendarClick}
-                />
-              </BentoGrid>
-            </div>
-          )}
+                                {/* Lesson Plan Content Section */}
+                                <div className="space-y-3">
+                                  <h5 className="font-medium text-[#000000] text-sm">Lesson Plans</h5>
+                                  {unitLessonPlanContent.length > 0 ? (
+                                    <div className="space-y-2">
+                                      {unitLessonPlanContent.map((content) => (
+                                        <div key={content.id} className="flex items-center justify-between p-2 bg-white rounded border border-[#B2A29E]/20">
+                                          <div>
+                                            <p className="text-sm font-medium text-[#000000]">{content.title}</p>
+                                            <p className="text-xs text-[#707D7F]">
+                                              Created: {new Date(content.createdAt).toLocaleDateString()}
+                                              {content.lectureLength && (
+                                                <span className="ml-2">
+                                                  ({content.lectureLength} minutes)
+                                                </span>
+                                              )}
+                                            </p>
+                                          </div>
+                                          <Button size="sm" variant="outline">
+                                            <Eye className="w-3 h-3" />
+                                          </Button>
+                                        </div>
+                                      ))}
+                                    </div>
+                                  ) : (
+                                    <p className="text-sm text-[#707D7F] italic">No lesson plans generated yet</p>
+                                  )}
+                                </div>
 
-          {currentView === "calendar" && (
-            <div className="space-y-6">
-              <div className="flex items-center gap-4">
-                <Button
-                  variant="ghost"
-                  onClick={handleBackClick}
-                  className="flex items-center gap-2"
-                >
-                  <ArrowLeft className="w-4 h-4" />
-                  Back
-                </Button>
-              </div>
-              <div className="bg-white/80 backdrop-blur-sm border-2 border-[#47624f] rounded-lg p-6 shadow-lg">
-                <CourseCalendar courseData={courseData} />
-              </div>
-            </div>
-          )}
-
-          {currentView === "content-list" && (
-            <div className="space-y-6">
-              <div className="flex items-center gap-4">
-                <Button
-                  variant="ghost"
-                  onClick={handleBackClick}
-                  className="flex items-center gap-2"
-                >
-                  <ArrowLeft className="w-4 h-4" />
-                  Back
-                </Button>
-              </div>
-              
-              <div className="space-y-4">
-                <Card 
-                  className="bg-gradient-to-r from-[#47624f] to-[#707D7F] text-white cursor-pointer hover:from-[#000000] hover:to-[#47624f] transition-all duration-200"
-                  onClick={() => handleCreateClick(selectedContentType)}
-                >
-                  <CardContent className="p-6">
-                    <div className="flex items-center gap-3">
-                      <Plus className="w-6 h-6" />
-                      <h3 className="text-xl font-semibold">
-                        Create more {selectedContentType.replace('-', ' ')}
-                      </h3>
-                    </div>
-                  </CardContent>
-                </Card>
-                
-                {courseData.calendar?.map((unit: any) => {
-                  const unitContent = getContentByUnit(unit.id).filter((content: any) => content.type === selectedContentType)
-                  if (unitContent.length === 0) return null
-                  
-                  return (
-                    <Card key={unit.id} className="bg-white/80 backdrop-blur-sm border-2 border-[#47624f] shadow-lg">
-                      <CardHeader>
-                        <CardTitle className="text-[#47624f]">{unit.title}</CardTitle>
-                      </CardHeader>
-                      <CardContent>
-                        <div className="space-y-3">
-                          {unitContent.map((content: any) => (
-                            <div
-                              key={content.id}
-                              className="p-4 border border-gray-200 rounded-lg cursor-pointer hover:bg-gray-50"
-                              onClick={() => handleContentClick(content)}
-                            >
-                              <h4 className="font-medium text-gray-900">{content.unitTitle || `${selectedContentType.replace('-', ' ')} content`}</h4>
-                              <div className="text-sm text-gray-600 mt-1 prose prose-sm max-w-none">
-                                <SourcedContent content={content.content.substring(0, 200) + '...'} citations={content.specifications?.citations || []} sources={content.specifications?.sources || []} />
+                                {/* Exam Content Section */}
+                                <div className="space-y-3">
+                                  <h5 className="font-medium text-[#000000] text-sm">Exams</h5>
+                                  {unitExamContent.length > 0 ? (
+                                    <div className="space-y-2">
+                                      {unitExamContent.map((content) => (
+                                        <div key={content.id} className="flex items-center justify-between p-2 bg-white rounded border border-[#B2A29E]/20">
+                                          <div>
+                                            <p className="text-sm font-medium text-[#000000]">{content.title}</p>
+                                            <p className="text-xs text-[#707D7F]">
+                                              Created: {new Date(content.createdAt).toLocaleDateString()}
+                                              {content.examSpecs && (
+                                                <span className="ml-2">
+                                                  ({content.examSpecs.totalExamTime} min: {content.examSpecs.wordProblems.count} word, {content.examSpecs.essayProblems.count} essay, {content.examSpecs.multipleChoice.count} multiple choice)
+                                                </span>
+                                              )}
+                                            </p>
+                                          </div>
+                                          <Button size="sm" variant="outline">
+                                            <Eye className="w-3 h-3" />
+                                          </Button>
+                                        </div>
+                                      ))}
+                                    </div>
+                                  ) : (
+                                    <p className="text-sm text-[#707D7F] italic">No exams generated yet</p>
+                                  )}
+                                </div>
                               </div>
                             </div>
-                          ))}
+                          )}
                         </div>
-                      </CardContent>
-                    </Card>
-                  )
-                })}
-              </div>
-            </div>
-          )}
+                      )
+                    })}
+                  </div>
+                </CardContent>
+              </Card>
 
-          {currentView === "content" && currentContent && (
-            <div className="space-y-6">
-              <div className="flex items-center gap-4">
-                <Button
-                  variant="ghost"
-                  onClick={handleBackClick}
-                  className="flex items-center gap-2"
-                >
-                  <ArrowLeft className="w-4 h-4" />
-                  Back
-                </Button>
-              </div>
-              <div className="bg-white/90 backdrop-blur-sm border border-gray-200 rounded-lg p-8 min-h-full shadow-lg">
-                                    <SourcedContent content={currentContent.content} citations={currentContent.specifications?.citations || []} sources={currentContent.specifications?.sources || []} />
-              </div>
+              <Card>
+                <CardHeader>
+                  <CardTitle>Quick Stats</CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <div className="flex justify-between items-center">
+                    <span className="text-[#707D7F]">Total Units</span>
+                    <Badge variant="secondary">{courseData.calendar?.length || 0}</Badge>
+                  </div>
+                  <div className="flex justify-between items-center">
+                    <span className="text-[#707D7F]">Course Duration</span>
+                    <Badge variant="secondary">16 weeks</Badge>
+                  </div>
+                  <div className="flex justify-between items-center">
+                    <span className="text-[#707D7F]">Generated Content</span>
+                    <Badge variant="secondary">39 items</Badge>
+                  </div>
+                  <div className="flex justify-between items-center">
+                    <span className="text-[#707D7F]">Last Updated</span>
+                    <Badge variant="secondary">Today</Badge>
+                  </div>
+                </CardContent>
+              </Card>
             </div>
-          )}
-        </div>
+          </TabsContent>
+
+          <TabsContent value="calendar">
+            <CourseCalendar 
+              courseData={courseData}
+              onOpenContent={(id) => {
+                setSelectedContentId(id)
+                setContentModalOpen(true)
+              }}
+              onRequestGenerate={(type, unitId) => {
+                // Switch to generator tab and preselect
+                setActiveTab("overview")
+                setGeneratorType(type)
+                setShowGenerator(true)
+                // ContentGenerator will allow unit selection; we can enhance to preselect by id later
+              }}
+            />
+          </TabsContent>
+
+          <TabsContent value="content">
+            <div className="space-y-8">
+              {/* Reading Content Section */}
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <FileText className="w-5 h-5 text-[#47624f]" />
+                    Reading Content
+                  </CardTitle>
+                  <CardDescription>Comprehensive reading materials and study guides</CardDescription>
+                </CardHeader>
+                <CardContent>
+                  {savedReadingContent.length > 0 ? (
+                    <div className="space-y-4">
+                      {savedReadingContent.map((content) => (
+                        <div key={content.id} className="flex items-center justify-between p-4 bg-[#C9F2C7]/10 rounded-lg border border-[#B2A29E]/20">
+                          <div className="flex-1">
+                            <div className="flex items-center gap-2 mb-2">
+                              <Badge variant="secondary" className="bg-[#C9F2C7]/20 text-[#47624f]">
+                                Reading
+                              </Badge>
+                              <span className="text-sm text-[#707D7F]">
+                                {new Date(content.createdAt).toLocaleDateString()}
+                              </span>
+                            </div>
+                            <p className="text-sm text-[#000000] font-medium">
+                              View: Unit {courseData.calendar?.findIndex((unit: any) => unit.id === content.unitId) + 1} - {courseData.calendar?.find((unit: any) => unit.id === content.unitId)?.title || 'Unknown Unit'}
+                            </p>
+                          </div>
+                          <div className="flex gap-2">
+                            <Button 
+                              size="sm" 
+                              variant="outline"
+                              onClick={() => {
+                                setSelectedContentId(content.id)
+                                setContentModalOpen(true)
+                              }}
+                            >
+                              <Eye className="w-4 h-4" />
+                            </Button>
+                            <Button size="sm" variant="outline">
+                              <Edit className="w-4 h-4" />
+                            </Button>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <div className="text-center py-8 text-[#707D7F]">
+                      <FileText className="w-12 h-12 mx-auto mb-4 text-[#B2A29E]" />
+                      <p>No reading content generated yet</p>
+                      <Button 
+                        className="mt-4 bg-gradient-to-r from-[#47624f] to-[#707D7F] hover:from-[#000000] hover:to-[#47624f]"
+                        onClick={() => handleGenerateContent('reading')}
+                      >
+                        <Plus className="w-4 h-4 mr-2" />
+                        Generate Reading Content
+                      </Button>
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+
+              {/* Homework Content Section */}
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <PenTool className="w-5 h-5 text-[#47624f]" />
+                    Homework Problems
+                  </CardTitle>
+                  <CardDescription>Practice problems and assignments with solutions</CardDescription>
+                </CardHeader>
+                <CardContent>
+                  {savedHomeworkContent.length > 0 ? (
+                    <div className="space-y-4">
+                      {savedHomeworkContent.map((content) => (
+                        <div key={content.id} className="flex items-center justify-between p-4 bg-[#C9F2C7]/10 rounded-lg border border-[#B2A29E]/20">
+                          <div className="flex-1">
+                            <div className="flex items-center gap-2 mb-2">
+                              <Badge variant="secondary" className="bg-[#C9F2C7]/20 text-[#47624f]">
+                                Homework
+                              </Badge>
+                              <span className="text-sm text-[#707D7F]">
+                                {new Date(content.createdAt).toLocaleDateString()}
+                              </span>
+                            </div>
+                            <p className="text-sm text-[#000000] font-medium">
+                              View: Unit {courseData.calendar?.findIndex((unit: any) => unit.id === content.unitId) + 1} - {courseData.calendar?.find((unit: any) => unit.id === content.unitId)?.title || 'Unknown Unit'}
+                            </p>
+                          </div>
+                          <div className="flex gap-2">
+                            <Button 
+                              size="sm" 
+                              variant="outline"
+                              onClick={() => {
+                                setSelectedContentId(content.id)
+                                setContentModalOpen(true)
+                              }}
+                            >
+                              <Eye className="w-4 h-4" />
+                            </Button>
+                            <Button size="sm" variant="outline">
+                              <Edit className="w-4 h-4" />
+                            </Button>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <div className="text-center py-8 text-[#707D7F]">
+                      <PenTool className="w-12 h-12 mx-auto mb-4 text-[#B2A29E]" />
+                      <p>No homework problems generated yet</p>
+                      <Button 
+                        className="mt-4 bg-gradient-to-r from-[#47624f] to-[#707D7F] hover:from-[#000000] hover:to-[#47624f]"
+                        onClick={() => handleGenerateContent('homework')}
+                      >
+                        <Plus className="w-4 h-4 mr-2" />
+                        Generate Homework Problems
+                      </Button>
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+
+              {/* Lesson Plans Section */}
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <BookOpen className="w-5 h-5 text-[#47624f]" />
+                    Lesson Plans
+                  </CardTitle>
+                  <CardDescription>Detailed lesson plans with objectives, activities, and assessments</CardDescription>
+                </CardHeader>
+                <CardContent>
+                  {savedLessonPlanContent.length > 0 ? (
+                    <div className="space-y-4">
+                      {savedLessonPlanContent.map((content) => (
+                        <div key={content.id} className="flex items-center justify-between p-4 bg-[#C9F2C7]/10 rounded-lg border border-[#B2A29E]/20">
+                          <div className="flex-1">
+                            <div className="flex items-center gap-2 mb-2">
+                              <Badge variant="secondary" className="bg-[#C9F2C7]/20 text-[#47624f]">
+                                Lesson Plan
+                              </Badge>
+                              <span className="text-sm text-[#707D7F]">
+                                {new Date(content.createdAt).toLocaleDateString()}
+                              </span>
+                            </div>
+                            <p className="text-sm text-[#000000] font-medium">
+                              View: Unit {courseData.calendar?.findIndex((unit: any) => unit.id === content.unitId) + 1} - {courseData.calendar?.find((unit: any) => unit.id === content.unitId)?.title || 'Unknown Unit'}
+                            </p>
+                          </div>
+                          <div className="flex gap-2">
+                            <Button 
+                              size="sm" 
+                              variant="outline"
+                              onClick={() => {
+                                setSelectedContentId(content.id)
+                                setContentModalOpen(true)
+                              }}
+                            >
+                              <Eye className="w-4 h-4" />
+                            </Button>
+                            <Button size="sm" variant="outline">
+                              <Edit className="w-4 h-4" />
+                            </Button>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <div className="text-center py-8 text-[#707D7F]">
+                      <BookOpen className="w-12 h-12 mx-auto mb-4 text-[#B2A29E]" />
+                      <p>No lesson plans generated yet</p>
+                      <Button 
+                        className="mt-4 bg-gradient-to-r from-[#47624f] to-[#707D7F] hover:from-[#000000] hover:to-[#47624f]"
+                        onClick={() => handleGenerateContent('lesson-plan')}
+                      >
+                        <Plus className="w-4 h-4 mr-2" />
+                        Generate Lesson Plan
+                      </Button>
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+
+              {/* Exams Section */}
+              <Card>
+                    <CardHeader>
+                      <CardTitle className="flex items-center gap-2">
+                    <GraduationCap className="w-5 h-5 text-[#47624f]" />
+                    Exams
+                      </CardTitle>
+                  <CardDescription>Comprehensive exams with multiple question types</CardDescription>
+                    </CardHeader>
+                    <CardContent>
+                  {savedExamContent.length > 0 ? (
+                    <div className="space-y-4">
+                      {savedExamContent.map((content) => (
+                        <div key={content.id} className="flex items-center justify-between p-4 bg-[#C9F2C7]/10 rounded-lg border border-[#B2A29E]/20">
+                          <div className="flex-1">
+                            <div className="flex items-center gap-2 mb-2">
+                              <Badge variant="secondary" className="bg-[#C9F2C7]/20 text-[#47624f]">
+                                Exam
+                              </Badge>
+                              <span className="text-sm text-[#707D7F]">
+                                {new Date(content.createdAt).toLocaleDateString()}
+                              </span>
+                            </div>
+                            <p className="text-sm text-[#000000] font-medium">
+                              View: Unit {courseData.calendar?.findIndex((unit: any) => unit.id === content.unitId) + 1} - {courseData.calendar?.find((unit: any) => unit.id === content.unitId)?.title || 'Unknown Unit'}
+                            </p>
+                          </div>
+                          <div className="flex gap-2">
+                            <Button 
+                              size="sm" 
+                              variant="outline"
+                              onClick={() => {
+                                setSelectedContentId(content.id)
+                                setContentModalOpen(true)
+                              }}
+                            >
+                              <Eye className="w-4 h-4" />
+                            </Button>
+                            <Button size="sm" variant="outline">
+                              <Edit className="w-4 h-4" />
+                            </Button>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <div className="text-center py-8 text-[#707D7F]">
+                      <GraduationCap className="w-12 h-12 mx-auto mb-4 text-[#B2A29E]" />
+                      <p>No exams generated yet</p>
+                      <Button 
+                        className="mt-4 bg-gradient-to-r from-[#47624f] to-[#707D7F] hover:from-[#000000] hover:to-[#47624f]"
+                        onClick={() => handleGenerateContent('exam')}
+                      >
+                          <Plus className="w-4 h-4 mr-2" />
+                        Generate Exam
+                        </Button>
+                      </div>
+                  )}
+                    </CardContent>
+                  </Card>
+            </div>
+          </TabsContent>
+
+          <TabsContent value="export">
+            <CourseExport 
+              courseId={courseData.courseId}
+              courseName={courseData.courseName}
+            />
+          </TabsContent>
+        </Tabs>
       </div>
-
-      {/* Navigation Sidebar */}
-      <NavigationSidebar 
-        isOpen={sidebarOpen}
-        onClose={() => {
-          setSidebarOpen(false);
-          setSidebarHovered(false);
-        }}
-        courses={allCourses}
-        currentPage={courseData.courseName}
-        onCourseSelect={handleCourseSelect}
-        currentCourseId={courseData.courseId}
-      />
-
+      </div>
+      
       {/* Content Modal */}
       <ContentModal
         isOpen={contentModalOpen}

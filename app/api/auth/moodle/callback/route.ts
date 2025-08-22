@@ -68,8 +68,14 @@ export async function GET(request: NextRequest) {
     }
 
     const tokenData = await tokenResponse.json()
+    console.log('[DEBUG] OAuth token received:', { 
+      hasAccessToken: !!tokenData.access_token,
+      tokenLength: tokenData.access_token?.length,
+      expiresIn: tokenData.expires_in,
+      scope: tokenData.scope
+    })
 
-    // Store the access token in the database (encrypted)
+    // Store the OAuth access token directly (the API service will handle OAuth endpoints)
     await prisma.user.update({
       where: { id: session.user.id },
       data: {
