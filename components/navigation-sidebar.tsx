@@ -4,7 +4,7 @@ import { signOut } from "next-auth/react"
 import { useEffect } from "react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
-import { BookOpen, GraduationCap, Home, LogOut, X, Plus } from "lucide-react"
+import { BookOpen, GraduationCap, Home, LogOut, X, Plus, Share2 } from "lucide-react"
 import Image from "next/image"
 
 interface Course {
@@ -37,6 +37,12 @@ export function NavigationSidebar({ isOpen, onClose, currentPage, courses = [], 
       href: "/",
       icon: Home,
       description: "View all your courses"
+    },
+    {
+      label: "Integrations",
+      href: "/integrations",
+      icon: Share2,
+      description: "Connect to Moodle/Canvas"
     }
   ]
 
