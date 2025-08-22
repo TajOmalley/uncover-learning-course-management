@@ -1,6 +1,9 @@
 import React from 'react'
 import ReactMarkdown from 'react-markdown'
 import remarkGfm from 'remark-gfm'
+import remarkMath from 'remark-math'
+import rehypeKatex from 'rehype-katex'
+import rehypeRaw from 'rehype-raw'
 import { Badge } from '@/components/ui/badge'
 
 interface EmbeddedCitation {
@@ -36,109 +39,127 @@ export function SourcedContent({ content, citations, sources }: SourcedContentPr
     sourceNumberMap.set(source.id, index + 1)
   })
 
-  // Function to render text with citation markers
-  const renderTextWithCitations = (text: string) => {
+  // Function to add citation numbers to content based on citation positions
+  const addCitationNumbersToContent = (rawContent: string) => {
     if (!citations || citations.length === 0) {
-      return text
+      return rawContent
     }
 
-    // Find all citation positions in this text
-    const citationPositions: Array<{
-      position: number
-      citation: EmbeddedCitation
-      sourceNumber: number
-    }> = []
-
-    citations.forEach(citation => {
+    let processedContent = rawContent
+    
+    // Sort citations by startIndex to process them in order
+    const sortedCitations = [...citations].sort((a, b) => a.startIndex - b.startIndex)
+    
+    // Process citations in reverse order to avoid index shifting
+    for (let i = sortedCitations.length - 1; i >= 0; i--) {
+      const citation = sortedCitations[i]
       const sourceNumber = sourceNumberMap.get(citation.sourceId)
+      
       if (sourceNumber) {
-        // Find the sentence containing this citation
-        const sentenceEnd = text.indexOf('.', citation.startIndex)
+        // Find the end of the sentence containing this citation
+        const sentenceEnd = processedContent.indexOf('.', citation.endIndex)
         if (sentenceEnd !== -1) {
-          citationPositions.push({
-            position: sentenceEnd,
-            citation,
-            sourceNumber
-          })
+          // Insert citation number at the end of the sentence
+          const citationNumber = `[${sourceNumber}]`
+          processedContent = processedContent.slice(0, sentenceEnd) + citationNumber + processedContent.slice(sentenceEnd)
+          console.log(`Added citation ${sourceNumber} at position ${sentenceEnd}`)
         }
       }
-    })
+    }
+    
+    return processedContent
+  }
 
-    // Sort by position (descending) to avoid index shifting
-    citationPositions.sort((a, b) => b.position - a.position)
-
-    // Split text and insert citation components
-    let result: React.ReactNode[] = []
-    let currentText = text
-
-    citationPositions.forEach(({ position, citation, sourceNumber }) => {
-      const beforeCitation = currentText.substring(0, position)
-      const afterCitation = currentText.substring(position)
-      
-      result.unshift(
-        <span key={`citation-${citation.id}`}>
-          {beforeCitation}
-                     <sup>
-             <a 
-               href={citation.sourceUrl} 
-               target="_blank" 
-               rel="noopener noreferrer" 
-               className="text-[#47624f] hover:text-[#707D7F] font-medium hover:underline cursor-pointer" 
-               title={`View source: ${citation.sourceTitle}`}
-             >
-               {sourceNumber}
-             </a>
-           </sup>
-          {afterCitation}
-        </span>
-      )
-      
-      currentText = beforeCitation
-    })
-
-    // If no citations, return original text
-    if (result.length === 0) {
-      return text
+  // Function to replace citation numbers with HTML links
+  const replaceCitationNumbersWithLinks = (content: string) => {
+    if (!citations || citations.length === 0) {
+      return content
     }
 
-    return result
+    let processedContent = content
+    
+    // Find all citation numbers like [1], [2], [3], etc.
+    const citationNumberRegex = /\[(\d+)\]/g
+    const matches = processedContent.match(citationNumberRegex)
+    
+    if (matches) {
+      console.log('Found citation numbers in content:', matches)
+      
+      // Replace each citation number with HTML link
+      matches.forEach((match) => {
+        const number = parseInt(match.replace(/[\[\]]/g, ''))
+        
+        // Find the citation that corresponds to this source number
+        const citation = citations.find(c => sourceNumberMap.get(c.sourceId) === number)
+        
+        if (citation) {
+          console.log(`Replacing ${match} with citation link for source ${number}`)
+          
+          // Create HTML citation link
+          const citationHtml = `<sup><a href="${citation.sourceUrl}" target="_blank" rel="noopener noreferrer" class="text-[#47624f] hover:text-[#707D7F] font-medium hover:underline cursor-pointer" title="View source: ${citation.sourceTitle}">${number}</a></sup>`
+          
+          // Replace the citation number with HTML
+          processedContent = processedContent.replace(match, citationHtml)
+        }
+      })
+    }
+    
+    return processedContent
   }
+
+  // Process content to add citation numbers and replace them with links
+  const contentWithNumbers = addCitationNumbersToContent(content)
+  const processedContent = replaceCitationNumbersWithLinks(contentWithNumbers)
+  
+  // Debug logging
+  console.log('Original content length:', content.length)
+  console.log('Processed content length:', processedContent.length)
+  console.log('Citations count:', citations?.length || 0)
 
      return (
      <div className="space-y-8">
        {/* Content with Citations */}
                <div className="prose prose-lg max-w-none prose-headings:text-[#47624f] prose-headings:font-bold prose-p:text-gray-700 prose-p:leading-relaxed prose-p:text-base prose-li:text-gray-700 prose-strong:text-[#47624f] prose-code:text-[#47624f] prose-code:bg-[#C9F2C7] prose-code:px-1 prose-code:py-0.5 prose-code:rounded">
          <ReactMarkdown 
-           remarkPlugins={[remarkGfm]}
+           remarkPlugins={[remarkGfm, remarkMath]}
+           rehypePlugins={[rehypeRaw, rehypeKatex]}
            components={{
+             // Allow HTML rendering for citation links
+             sup: ({ children, ...props }) => <sup {...props}>{children}</sup>,
+             a: ({ children, href, ...props }) => (
+               <a href={href} {...props} className="text-[#47624f] hover:text-[#707D7F] font-medium hover:underline cursor-pointer">
+                 {children}
+               </a>
+             ),
+
              p: ({ children, ...props }) => (
                <p {...props} className="mb-6 leading-7 text-gray-700">
-                 {typeof children === 'string' ? renderTextWithCitations(children) : children}
+                 {children}
                </p>
              ),
                            h1: ({ children, ...props }) => (
                 <h1 {...props} className="text-3xl font-bold text-[#47624f] mb-6 mt-8 border-b-2 border-[#B2A29E] pb-2">
-                  {typeof children === 'string' ? renderTextWithCitations(children) : children}
+                  {children}
                 </h1>
               ),
               h2: ({ children, ...props }) => (
                 <h2 {...props} className="text-2xl font-semibold text-[#47624f] mb-4 mt-8">
-                  {typeof children === 'string' ? renderTextWithCitations(children) : children}
+                  {children}
                 </h2>
               ),
               h3: ({ children, ...props }) => (
                 <h3 {...props} className="text-xl font-semibold text-[#47624f] mb-3 mt-6">
-                  {typeof children === 'string' ? renderTextWithCitations(children) : children}
+                  {children}
                 </h3>
               ),
               h4: ({ children, ...props }) => (
                 <h4 {...props} className="text-lg font-medium text-[#47624f] mb-2 mt-4">
-                  {typeof children === 'string' ? renderTextWithCitations(children) : children}
+                  {children}
                 </h4>
               ),
              li: ({ children, ...props }) => (
                <li {...props} className="mb-2 text-gray-700 leading-relaxed">
-                 {typeof children === 'string' ? renderTextWithCitations(children) : children}
+                 {children}
                </li>
              ),
              ul: ({ children, ...props }) => (
@@ -178,7 +199,7 @@ export function SourcedContent({ content, citations, sources }: SourcedContentPr
              ),
            }}
          >
-           {content}
+           {processedContent}
          </ReactMarkdown>
        </div>
 

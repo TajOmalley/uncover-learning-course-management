@@ -4,6 +4,7 @@ import { GeistMono } from 'geist/font/mono'
 import { Montserrat, Fraunces } from 'next/font/google'
 import AuthSessionProvider from '@/components/providers/session-provider'
 import './globals.css'
+import 'katex/dist/katex.min.css'
 
 const montserrat = Montserrat({ 
   subsets: ['latin'],
