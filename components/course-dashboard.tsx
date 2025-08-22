@@ -277,7 +277,13 @@ export function CourseDashboard({ courseData, onBack, onCourseSelect }: CourseDa
               id: "integrate",
               label: "Integrate",
               icon: Link,
-              onClick: () => router.push("/integrations"),
+              onClick: () => {
+                if (courseData?.courseId) {
+                  router.push(`/courses/${courseData.courseId}/export`)
+                } else {
+                  router.push('/integrations')
+                }
+              },
               content: null,
               dimensions: { width: 0, height: 0 },
             },
