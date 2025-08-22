@@ -277,8 +277,9 @@ export function CourseDashboard({ courseData, onBack, onCourseSelect }: CourseDa
               id: "integrate",
               label: "Integrate",
               icon: Link,
-              content: <div className="p-4 text-center">Integration functionality coming soon...</div>,
-              dimensions: { width: 300, height: 100 },
+              onClick: () => router.push("/integrations"),
+              content: null,
+              dimensions: { width: 0, height: 0 },
             },
           ]}
           className="sticky top-0 z-50 relative"
