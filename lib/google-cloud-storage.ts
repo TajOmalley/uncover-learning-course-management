@@ -139,6 +139,71 @@ export class GoogleCloudStorageService {
       throw new Error('Failed to get content metadata')
     }
   }
+
+  /**
+   * Upload file to Google Cloud Storage
+   */
+  async uploadFile(
+    buffer: Buffer,
+    filename: string,
+    options: {
+      contentType: string
+      metadata?: Record<string, string>
+    }
+  ): Promise<void> {
+    try {
+      // Validate required environment variables
+      if (!process.env.GOOGLE_CLOUD_PROJECT_ID) {
+        throw new Error('GOOGLE_CLOUD_PROJECT_ID is not configured')
+      }
+      
+      if (!process.env.GOOGLE_CLOUD_BUCKET_NAME) {
+        throw new Error('GOOGLE_CLOUD_BUCKET_NAME is not configured')
+      }
+
+      const file = this.bucket.file(filename)
+      
+      const fileMetadata = {
+        contentType: options.contentType,
+        metadata: options.metadata || {}
+      }
+
+      await file.save(buffer, fileMetadata)
+    } catch (error) {
+      console.error('Error uploading file to Google Cloud Storage:', error)
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error'
+      throw new Error(`Failed to upload file to cloud storage: ${errorMessage}`)
+    }
+  }
+
+  /**
+   * Delete file from Google Cloud Storage
+   */
+  async deleteFile(filename: string): Promise<void> {
+    try {
+      const file = this.bucket.file(filename)
+      await file.delete()
+    } catch (error) {
+      console.error('Error deleting file from Google Cloud Storage:', error)
+      throw new Error('Failed to delete file from cloud storage')
+    }
+  }
+
+  /**
+   * List uploaded files for a course
+   */
+  async listUploadedFiles(courseId: string, userId: string): Promise<string[]> {
+    try {
+      const [files] = await this.bucket.getFiles({
+        prefix: `professor uploads/`
+      })
+      
+      return files.map(file => file.name)
+    } catch (error) {
+      console.error('Error listing uploaded files:', error)
+      throw new Error('Failed to list uploaded files')
+    }
+  }
 }
 
 export const googleCloudStorage = new GoogleCloudStorageService() 

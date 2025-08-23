@@ -10,6 +10,7 @@ import { CourseCalendar } from "@/components/course-calendar"
 import { ContentGenerator } from "@/components/content-generator"
 import { NavigationSidebar } from "@/components/navigation-sidebar"
 import { ContentModal } from "@/components/content-modal"
+import { UploadView } from "@/components/upload-view"
 import DynamicActionBar, { type ActionItem } from "@/components/ui/dynamic-action"
 import { BentoCard, BentoGrid } from "@/components/ui/bento-grid"
 import { SourcedContent } from "@/components/SourcedContent"
@@ -349,7 +350,7 @@ export function CourseDashboard({ courseData, onBack, onCourseSelect }: CourseDa
                   background={<div className="absolute -right-20 -top-20 opacity-60" />}
                   className="lg:col-start-1 lg:col-end-2 lg:row-start-1 lg:row-end-3"
                   Icon={Upload}
-                  onClick={() => {}}
+                  onClick={() => setCurrentView("upload")}
                 />
                 <BentoCard
                   name="Create Materials"
@@ -396,7 +397,7 @@ export function CourseDashboard({ courseData, onBack, onCourseSelect }: CourseDa
                   background={<div className="absolute -right-20 -top-20 opacity-60" />}
                   className="lg:col-start-1 lg:col-end-2 lg:row-start-1 lg:row-end-3"
                   Icon={Upload}
-                  onClick={() => {}}
+                  onClick={() => setCurrentView("upload")}
                 />
                 <div className="lg:col-start-2 lg:col-end-3 lg:row-start-1 lg:row-end-5 bg-black/5 backdrop-blur-xl border-2 border-[#47624f] rounded-xl shadow-lg p-4 overflow-hidden">
                   <div className="h-full flex flex-col">
@@ -645,6 +646,15 @@ export function CourseDashboard({ courseData, onBack, onCourseSelect }: CourseDa
               <div className="bg-white/90 backdrop-blur-sm border border-gray-200 rounded-lg p-8 min-h-full shadow-lg">
                                     <SourcedContent content={currentContent.content} citations={currentContent.specifications?.citations || []} sources={currentContent.specifications?.sources || []} />
               </div>
+            </div>
+          )}
+
+          {currentView === "upload" && (
+            <div className="px-6 h-[calc(100vh-280px)] overflow-y-auto">
+              <UploadView 
+                courseData={courseData}
+                onBack={() => setCurrentView("default")}
+              />
             </div>
           )}
         </div>

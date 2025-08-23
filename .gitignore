@@ -43,3 +43,10 @@ service-account-key.json.env
 
 .env
 .env.bak
+
+# Context files
+*_CONTEXT.md
+
+# Service account keys
+service-account-key.json
+*.json.env
