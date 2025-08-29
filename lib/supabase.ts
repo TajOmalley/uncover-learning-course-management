@@ -1,8 +1,12 @@
 import { createClient } from '@supabase/supabase-js'
 
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || 'https://djoqdrvdrsalaxiprifd.supabase.co'
-const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRqb3FkcnZkcnNhbGF4aXByaWZkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTQyMzMyOTEsImV4cCI6MjA2OTgwOTI5MX0.U16msm5XAtc2ZdykcEEvXGzoW9EGZl3poithxWmCvh0'
-const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRqb3FkcnZkcnNhbGF4aXByaWZkIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc1NDIzMzI5MSwiZXhwIjoyMDY5ODA5MjkxfQ.4SrTqzw4LlLvwng2x1fOTvsiSiNSxMfQ7k5Y7G5BWUA'
+const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
+const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
+const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY
+
+if (!supabaseUrl || !supabaseAnonKey || !supabaseServiceKey) {
+  throw new Error('Missing required Supabase environment variables')
+}
 
 // Client for client-side operations (with RLS)
 export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
@@ -31,6 +35,7 @@ export interface Database {
           email: string
           name: string | null
           password: string
+          role?: string
           createdAt: string
           updatedAt: string
           canvasAccessToken: string | null
@@ -45,6 +50,7 @@ export interface Database {
           email: string
           name?: string | null
           password: string
+          role?: string
           createdAt?: string
           updatedAt?: string
           canvasAccessToken?: string | null
@@ -59,6 +65,7 @@ export interface Database {
           email?: string
           name?: string | null
           password?: string
+          role?: string
           createdAt?: string
           updatedAt?: string
           canvasAccessToken?: string | null
