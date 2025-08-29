@@ -1,9 +1,6 @@
 import { NextRequest, NextResponse } from "next/server"
-import { PrismaClient } from "@prisma/client"
 import bcrypt from "bcryptjs"
-
-// Only create Prisma client if DATABASE_URL is available
-const prisma = process.env.DATABASE_URL ? new PrismaClient() : null
+import { supabaseAdmin } from "@/lib/supabase"
 
 export async function POST(request: NextRequest) {
   try {
@@ -25,17 +22,12 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    if (!prisma) {
-      return NextResponse.json(
-        { error: "Database not available" },
-        { status: 500 }
-      )
-    }
-
     // Check if user already exists
-    const existingUser = await prisma.user.findUnique({
-      where: { email }
-    })
+    const { data: existingUser, error: existingError } = await supabaseAdmin
+      .from('User')
+      .select('*')
+      .eq('email', email)
+      .single()
 
     if (existingUser) {
       return NextResponse.json(
@@ -48,14 +40,24 @@ export async function POST(request: NextRequest) {
     const hashedPassword = await bcrypt.hash(password, 12)
 
     // Create user
-    const user = await prisma.user.create({
-      data: {
+    const { data: user, error: userError } = await supabaseAdmin
+      .from('User')
+      .insert({
         email,
         password: hashedPassword,
         name: name || null,
-        role
-      }
-    })
+        role: role
+      })
+      .select()
+      .single()
+
+    if (userError) {
+      console.error("Error creating user:", userError)
+      return NextResponse.json(
+        { error: "Failed to create user" },
+        { status: 500 }
+      )
+    }
 
     return NextResponse.json({
       success: true,

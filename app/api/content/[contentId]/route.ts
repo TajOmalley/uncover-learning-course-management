@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server"
 import { getServerSession } from "next-auth"
 import { authOptions } from "@/lib/auth"
 import { googleCloudStorage } from "@/lib/google-cloud-storage"
-import { prisma } from "@/lib/prisma"
+import { supabaseAdmin } from "@/lib/supabase"
 
 // GET - Get specific content by ID
 export async function GET(
@@ -29,23 +29,32 @@ export async function GET(
     }
 
     // Get the content record from database
-    const content = await prisma.generatedContent.findFirst({
-      where: {
-        id: contentId,
-        userId: session.user.id
-      },
-      include: {
-        course: true,
-        unit: true
-      }
-    })
+    const { data: content, error: contentError } = await supabaseAdmin
+      .from('GeneratedContent')
+      .select('*')
+      .eq('id', contentId)
+      .eq('userId', session.user.id)
+      .single()
 
-    if (!content) {
+    if (contentError || !content) {
       return NextResponse.json(
         { error: "Content not found or access denied" },
         { status: 404 }
       )
     }
+
+    // Get related course and unit data separately
+    const { data: course } = await supabaseAdmin
+      .from('Course')
+      .select('*')
+      .eq('id', content.courseId)
+      .single()
+
+    const { data: unit } = await supabaseAdmin
+      .from('Unit')
+      .select('*')
+      .eq('id', content.unitId)
+      .single()
 
     // Parse the content and specifications
     const parsedContent = JSON.parse(content.content)
@@ -73,8 +82,8 @@ export async function GET(
         specifications: parsedContent.specifications || {},
         storageFilename: content.storageFilename,
         createdAt: content.createdAt,
-        course: content.course,
-        unit: content.unit,
+        course: course,
+        unit: unit,
         cloudStorageContent
       }
     })

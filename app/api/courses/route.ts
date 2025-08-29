@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server"
 import { getServerSession } from "next-auth"
 import { authOptions } from "@/lib/auth"
-import { prisma } from "@/lib/prisma"
+import { supabaseAdmin } from "@/lib/supabase"
 
 // GET - Get all courses for the authenticated user
 export async function GET(request: NextRequest) {
@@ -15,22 +15,86 @@ export async function GET(request: NextRequest) {
       )
     }
 
-    const courses = await prisma.course.findMany({
-      where: {
-        userId: session.user.id
-      },
-      include: {
-        units: true,
-        generatedContent: true
-      },
-      orderBy: {
-        createdAt: 'desc'
+    // Get courses first
+    const { data: courses, error: coursesError } = await supabaseAdmin
+      .from('Course')
+      .select('*')
+      .eq('userId', session.user.id)
+      .order('createdAt', { ascending: false })
+
+    if (coursesError) {
+      console.error("Error fetching courses:", coursesError)
+      return NextResponse.json(
+        { error: "Failed to fetch courses" },
+        { status: 500 }
+      )
+    }
+
+    if (!courses || courses.length === 0) {
+      return NextResponse.json({
+        success: true,
+        courses: []
+      })
+    }
+
+    // Get course IDs
+    const courseIds = courses.map(course => course.id)
+
+    // Get units for all courses
+    const { data: units, error: unitsError } = await supabaseAdmin
+      .from('Unit')
+      .select('*')
+      .in('courseId', courseIds)
+
+    if (unitsError) {
+      console.error("Error fetching units:", unitsError)
+      return NextResponse.json(
+        { error: "Failed to fetch course units" },
+        { status: 500 }
+      )
+    }
+
+    // Get generated content for all courses
+    const { data: generatedContent, error: contentError } = await supabaseAdmin
+      .from('GeneratedContent')
+      .select('*')
+      .in('courseId', courseIds)
+
+    if (contentError) {
+      console.error("Error fetching generated content:", contentError)
+      return NextResponse.json(
+        { error: "Failed to fetch course content" },
+        { status: 500 }
+      )
+    }
+
+    // Combine the data manually
+    const transformedCourses = courses.map(course => {
+      const courseUnits = units?.filter(unit => unit.courseId === course.id) || []
+      const courseContent = generatedContent?.filter(content => content.courseId === course.id) || []
+      
+      return {
+        id: course.id,
+        title: course.title, // Use title directly from database
+        subject: course.subject,
+        level: course.level,
+        startDate: course.startDate,
+        endDate: course.endDate,
+        lectureSchedule: course.lectureSchedule,
+        numberOfUnits: course.numberOfUnits,
+        userId: course.userId,
+        createdAt: course.createdAt,
+        updatedAt: course.updatedAt,
+        canvasCourseId: course.canvasCourseId,
+        moodleCourseId: course.moodleCourseId,
+        units: courseUnits,
+        generatedContent: courseContent
       }
     })
 
     return NextResponse.json({
       success: true,
-      courses
+      courses: transformedCourses
     })
 
   } catch (error) {
@@ -65,32 +129,42 @@ export async function POST(request: NextRequest) {
     }
 
     // Create the course
-    const course = await prisma.course.create({
-      data: {
-        title,
+    const { data: course, error: courseError } = await supabaseAdmin
+      .from('Course')
+      .insert({
+        title, // Use title directly
         subject,
         level,
         startDate,
         endDate,
-        lectureSchedule: JSON.stringify(lectureSchedule),
+        lectureSchedule: lectureSchedule || null,
         numberOfUnits,
         userId: session.user.id
-      }
-    })
+      })
+      .select()
+      .single()
+
+    if (courseError) {
+      console.error("Error creating course:", courseError)
+      return NextResponse.json(
+        { error: "Failed to create course" },
+        { status: 500 }
+      )
+    }
 
     // Create units if provided
     if (units && Array.isArray(units)) {
       for (const unit of units) {
-        await prisma.unit.create({
-          data: {
+        await supabaseAdmin
+          .from('Unit')
+          .insert({
             title: unit.title,
-            week: unit.week,
-            type: unit.type,
-            color: unit.color,
             description: unit.description || null,
+            week: unit.week || 1,
+            type: unit.type || 'unit',
+            color: unit.color || null,
             courseId: course.id
-          }
-        })
+          })
       }
     }
 
@@ -103,7 +177,7 @@ export async function POST(request: NextRequest) {
         level: course.level,
         startDate: course.startDate,
         endDate: course.endDate,
-        lectureSchedule: JSON.parse(course.lectureSchedule),
+        lectureSchedule: course.lectureSchedule,
         numberOfUnits: course.numberOfUnits,
         createdAt: course.createdAt
       }
@@ -141,56 +215,76 @@ export async function DELETE(request: NextRequest) {
     }
 
     // Verify the course belongs to the authenticated user
-    const course = await prisma.course.findFirst({
-      where: {
-        id: courseId,
-        userId: session.user.id
-      },
-      include: {
-        units: true,
-        generatedContent: true
-      }
-    })
+    const { data: course, error: courseError } = await supabaseAdmin
+      .from('Course')
+      .select('*')
+      .eq('id', courseId)
+      .eq('userId', session.user.id)
+      .single()
 
-    if (!course) {
+    if (courseError || !course) {
       return NextResponse.json(
         { error: "Course not found or access denied" },
         { status: 404 }
       )
     }
 
-    console.log(`Attempting to delete course: ${courseId} with ${course.units.length} units and ${course.generatedContent.length} content items`)
+    // Get related data counts for logging
+    const { data: units } = await supabaseAdmin
+      .from('Unit')
+      .select('id')
+      .eq('courseId', courseId)
 
-    // Use a transaction to ensure atomicity
-    await prisma.$transaction(async (tx) => {
-      // Delete generated content first (if any)
-      if (course.generatedContent.length > 0) {
-        await tx.generatedContent.deleteMany({
-          where: {
-            courseId: courseId
-          }
-        })
-        console.log(`Deleted ${course.generatedContent.length} content items`)
+    const { data: content } = await supabaseAdmin
+      .from('GeneratedContent')
+      .select('id')
+      .eq('courseId', courseId)
+
+    console.log(`Attempting to delete course: ${courseId} with ${units?.length || 0} units and ${content?.length || 0} content items`)
+
+    // Delete generated content first (if any)
+    if (content && content.length > 0) {
+      const { error: contentError } = await supabaseAdmin
+        .from('GeneratedContent')
+        .delete()
+        .eq('courseId', courseId)
+      
+      if (contentError) {
+        console.error("Error deleting content:", contentError)
+      } else {
+        console.log(`Deleted ${content.length} content items`)
       }
+    }
 
-      // Delete units (if any)
-      if (course.units.length > 0) {
-        await tx.unit.deleteMany({
-          where: {
-            courseId: courseId
-          }
-        })
-        console.log(`Deleted ${course.units.length} units`)
+    // Delete units (if any)
+    if (units && units.length > 0) {
+      const { error: unitsError } = await supabaseAdmin
+        .from('Unit')
+        .delete()
+        .eq('courseId', courseId)
+      
+      if (unitsError) {
+        console.error("Error deleting units:", unitsError)
+      } else {
+        console.log(`Deleted ${units.length} units`)
       }
+    }
 
-      // Finally delete the course
-      await tx.course.delete({
-        where: {
-          id: courseId
-        }
-      })
-      console.log(`Successfully deleted course: ${courseId}`)
-    })
+    // Finally delete the course
+    const { error: deleteError } = await supabaseAdmin
+      .from('Course')
+      .delete()
+      .eq('id', courseId)
+    
+    if (deleteError) {
+      console.error("Error deleting course:", deleteError)
+      return NextResponse.json(
+        { error: "Failed to delete course" },
+        { status: 500 }
+      )
+    }
+    
+    console.log(`Successfully deleted course: ${courseId}`)
 
     return NextResponse.json({
       success: true,

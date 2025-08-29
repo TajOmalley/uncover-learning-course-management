@@ -1,13 +1,8 @@
 import CredentialsProvider from "next-auth/providers/credentials"
-import { PrismaAdapter } from "@auth/prisma-adapter"
-import { PrismaClient } from "@prisma/client"
+import { supabaseAdmin } from "./supabase"
 import bcrypt from "bcryptjs"
 
-// Only create Prisma client if DATABASE_URL is available
-const prisma = process.env.DATABASE_URL ? new PrismaClient() : null
-
 export const authOptions = {
-  adapter: prisma ? PrismaAdapter(prisma) : undefined,
   providers: [
     CredentialsProvider({
       name: "credentials",
@@ -20,34 +15,35 @@ export const authOptions = {
           return null
         }
 
-        if (!prisma) {
-          console.error('Prisma client not available')
-          return null
-        }
+        try {
+                  const { data: user, error } = await supabaseAdmin
+          .from('User')
+          .select('id, email, name, password, role')
+          .eq('email', credentials.email)
+          .single()
 
-        const user = await prisma.user.findUnique({
-          where: {
-            email: credentials.email
+          if (error || !user) {
+            return null
           }
-        })
 
-        if (!user) {
+          const isPasswordValid = await bcrypt.compare(
+            credentials.password,
+            user.password
+          )
+
+          if (!isPasswordValid) {
+            return null
+          }
+
+          return {
+            id: user.id,
+            email: user.email,
+            name: user.name,
+            role: user.role,
+          }
+        } catch (error) {
+          console.error('Authentication error:', error)
           return null
-        }
-
-        const isPasswordValid = await bcrypt.compare(
-          credentials.password,
-          user.password
-        )
-
-        if (!isPasswordValid) {
-          return null
-        }
-
-        return {
-          id: user.id,
-          email: user.email,
-          name: user.name,
         }
       }
     })
@@ -62,12 +58,14 @@ export const authOptions = {
     async jwt({ token, user }: { token: any; user: any }) {
       if (user) {
         token.id = user.id
+        token.role = user.role
       }
       return token
     },
     async session({ session, token }: { session: any; token: any }) {
       if (token && session.user) {
         session.user.id = token.id as string
+        session.user.role = token.role as string
       }
       return session
     }

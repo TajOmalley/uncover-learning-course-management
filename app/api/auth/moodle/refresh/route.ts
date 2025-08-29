@@ -1,10 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
-import { PrismaClient } from '@prisma/client'
+import { supabaseAdmin } from '@/lib/supabase'
 import { decryptToken, encryptToken } from '@/lib/crypto'
 
-const prisma = new PrismaClient()
+
 
 export async function POST(request: NextRequest) {
   try {
@@ -13,8 +13,13 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
-    const user = await prisma.user.findUnique({ where: { id: session.user.id } })
-    if (!user?.moodleRefreshToken) {
+    const { data: user, error } = await supabaseAdmin
+      .from('users')
+      .select('*')
+      .eq('id', session.user.id)
+      .single()
+    
+    if (error || !user?.moodleRefreshToken) {
       return NextResponse.json({ error: 'No Moodle refresh token' }, { status: 400 })
     }
 
@@ -47,14 +52,14 @@ export async function POST(request: NextRequest) {
 
     const data = await resp.json()
 
-    await prisma.user.update({
-      where: { id: session.user.id },
-      data: {
+    await supabaseAdmin
+      .from('users')
+      .update({
         moodleAccessToken: data.access_token ? encryptToken(data.access_token) : user.moodleAccessToken,
         moodleRefreshToken: data.refresh_token ? encryptToken(data.refresh_token) : user.moodleRefreshToken,
-        moodleTokenExpiresAt: data.expires_in ? new Date(Date.now() + data.expires_in * 1000) : user.moodleTokenExpiresAt,
-      },
-    })
+        moodleTokenExpiresAt: data.expires_in ? new Date(Date.now() + data.expires_in * 1000).toISOString() : user.moodleTokenExpiresAt,
+      })
+      .eq('id', session.user.id)
 
     return NextResponse.json({ success: true })
   } catch (error) {

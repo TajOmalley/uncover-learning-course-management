@@ -1,10 +1,8 @@
-import { PrismaClient } from '@prisma/client'
+import { supabaseAdmin } from '@/lib/supabase'
 import { decryptToken } from '@/lib/crypto'
 import { CanvasService } from './canvas'
 import { MoodleService } from './moodle'
 import { LMSCredentials, LMSType } from './types'
-
-const prisma = new PrismaClient()
 
 /**
  * Get LMS credentials for a user from the database
@@ -17,17 +15,13 @@ export async function getLMSCredentials(
   try {
     console.log(`[DEBUG] getLMSCredentials called for user: ${userId}, lmsType: ${lmsType}`)
     
-    const user = await prisma.user.findUnique({
-      where: { id: userId },
-      select: {
-        canvasAccessToken: true,
-        moodleAccessToken: true,
-        moodleTokenExpiresAt: true,
-        canvasTokenExpiresAt: true,
-      }
-    })
+    const { data: user, error } = await supabaseAdmin
+      .from('users')
+      .select('canvasAccessToken, moodleAccessToken, moodleTokenExpiresAt, canvasTokenExpiresAt')
+      .eq('id', userId)
+      .single()
 
-    if (!user) {
+    if (error || !user) {
       console.log(`[DEBUG] User not found: ${userId}`)
       throw new Error('User not found')
     }

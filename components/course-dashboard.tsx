@@ -2,10 +2,11 @@
 
 import { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
+import { useSession } from "next-auth/react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
-import { ChevronRight, ChevronDown, Menu, Download, Plus, Upload, Calendar, Link, BookOpen, FileText, Settings, ArrowLeft, PenTool, GraduationCap } from "lucide-react"
+import { ChevronRight, ChevronDown, Menu, Download, Plus, Upload, Calendar, Link, BookOpen, FileText, Settings, ArrowLeft, PenTool, GraduationCap, MessageSquare } from "lucide-react"
 import { CourseCalendar } from "@/components/course-calendar"
 import { ContentGenerator } from "@/components/content-generator"
 import { NavigationSidebar } from "@/components/navigation-sidebar"
@@ -23,12 +24,16 @@ interface CourseDashboardProps {
 }
 
 export function CourseDashboard({ courseData, onBack, onCourseSelect }: CourseDashboardProps) {
+  const { data: session } = useSession()
   const router = useRouter()
   const [sidebarOpen, setSidebarOpen] = useState(false)
   const [sidebarHovered, setSidebarHovered] = useState(false)
   const [allCourses, setAllCourses] = useState<any[]>([])
   const [contentModalOpen, setContentModalOpen] = useState(false)
   const [selectedContentId, setSelectedContentId] = useState<string | null>(null)
+  
+  // Check if user is a student
+  const isStudent = session?.user?.role === 'student'
   
   // View state
   const [selectedContentType, setSelectedContentType] = useState("")
@@ -152,6 +157,16 @@ export function CourseDashboard({ courseData, onBack, onCourseSelect }: CourseDa
     setSelectedUnit("")
   }
 
+  // Student-specific handlers
+  const handleStudyClick = () => {
+    setCurrentView("study")
+  }
+
+  const handleTutorClick = () => {
+    // No functionality for now
+    console.log("Tutor clicked - functionality coming soon")
+  }
+
   const handleCourseSelect = (course: any) => {
     router.push(`/?courseId=${course.id}`)
     setSidebarOpen(false)
@@ -169,7 +184,7 @@ export function CourseDashboard({ courseData, onBack, onCourseSelect }: CourseDa
     } else if (currentView === "bento" && bentoView === "main") {
       setCurrentView("default")
       setBentoView("main")
-    } else if (currentView === "create" || currentView === "calendar" || currentView === "content" || currentView === "export") {
+    } else if (currentView === "create" || currentView === "calendar" || currentView === "content" || currentView === "export" || currentView === "study") {
       setCurrentView("default")
       setBentoView("main")
     } else {
@@ -247,34 +262,41 @@ export function CourseDashboard({ courseData, onBack, onCourseSelect }: CourseDa
               content: <div className="p-4 text-center">Upload functionality coming soon...</div>,
               dimensions: { width: 300, height: 100 },
             },
-            {
-              id: "create",
-              label: "View Materials",
-              icon: BookOpen,
-              content: (
-                <div className="flex flex-col items-center gap-1 py-4 px-6">
-                  {[
-                    { name: "Readings", type: "reading" },
-                    { name: "Lesson Plans", type: "lesson-plan" },
-                    { name: "Homework", type: "homework" },
-                    { name: "Exams", type: "exam" },
-                  ].map((item) => (
-                    <div key={item.name} className="group w-full">
-                      <div 
-                        className="mx-auto flex w-full cursor-pointer items-center justify-between gap-3 rounded-2xl py-2 duration-300 group-hover:w-[95%] group-hover:bg-black/5 group-hover:px-3"
-                        onClick={() => handleContentTypeClick(item.type)}
-                      >
-                        <div className="flex items-center gap-3">
-                          <span className="font-bold">{item.name}</span>
-                        </div>
-                      </div>
-                    </div>
-                  ))}
-                  <div className="mt-4 h-[2px] w-full bg-black/10"></div>
-                </div>
-              ),
-              dimensions: { width: 300, height: 200 },
-            },
+                         {
+               id: "create",
+               label: "View Materials",
+               icon: BookOpen,
+               content: (
+                 <div className="flex flex-col items-center gap-1 py-4 px-6">
+                   {[
+                     { name: "Readings", type: "reading" },
+                     { name: isStudent ? "Notes" : "Lesson Plans", type: isStudent ? "notes" : "lesson-plan" },
+                     { name: "Homework", type: "homework" },
+                     { name: isStudent ? "Flashcards" : "Exams", type: isStudent ? "flashcards" : "exam" },
+                   ].map((item) => (
+                     <div key={item.name} className="group w-full">
+                       <div 
+                         className="mx-auto flex w-full cursor-pointer items-center justify-between gap-3 rounded-2xl py-2 duration-300 group-hover:w-[95%] group-hover:bg-black/5 group-hover:px-3"
+                         onClick={() => {
+                           if (isStudent && (item.type === "notes" || item.type === "flashcards")) {
+                             // No functionality for student notes/flashcards
+                             console.log(`${item.name} clicked - functionality coming soon`)
+                           } else {
+                             handleContentTypeClick(item.type)
+                           }
+                         }}
+                       >
+                         <div className="flex items-center gap-3">
+                           <span className="font-bold">{item.name}</span>
+                         </div>
+                       </div>
+                     </div>
+                   ))}
+                   <div className="mt-4 h-[2px] w-full bg-black/10"></div>
+                 </div>
+               ),
+               dimensions: { width: 300, height: 200 },
+             },
             {
               id: "integrate",
               label: "Integrate",
@@ -316,10 +338,10 @@ export function CourseDashboard({ courseData, onBack, onCourseSelect }: CourseDa
                 <div>
                   <h1 className="text-4xl font-bold text-[#47624f] mb-2">{courseData.courseName}</h1>
                   <div className="flex items-center gap-6 text-gray-600">
-                    <span className="flex items-center gap-2">
-                      <span className="font-semibold">Professor:</span>
-                      <span>{courseData.professor || "User Name"}</span>
-                    </span>
+                                         <span className="flex items-center gap-2">
+                       <span className="font-semibold">{isStudent ? "Student:" : "Professor:"}</span>
+                       <span>{courseData.professor || "User Name"}</span>
+                     </span>
                     <span className="flex items-center gap-2">
                       <span className="font-semibold">Duration:</span>
                       <span>{getCourseDuration()}</span>
@@ -348,39 +370,101 @@ export function CourseDashboard({ courseData, onBack, onCourseSelect }: CourseDa
                   href="#"
                   cta=""
                   background={<div className="absolute -right-20 -top-20 opacity-60" />}
-                  className="lg:col-start-1 lg:col-end-2 lg:row-start-1 lg:row-end-3"
+                  className="lg:col-start-1 lg:col-end-2 lg:row-start-1 lg:row-end-5"
                   Icon={Upload}
                   onClick={() => setCurrentView("upload")}
                 />
                 <BentoCard
-                  name="Create Materials"
-                  description="Click to Create Personalized Readings, Lesson Plans, Assignments, and Exams"
+                  name={isStudent ? "Study" : "Create Materials"}
+                  description={isStudent ? "Access your study materials and tools" : "Click to Create Personalized Readings, Lesson Plans, Assignments, and Exams"}
                   href="#"
                   cta=""
                   background={<div className="absolute -right-20 -top-20 opacity-60" />}
                   className="lg:col-start-2 lg:col-end-3 lg:row-start-1 lg:row-end-5"
                   Icon={BookOpen}
-                  onClick={() => setCurrentView("content-expanded")}
+                  onClick={isStudent ? handleStudyClick : () => setCurrentView("content-expanded")}
                 />
                 <BentoCard
-                  name="Manage"
-                  description="Manage Learning and Content Distribution"
-                  href="#"
-                  cta=""
-                  background={<div className="absolute -right-20 -top-20 opacity-60" />}
-                  className="lg:col-start-1 lg:col-end-2 lg:row-start-3 lg:row-end-5"
-                  Icon={Settings}
-                  onClick={() => {}}
-                />
-                <BentoCard
-                  name="Calendar"
-                  description="View Course Calendar"
+                  name={isStudent ? "Tutor" : "Calendar"}
+                  description={isStudent ? "Get help from AI tutor" : "View Course Calendar"}
                   href="#"
                   cta=""
                   background={<div className="absolute -right-20 -top-20 opacity-60" />}
                   className="lg:col-start-3 lg:col-end-4 lg:row-start-1 lg:row-end-5"
-                  Icon={Calendar}
-                  onClick={handleCalendarClick}
+                  Icon={isStudent ? MessageSquare : Calendar}
+                  onClick={isStudent ? handleTutorClick : handleCalendarClick}
+                />
+              </BentoGrid>
+            </div>
+          )}
+
+          {currentView === "study" && (
+            <div className="px-6 h-[calc(100vh-280px)]">
+              <BentoGrid className="lg:grid-rows-4 h-full">
+                <BentoCard
+                  name="Upload"
+                  description="Add Previous Materials, Syllabi, and Curriculum Standards to Shape Course"
+                  href="#"
+                  cta=""
+                  background={<div className="absolute -right-20 -top-20 opacity-60" />}
+                  className="lg:col-start-1 lg:col-end-2 lg:row-start-1 lg:row-end-5"
+                  Icon={Upload}
+                  onClick={() => setCurrentView("upload")}
+                />
+                <div className="lg:col-start-2 lg:col-end-3 lg:row-start-1 lg:row-end-5 bg-black/5 backdrop-blur-xl border-2 border-[#47624f] rounded-xl shadow-lg p-4 overflow-hidden">
+                  <div className="h-full flex flex-col">
+                    <div className="flex items-center justify-between mb-4">
+                      <h3 className="text-2xl font-bold text-[#47624f]">Study Tools</h3>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => setCurrentView("default")}
+                        className="text-[#47624f] hover:bg-[#47624f] hover:text-white"
+                      >
+                        <ArrowLeft className="w-4 h-4" />
+                      </Button>
+                    </div>
+                    <div className="flex flex-col gap-3 flex-1">
+                      {[
+                        { name: "Notes", type: "notes", icon: FileText },
+                        { name: "Flashcards", type: "flashcards", icon: BookOpen },
+                      ].map((item) => {
+                        const Icon = item.icon
+                        return (
+                          <div 
+                            key={item.type}
+                            className="group relative bg-white/20 backdrop-blur-sm border border-[#47624f]/30 rounded-lg p-3 cursor-pointer hover:bg-[#47624f] hover:border-[#47624f] transition-all duration-300 overflow-hidden"
+                            onClick={() => {
+                              // No functionality for now
+                              console.log(`${item.name} clicked - functionality coming soon`)
+                            }}
+                          >
+                            {/* Diagonal shimmer effect */}
+                            <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none">
+                              <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent transform -skew-x-12 -translate-x-full group-hover:translate-x-full transition-transform duration-700 ease-out"></div>
+                            </div>
+                            
+                            <div className="relative z-10 flex items-center gap-3">
+                              <Icon className="w-6 h-6 text-[#47624f] group-hover:text-white transition-colors duration-300" />
+                              <h4 className="font-semibold text-[#47624f] group-hover:text-white transition-colors duration-300">
+                                {item.name}
+                              </h4>
+                            </div>
+                          </div>
+                        )
+                      })}
+                    </div>
+                  </div>
+                </div>
+                <BentoCard
+                  name="Tutor"
+                  description="Get help from AI tutor"
+                  href="#"
+                  cta=""
+                  background={<div className="absolute -right-20 -top-20 opacity-60" />}
+                  className="lg:col-start-3 lg:col-end-4 lg:row-start-1 lg:row-end-5"
+                  Icon={MessageSquare}
+                  onClick={handleTutorClick}
                 />
               </BentoGrid>
             </div>

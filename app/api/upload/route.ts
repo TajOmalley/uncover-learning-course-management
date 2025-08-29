@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server"
 import { getServerSession } from "next-auth"
 import { authOptions } from "@/lib/auth"
 import { googleCloudStorage } from "@/lib/google-cloud-storage"
-import { prisma } from "@/lib/prisma"
+import { supabaseAdmin } from "@/lib/supabase"
 
 export async function POST(request: NextRequest) {
   try {
@@ -65,14 +65,14 @@ export async function POST(request: NextRequest) {
     }
 
     // Verify the course belongs to the authenticated user
-    const course = await prisma.course.findFirst({
-      where: {
-        id: courseId,
-        userId: session.user.id
-      }
-    })
+    const { data: course, error: courseError } = await supabaseAdmin
+      .from('Course')
+      .select('*')
+      .eq('id', courseId)
+      .eq('userId', session.user.id)
+      .single()
 
-    if (!course) {
+    if (courseError || !course) {
       return NextResponse.json(
         { error: "Course not found or access denied" },
         { status: 404 }
@@ -114,16 +114,38 @@ export async function POST(request: NextRequest) {
       )
     }
 
+    // Save file record to Supabase database
+    const { data: uploadedFile, error: dbError } = await supabaseAdmin
+      .from('uploadedfiles')
+      .insert({
+        originalname: file.name,
+        storagepath: storagePath,
+        filetype: type,
+        mimetype: file.type,
+        filesize: file.size,
+        userid: session.user.id,
+        courseid: courseId
+      })
+      .select()
+      .single()
+
+    if (dbError) {
+      console.error("Error saving file record to database:", dbError)
+      // Note: We don't fail the upload if database save fails, since the file was uploaded successfully
+      // But we should log this for debugging
+    }
+
     // Return success response with file metadata
     return NextResponse.json({
       success: true,
       file: {
-        id: `upload-${Date.now()}`, // Generate a simple ID
+        id: uploadedFile?.id || `upload-${Date.now()}`,
         originalName: file.name,
         storagePath: storagePath,
         fileType: type,
         fileSize: file.size,
-        uploadedAt: new Date().toISOString()
+        mimeType: file.type,
+        uploadedAt: uploadedFile?.createdat || new Date().toISOString()
       }
     })
 
@@ -136,10 +158,69 @@ export async function POST(request: NextRequest) {
   }
 }
 
-// GET - Get all uploaded files for a course (placeholder for now)
+// GET - Get all uploaded files for a course
 export async function GET(request: NextRequest) {
-  return NextResponse.json({
-    success: true,
-    files: [] // Return empty array for now
-  })
+  try {
+    const session = await getServerSession(authOptions)
+    
+    if (!session?.user?.id) {
+      return NextResponse.json(
+        { error: "Authentication required" },
+        { status: 401 }
+      )
+    }
+
+    const { searchParams } = new URL(request.url)
+    const courseId = searchParams.get('courseId')
+
+    if (!courseId) {
+      return NextResponse.json(
+        { error: "Course ID is required" },
+        { status: 400 }
+      )
+    }
+
+    // Verify the course belongs to the authenticated user
+    const { data: course, error: courseError } = await supabaseAdmin
+      .from('Course')
+      .select('id')
+      .eq('id', courseId)
+      .eq('userId', session.user.id)
+      .single()
+
+    if (courseError || !course) {
+      return NextResponse.json(
+        { error: "Course not found or access denied" },
+        { status: 404 }
+      )
+    }
+
+    // Get all uploaded files for the course
+    const { data: files, error: filesError } = await supabaseAdmin
+      .from('uploadedfiles')
+      .select('*')
+      .eq('courseid', courseId)
+      .eq('userid', session.user.id)
+      .order('createdat', { ascending: false })
+
+    if (filesError) {
+      console.error("Error fetching uploaded files:", filesError)
+      return NextResponse.json(
+        { error: "Failed to fetch uploaded files" },
+        { status: 500 }
+      )
+    }
+
+    return NextResponse.json({
+      success: true,
+      files: files || []
+    })
+
+  } catch (error) {
+    console.error("Error fetching uploaded files:", error)
+    return NextResponse.json(
+      { error: "Internal server error" },
+      { status: 500 }
+    )
+  }
 }

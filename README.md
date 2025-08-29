@@ -50,7 +50,7 @@ Uncover Learning is building a course management application that removes the ne
 - **UI Components**: Radix UI primitives
 - **Icons**: Lucide React
 - **Forms**: React Hook Form with Zod validation
-- **Database**: Prisma ORM with PostgreSQL (Supabase)
+- **Database**: Supabase (PostgreSQL)
 - **Authentication**: NextAuth.js
 - **Deployment**: Vercel
 
@@ -83,11 +83,8 @@ cp .env.example .env
 
 4. Set up the database:
 ```bash
-# Generate Prisma client
-npx prisma generate
-
-# Run database migrations
-npx prisma db push
+# Database is automatically configured with Supabase
+# No additional setup required
 ```
 
 5. Start the development server:
@@ -145,14 +142,14 @@ course-management/
 │   ├── content-generator.tsx # Content generation
 │   └── user-dashboard.tsx # Course listing
 ├── lib/                  # Utility functions
-├── prisma/               # Database schema and migrations
+├── lib/                  # Utility functions and Supabase client
 ├── public/               # Static assets
 └── styles/               # Global styles
 ```
 
 ## Database Schema
 
-The application uses Prisma with the following main models:
+The application uses Supabase with the following main tables:
 - **User**: Authentication and user management
 - **Course**: Course information and metadata
 - **Unit**: Course units with relationships
@@ -218,7 +215,7 @@ MOODLE_WS_TOKEN=your_moodle_ws_token
 Then run the database and start the app:
 
 ```
-pnpm prisma migrate dev
+# Database changes are managed through Supabase dashboard
 pnpm dev
 ```
 

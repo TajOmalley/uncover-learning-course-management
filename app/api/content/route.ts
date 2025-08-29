@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server"
 import { getServerSession } from "next-auth"
 import { authOptions } from "@/lib/auth"
 import { googleCloudStorage } from "@/lib/google-cloud-storage"
-import { prisma } from "@/lib/prisma"
+import { supabaseAdmin } from "@/lib/supabase"
 
 // POST - Save generated content to database
 export async function POST(request: NextRequest) {
@@ -33,14 +33,14 @@ export async function POST(request: NextRequest) {
     }
 
     // Verify the course belongs to the authenticated user
-    const course = await prisma.course.findFirst({
-      where: {
-        id: courseId,
-        userId: session.user.id
-      }
-    })
+    const { data: course, error: courseError } = await supabaseAdmin
+      .from('Course')
+      .select('*')
+      .eq('id', courseId)
+      .eq('userId', session.user.id)
+      .single()
 
-    if (!course) {
+    if (courseError || !course) {
       return NextResponse.json(
         { error: "Course not found or access denied" },
         { status: 404 }
@@ -61,16 +61,26 @@ export async function POST(request: NextRequest) {
     )
 
     // Create the generated content record in database
-    const generatedContent = await prisma.generatedContent.create({
-      data: {
+    const { data: generatedContent, error: contentError } = await supabaseAdmin
+      .from('GeneratedContent')
+      .insert({
         courseId,
         unitId,
         type,
         content: JSON.stringify({ content, specifications }),
         storageFilename,
         userId: session.user.id
-      }
-    })
+      })
+      .select()
+      .single()
+
+    if (contentError) {
+      console.error("Error creating content:", contentError)
+      return NextResponse.json(
+        { error: "Failed to save content" },
+        { status: 500 }
+      )
+    }
 
     return NextResponse.json({
       success: true,
@@ -118,14 +128,14 @@ export async function GET(request: NextRequest) {
     }
 
     // Verify the course belongs to the authenticated user
-    const course = await prisma.course.findFirst({
-      where: {
-        id: courseId,
-        userId: session.user.id
-      }
-    })
+    const { data: course, error: courseError } = await supabaseAdmin
+      .from('Course')
+      .select('*')
+      .eq('id', courseId)
+      .eq('userId', session.user.id)
+      .single()
 
-    if (!course) {
+    if (courseError || !course) {
       return NextResponse.json(
         { error: "Course not found or access denied" },
         { status: 404 }
@@ -133,18 +143,23 @@ export async function GET(request: NextRequest) {
     }
 
     // Get all content for the course
-    const content = await prisma.generatedContent.findMany({
-      where: {
-        courseId,
-        userId: session.user.id
-      },
-      orderBy: {
-        createdAt: 'desc'
-      }
-    })
+    const { data: content, error: contentError } = await supabaseAdmin
+      .from('GeneratedContent')
+      .select('*')
+      .eq('courseId', courseId)
+      .eq('userId', session.user.id)
+      .order('createdAt', { ascending: false })
+
+    if (contentError) {
+      console.error("Error fetching content:", contentError)
+      return NextResponse.json(
+        { error: "Failed to fetch content" },
+        { status: 500 }
+      )
+    }
 
     // Parse the content and specifications
-    const parsedContent = content.map(item => {
+    const parsedContent = (content || []).map((item: any) => {
       const parsedContent = JSON.parse(item.content)
       return {
         id: item.id,
@@ -194,14 +209,14 @@ export async function DELETE(request: NextRequest) {
     }
 
     // Get the content record
-    const content = await prisma.generatedContent.findFirst({
-      where: {
-        id: contentId,
-        userId: session.user.id
-      }
-    })
+    const { data: content, error: contentError } = await supabaseAdmin
+      .from('GeneratedContent')
+      .select('*')
+      .eq('id', contentId)
+      .eq('userId', session.user.id)
+      .single()
 
-    if (!content) {
+    if (contentError || !content) {
       return NextResponse.json(
         { error: "Content not found or access denied" },
         { status: 404 }
@@ -219,11 +234,18 @@ export async function DELETE(request: NextRequest) {
     }
 
     // Delete from database
-    await prisma.generatedContent.delete({
-      where: {
-        id: contentId
-      }
-    })
+    const { error: deleteError } = await supabaseAdmin
+      .from('GeneratedContent')
+      .delete()
+      .eq('id', contentId)
+
+    if (deleteError) {
+      console.error("Error deleting content:", deleteError)
+      return NextResponse.json(
+        { error: "Failed to delete content" },
+        { status: 500 }
+      )
+    }
 
     return NextResponse.json({
       success: true,

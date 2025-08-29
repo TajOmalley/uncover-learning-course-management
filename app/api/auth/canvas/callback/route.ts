@@ -1,10 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getServerSession } from 'next-auth'
-import { authOptions } from '../../[...nextauth]/route'
-import { PrismaClient } from '@prisma/client'
+import { authOptions } from '@/lib/auth'
+import { supabaseAdmin } from '@/lib/supabase'
 import { encryptToken } from '@/lib/crypto'
-
-const prisma = new PrismaClient()
 
 export async function GET(request: NextRequest) {
   try {
@@ -70,16 +68,16 @@ export async function GET(request: NextRequest) {
     const tokenData = await tokenResponse.json()
 
     // Store the access token in the database (encrypted)
-    await prisma.user.update({
-      where: { id: session.user.id },
-      data: {
+    await supabaseAdmin
+      .from('users')
+      .update({
         canvasAccessToken: tokenData.access_token ? encryptToken(tokenData.access_token) : null,
         canvasRefreshToken: tokenData.refresh_token ? encryptToken(tokenData.refresh_token) : null,
         canvasTokenExpiresAt: tokenData.expires_in 
-          ? new Date(Date.now() + tokenData.expires_in * 1000)
+          ? new Date(Date.now() + tokenData.expires_in * 1000).toISOString()
           : null,
-      },
-    })
+      })
+      .eq('id', session.user.id)
 
     // Redirect back to integrations page with success
     return NextResponse.redirect(`${process.env.NEXTAUTH_URL}/integrations?success=canvas_connected`)
