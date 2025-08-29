@@ -16,6 +16,7 @@ import DynamicActionBar, { type ActionItem } from "@/components/ui/dynamic-actio
 import { BentoCard, BentoGrid } from "@/components/ui/bento-grid"
 import { SourcedContent } from "@/components/SourcedContent"
 import { CourseExport } from "@/components/course-export"
+import { TutorMessage } from "@/components/TutorMessage"
 
 interface CourseDashboardProps {
   courseData: any
@@ -45,6 +46,15 @@ export function CourseDashboard({ courseData, onBack, onCourseSelect }: CourseDa
   
   // Saved content state
   const [savedContent, setSavedContent] = useState<any[]>([])
+  
+  // Tutor chat state
+  const [chatMessages, setChatMessages] = useState<Array<{
+    role: 'user' | 'assistant'
+    content: string
+    summary?: string
+  }>>([])
+  const [userInput, setUserInput] = useState('')
+  const [isLoading, setIsLoading] = useState(false)
 
   // Load saved content from database
   useEffect(() => {
@@ -163,8 +173,83 @@ export function CourseDashboard({ courseData, onBack, onCourseSelect }: CourseDa
   }
 
   const handleTutorClick = () => {
-    // No functionality for now
-    console.log("Tutor clicked - functionality coming soon")
+    setCurrentView("tutor")
+  }
+
+  const handleSendMessage = async () => {
+    if (!userInput.trim() || isLoading) return
+
+    const message = userInput.trim()
+    setUserInput('')
+    setIsLoading(true)
+
+    // Add user message to chat
+    const newUserMessage = {
+      role: 'user' as const,
+      content: message
+    }
+    setChatMessages(prev => [...prev, newUserMessage])
+
+    try {
+      const response = await fetch('/api/tutor', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          userMessage: message,
+          courseData: {
+            courseName: courseData.courseName,
+            subject: courseData.subject,
+            level: courseData.level,
+            professor: courseData.professor
+          },
+          conversationHistory: chatMessages
+        })
+      })
+
+      if (!response.ok) {
+        throw new Error('Failed to get tutor response')
+      }
+
+      const result = await response.json()
+      
+      if (result.success) {
+        // Add assistant response to chat
+        const newAssistantMessage = {
+          role: 'assistant' as const,
+          content: result.tutorResponse.response,
+          summary: result.tutorResponse.conversationSummary
+        }
+        setChatMessages(prev => [...prev, newAssistantMessage])
+      } else {
+        throw new Error(result.error || 'Failed to get response')
+      }
+    } catch (error) {
+      console.error('Error sending message:', error)
+      // Add error message to chat
+      const errorMessage = {
+        role: 'assistant' as const,
+        content: 'Sorry, I encountered an error. Please try again.'
+      }
+      setChatMessages(prev => [...prev, errorMessage])
+    } finally {
+      setIsLoading(false)
+    }
+  }
+
+  const handleKeyPress = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
+    if (e.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault()
+      handleSendMessage()
+    }
+  }
+
+  const handleInputChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
+    setUserInput(e.target.value)
+    // Auto-resize the textarea
+    e.target.style.height = 'auto'
+    e.target.style.height = Math.min(e.target.scrollHeight, 200) + 'px'
   }
 
   const handleCourseSelect = (course: any) => {
@@ -184,7 +269,7 @@ export function CourseDashboard({ courseData, onBack, onCourseSelect }: CourseDa
     } else if (currentView === "bento" && bentoView === "main") {
       setCurrentView("default")
       setBentoView("main")
-    } else if (currentView === "create" || currentView === "calendar" || currentView === "content" || currentView === "export" || currentView === "study") {
+    } else if (currentView === "create" || currentView === "calendar" || currentView === "content" || currentView === "export" || currentView === "study" || currentView === "tutor") {
       setCurrentView("default")
       setBentoView("main")
     } else {
@@ -739,6 +824,70 @@ export function CourseDashboard({ courseData, onBack, onCourseSelect }: CourseDa
                 courseData={courseData}
                 onBack={() => setCurrentView("default")}
               />
+            </div>
+          )}
+
+          {currentView === "tutor" && (
+            <div className="px-6 h-[calc(100vh-280px)]">
+              <div className="h-full flex flex-col">
+                {/* Chat Messages Area */}
+                <div className="flex-1 bg-black/5 backdrop-blur-xl border-2 border-[#47624f] rounded-xl shadow-lg p-6 mb-4 overflow-y-auto">
+                  {chatMessages.length === 0 ? (
+                    <div className="text-center text-gray-500">
+                      <MessageSquare className="w-8 h-8 mx-auto mb-2 opacity-50" />
+                      <p>Start a conversation with your AI tutor</p>
+                    </div>
+                  ) : (
+                                         <div className="space-y-6">
+                       {chatMessages.map((message, index) => (
+                         <div key={index} className={`${message.role === 'user' ? 'text-right' : 'text-left'}`}>
+                           {message.role === 'user' ? (
+                             <div className="inline-block bg-[#47624f] text-white rounded-xl px-4 py-2 max-w-[80%]">
+                               {message.content}
+                             </div>
+                                                       ) : (
+                              <TutorMessage content={message.content} />
+                            )}
+                         </div>
+                       ))}
+                                             {isLoading && (
+                         <div className="text-left">
+                           <div className="flex items-center gap-2 text-gray-600">
+                             <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-[#47624f]"></div>
+                             <span className="text-sm">Tutor is thinking...</span>
+                           </div>
+                         </div>
+                       )}
+                    </div>
+                  )}
+                </div>
+                
+                {/* Chat Input */}
+                <div className="bg-black/5 backdrop-blur-xl border-2 border-[#47624f] rounded-xl shadow-lg p-4">
+                                     <div className="flex items-end gap-3">
+                     <div className="flex-1 relative">
+                       <textarea
+                         value={userInput}
+                         onChange={handleInputChange}
+                         onKeyPress={handleKeyPress}
+                         placeholder="Ask your tutor a question..."
+                         disabled={isLoading}
+                         rows={1}
+                         className="w-full bg-white/80 backdrop-blur-sm border border-gray-200 rounded-xl px-4 py-3 text-gray-700 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-[#47624f] focus:border-transparent transition-all duration-200 disabled:opacity-50 resize-none overflow-hidden"
+                         style={{ minHeight: '44px', maxHeight: '200px' }}
+                       />
+                     </div>
+                    <button 
+                      onClick={handleSendMessage}
+                      disabled={isLoading || !userInput.trim()}
+                      className="bg-[#47624f] hover:bg-[#3a4f3f] disabled:opacity-50 disabled:cursor-not-allowed text-white rounded-xl px-4 py-3 transition-colors duration-200 flex items-center gap-2"
+                    >
+                      <MessageSquare className="w-4 h-4" />
+                      {isLoading ? 'Sending...' : 'Send'}
+                    </button>
+                  </div>
+                </div>
+              </div>
             </div>
           )}
         </div>

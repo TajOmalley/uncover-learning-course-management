@@ -104,4 +104,45 @@
   .glass {
     @apply bg-white/10 backdrop-blur-md border border-white/20 shadow-[0_8px_32px_rgba(0,0,0,0.08)];
   }
+
+  /* Math rendering styles */
+  .math-render {
+    display: inline-block !important;
+    vertical-align: middle !important;
+    line-height: 1.2 !important;
+    font-size: 1em !important;
+  }
+
+  .math-block-render {
+    text-align: center !important;
+    margin: 1rem 0 !important;
+    overflow-x: auto !important;
+    padding: 0.5rem 0 !important;
+  }
+
+  /* KaTeX specific overrides for better integration */
+  .katex {
+    font-size: 1em !important;
+    line-height: 1.2 !important;
+  }
+
+  .katex-display {
+    margin: 1rem 0 !important;
+    text-align: center !important;
+  }
+
+  .katex-html {
+    overflow-x: auto !important;
+    overflow-y: hidden !important;
+  }
+
+  /* Ensure math doesn't break the layout */
+  .katex .base {
+    margin: 0.25em 0 !important;
+  }
+
+  /* Better spacing for inline math */
+  .katex .mathnormal {
+    font-style: normal !important;
+  }
 }
