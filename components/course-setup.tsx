@@ -184,14 +184,49 @@ export function CourseSetup({ onComplete }: CourseSetupProps) {
     }
   }
 
-      const generateMockCalendar = (data: any) => {
-    // Mock calendar generation
+  const generateMockCalendar = (data: any) => {
+    // Mock calendar generation with all required fields
     return [
-      { id: 1, title: "Course Introduction & Fundamentals", week: 1, type: "unit", color: "bg-[#47624f]" },
-      { id: 2, title: "Core Concepts & Theory", week: 3, type: "unit", color: "bg-[#707D7F]" },
-      { id: 3, title: "Practical Applications", week: 6, type: "unit", color: "bg-[#B2A29E]" },
-      { id: 4, title: "Advanced Topics", week: 9, type: "unit", color: "bg-[#C9F2C7]" },
-      { id: 5, title: "Final Projects & Assessment", week: 12, type: "unit", color: "bg-[#000000]" },
+      { 
+        id: 1, 
+        title: "Course Introduction & Fundamentals", 
+        week: 1, 
+        type: "unit", 
+        color: "bg-[#47624f]",
+        description: "Introduction to course concepts and fundamental principles"
+      },
+      { 
+        id: 2, 
+        title: "Core Concepts & Theory", 
+        week: 3, 
+        type: "unit", 
+        color: "bg-[#707D7F]",
+        description: "Core theoretical concepts and foundational knowledge"
+      },
+      { 
+        id: 3, 
+        title: "Practical Applications", 
+        week: 6, 
+        type: "unit", 
+        color: "bg-[#B2A29E]",
+        description: "Practical applications and real-world examples"
+      },
+      { 
+        id: 4, 
+        title: "Advanced Topics", 
+        week: 9, 
+        type: "unit", 
+        color: "bg-[#C9F2C7]",
+        description: "Advanced concepts and specialized topics"
+      },
+      { 
+        id: 5, 
+        title: "Final Projects & Assessment", 
+        week: 12, 
+        type: "unit", 
+        color: "bg-[#000000]",
+        description: "Final projects, assessments, and course wrap-up"
+      },
     ]
   }
 

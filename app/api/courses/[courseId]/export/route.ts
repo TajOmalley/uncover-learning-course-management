@@ -28,6 +28,7 @@ export async function POST(
     
     // Verify user session
     const session = await getServerSession(authOptions)
+    
     if (!session?.user?.id) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
@@ -179,6 +180,7 @@ export async function GET(
     
     // Verify user session
     const session = await getServerSession(authOptions)
+    
     if (!session?.user?.id) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
@@ -203,6 +205,7 @@ export async function GET(
     const hasMoodle = await getLMSCredentials(session.user.id, 'moodle')
 
     return NextResponse.json({
+      success: true,
       course: {
         id: course.id,
         title: course.title,

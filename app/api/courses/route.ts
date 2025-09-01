@@ -128,18 +128,24 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // Create the course
+    // Generate a unique ID for the course
+    const courseId = `course_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`
+
+    // Create the course with the generated ID
     const { data: course, error: courseError } = await supabaseAdmin
       .from('Course')
       .insert({
-        title, // Use title directly
+        id: courseId,
+        title,
         subject,
         level,
         startDate,
         endDate,
         lectureSchedule: lectureSchedule || null,
         numberOfUnits,
-        userId: session.user.id
+        userId: session.user.id,
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString()
       })
       .select()
       .single()
@@ -155,15 +161,21 @@ export async function POST(request: NextRequest) {
     // Create units if provided
     if (units && Array.isArray(units)) {
       for (const unit of units) {
+        // Generate unique ID for each unit
+        const unitId = `unit_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`
+        
         await supabaseAdmin
           .from('Unit')
           .insert({
+            id: unitId,
             title: unit.title,
             description: unit.description || null,
             week: unit.week || 1,
             type: unit.type || 'unit',
             color: unit.color || null,
-            courseId: course.id
+            courseId: course.id,
+            createdAt: new Date().toISOString(),
+            updatedAt: new Date().toISOString()
           })
       }
     }

@@ -8,15 +8,12 @@ import { LMSCredentials, LMSType } from './types'
  * Get LMS credentials for a user from the database
  * Retrieves and decrypts OAuth tokens from your existing auth system
  */
-export async function getLMSCredentials(
-  userId: string, 
-  lmsType: LMSType
-): Promise<LMSCredentials | null> {
+export async function getLMSCredentials(userId: string, lmsType: LMSType): Promise<LMSCredentials | null> {
   try {
     console.log(`[DEBUG] getLMSCredentials called for user: ${userId}, lmsType: ${lmsType}`)
     
     const { data: user, error } = await supabaseAdmin
-      .from('users')
+      .from('User')
       .select('canvasAccessToken, moodleAccessToken, moodleTokenExpiresAt, canvasTokenExpiresAt')
       .eq('id', userId)
       .single()

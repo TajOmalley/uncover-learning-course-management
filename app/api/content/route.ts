@@ -1,10 +1,9 @@
 import { NextRequest, NextResponse } from "next/server"
 import { getServerSession } from "next-auth"
 import { authOptions } from "@/lib/auth"
-import { googleCloudStorage } from "@/lib/google-cloud-storage"
 import { supabaseAdmin } from "@/lib/supabase"
 
-// POST - Save generated content to database
+// POST - Create new generated content
 export async function POST(request: NextRequest) {
   try {
     const session = await getServerSession(authOptions)
@@ -16,18 +15,12 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    const { 
-      courseId, 
-      unitId, 
-      type, 
-      content, 
-      specifications 
-    } = await request.json()
+    const { courseId, unitId, type, content, specifications } = await request.json()
 
     // Validate required fields
-    if (!courseId || !unitId || !type || !content) {
+    if (!courseId || !type || !content) {
       return NextResponse.json(
-        { error: "Missing required content information" },
+        { error: "Missing required fields: courseId, type, or content" },
         { status: 400 }
       )
     }
@@ -47,29 +40,22 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // Upload content to Google Cloud Storage
-    const contentData = JSON.stringify({ content, specifications })
-    const storageFilename = await googleCloudStorage.uploadContent(
-      contentData,
-      {
-        courseId,
-        unitId,
-        type,
-        userId: session.user.id,
-        specifications
-      }
-    )
+    // Generate a unique ID for the content
+    const contentId = `content_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`
 
-    // Create the generated content record in database
+    // Create the generated content
     const { data: generatedContent, error: contentError } = await supabaseAdmin
       .from('GeneratedContent')
       .insert({
+        id: contentId,
         courseId,
         unitId,
         type,
         content: JSON.stringify({ content, specifications }),
-        storageFilename,
-        userId: session.user.id
+        storageFilename: null,
+        userId: session.user.id,
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString()
       })
       .select()
       .single()
@@ -91,7 +77,7 @@ export async function POST(request: NextRequest) {
         type: generatedContent.type,
         content: content,
         specifications: specifications,
-        storageFilename,
+        storageFilename: generatedContent.storageFilename,
         createdAt: generatedContent.createdAt
       }
     })
@@ -138,7 +124,7 @@ export async function GET(request: NextRequest) {
     if (courseError || !course) {
       return NextResponse.json(
         { error: "Course not found or access denied" },
-        { status: 404 }
+        { status: 400 }
       )
     }
 
@@ -168,7 +154,9 @@ export async function GET(request: NextRequest) {
         type: item.type,
         content: parsedContent.content,
         specifications: parsedContent.specifications,
-        createdAt: item.createdAt
+        storageFilename: item.storageFilename,
+        createdAt: item.createdAt,
+        updatedAt: item.updatedAt
       }
     })
 
@@ -179,81 +167,6 @@ export async function GET(request: NextRequest) {
 
   } catch (error) {
     console.error("Error fetching content:", error)
-    return NextResponse.json(
-      { error: "Internal server error" },
-      { status: 500 }
-    )
-  }
-}
-
-// DELETE - Delete content from both database and cloud storage
-export async function DELETE(request: NextRequest) {
-  try {
-    const session = await getServerSession(authOptions)
-    
-    if (!session?.user?.id) {
-      return NextResponse.json(
-        { error: "Authentication required" },
-        { status: 401 }
-      )
-    }
-
-    const { searchParams } = new URL(request.url)
-    const contentId = searchParams.get('contentId')
-
-    if (!contentId) {
-      return NextResponse.json(
-        { error: "Content ID is required" },
-        { status: 400 }
-      )
-    }
-
-    // Get the content record
-    const { data: content, error: contentError } = await supabaseAdmin
-      .from('GeneratedContent')
-      .select('*')
-      .eq('id', contentId)
-      .eq('userId', session.user.id)
-      .single()
-
-    if (contentError || !content) {
-      return NextResponse.json(
-        { error: "Content not found or access denied" },
-        { status: 404 }
-      )
-    }
-
-    // Delete from Google Cloud Storage if filename exists
-    if (content.storageFilename) {
-      try {
-        await googleCloudStorage.deleteContent(content.storageFilename)
-      } catch (storageError) {
-        console.error('Error deleting from cloud storage:', storageError)
-        // Continue with database deletion even if cloud storage deletion fails
-      }
-    }
-
-    // Delete from database
-    const { error: deleteError } = await supabaseAdmin
-      .from('GeneratedContent')
-      .delete()
-      .eq('id', contentId)
-
-    if (deleteError) {
-      console.error("Error deleting content:", deleteError)
-      return NextResponse.json(
-        { error: "Failed to delete content" },
-        { status: 500 }
-      )
-    }
-
-    return NextResponse.json({
-      success: true,
-      message: "Content deleted successfully"
-    })
-
-  } catch (error) {
-    console.error("Error deleting content:", error)
     return NextResponse.json(
       { error: "Internal server error" },
       { status: 500 }

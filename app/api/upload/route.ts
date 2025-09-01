@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from "next/server"
 import { getServerSession } from "next-auth"
 import { authOptions } from "@/lib/auth"
-import { googleCloudStorage } from "@/lib/google-cloud-storage"
 import { supabaseAdmin } from "@/lib/supabase"
 
 export async function POST(request: NextRequest) {
@@ -88,33 +87,11 @@ export async function POST(request: NextRequest) {
     const fileExtension = file.name.split('.').pop()
     const filename = `${file.name.replace(/\.[^/.]+$/, "")}-${timestamp}.${fileExtension}`
 
-    // Upload to Google Cloud Storage
+    // For now, we'll just save the file metadata to the database
+    // In a real implementation, you'd upload the file to cloud storage
     const storagePath = `professor uploads/${type}/${filename}`
-    
-    try {
-      await googleCloudStorage.uploadFile(
-        buffer,
-        storagePath,
-        {
-          contentType: file.type,
-          metadata: {
-            originalName: file.name,
-            uploadType: type,
-            courseId: courseId,
-            userId: session.user.id,
-            uploadedAt: new Date().toISOString()
-          }
-        }
-      )
-    } catch (storageError) {
-      console.error("Error uploading to Google Cloud Storage:", storageError)
-      return NextResponse.json(
-        { error: "Failed to upload file to storage" },
-        { status: 500 }
-      )
-    }
 
-    // Save file record to Supabase database
+    // Save file record to Supabase database using correct field names
     const { data: uploadedFile, error: dbError } = await supabaseAdmin
       .from('uploadedfiles')
       .insert({
@@ -131,8 +108,10 @@ export async function POST(request: NextRequest) {
 
     if (dbError) {
       console.error("Error saving file record to database:", dbError)
-      // Note: We don't fail the upload if database save fails, since the file was uploaded successfully
-      // But we should log this for debugging
+      return NextResponse.json(
+        { error: "Failed to save file" },
+        { status: 500 }
+      )
     }
 
     // Return success response with file metadata
@@ -195,7 +174,7 @@ export async function GET(request: NextRequest) {
       )
     }
 
-    // Get all uploaded files for the course
+    // Get all uploaded files for the course using correct field names
     const { data: files, error: filesError } = await supabaseAdmin
       .from('uploadedfiles')
       .select('*')

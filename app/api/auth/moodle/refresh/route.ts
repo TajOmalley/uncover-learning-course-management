@@ -2,68 +2,97 @@ import { NextRequest, NextResponse } from 'next/server'
 import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
 import { supabaseAdmin } from '@/lib/supabase'
-import { decryptToken, encryptToken } from '@/lib/crypto'
-
-
 
 export async function POST(request: NextRequest) {
   try {
     const session = await getServerSession(authOptions)
+    
     if (!session?.user?.id) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+      return NextResponse.json(
+        { error: 'Authentication required' },
+        { status: 401 }
+      )
     }
 
-    const { data: user, error } = await supabaseAdmin
-      .from('users')
+    // Get the current Moodle access token
+    const { data: user, error: fetchError } = await supabaseAdmin
+      .from('User')
       .select('*')
       .eq('id', session.user.id)
       .single()
-    
-    if (error || !user?.moodleRefreshToken) {
-      return NextResponse.json({ error: 'No Moodle refresh token' }, { status: 400 })
+
+    if (fetchError || !user) {
+      return NextResponse.json(
+        { error: 'User not found' },
+        { status: 404 }
+      )
     }
 
-    const refreshTokenPlain = decryptToken(user.moodleRefreshToken)
-
-    const moodleClientId = process.env.MOODLE_CLIENT_ID
-    const moodleClientSecret = process.env.MOODLE_CLIENT_SECRET
-    const moodleUrl = process.env.MOODLE_URL || 'http://localhost:8888/moodle'
-
-    if (!moodleClientId || !moodleClientSecret) {
-      return NextResponse.json({ error: 'Configuration error' }, { status: 500 })
+    if (!user.moodleAccessToken) {
+      return NextResponse.json(
+        { error: 'No Moodle access token found' },
+        { status: 400 }
+      )
     }
 
-    const resp = await fetch(`${moodleUrl}/local/oauth2/refresh_token.php`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-      body: new URLSearchParams({
-        client_id: moodleClientId,
-        client_secret: moodleClientSecret,
-        grant_type: 'refresh_token',
-        refresh_token: refreshTokenPlain,
-      }),
+    // Moodle doesn't use refresh tokens in the same way as other OAuth providers
+    // Instead, we'll need to re-authenticate the user
+    // For now, we'll return an error suggesting re-authentication
+    return NextResponse.json({
+      success: false,
+      error: 'Moodle token expired. Please re-authenticate with Moodle.',
+      requiresReauth: true
     })
 
-    if (!resp.ok) {
-      const text = await resp.text()
-      console.error('Moodle token refresh failed:', text)
-      return NextResponse.json({ error: 'Refresh failed' }, { status: 400 })
-    }
-
-    const data = await resp.json()
-
-    await supabaseAdmin
-      .from('users')
-      .update({
-        moodleAccessToken: data.access_token ? encryptToken(data.access_token) : user.moodleAccessToken,
-        moodleRefreshToken: data.refresh_token ? encryptToken(data.refresh_token) : user.moodleRefreshToken,
-        moodleTokenExpiresAt: data.expires_in ? new Date(Date.now() + data.expires_in * 1000).toISOString() : user.moodleTokenExpiresAt,
-      })
-      .eq('id', session.user.id)
-
-    return NextResponse.json({ success: true })
   } catch (error) {
     console.error('Moodle refresh error:', error)
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
+    return NextResponse.json(
+      { error: 'Internal server error' },
+      { status: 500 }
+    )
+  }
+}
+
+export async function GET(request: NextRequest) {
+  try {
+    const session = await getServerSession(authOptions)
+    
+    if (!session?.user?.id) {
+      return NextResponse.json(
+        { error: 'Authentication required' },
+        { status: 401 }
+      )
+    }
+
+    // Get the current Moodle token status
+    const { data: user, error: fetchError } = await supabaseAdmin
+      .from('User')
+      .select('moodleAccessToken, moodleTokenExpiresAt')
+      .eq('id', session.user.id)
+      .single()
+
+    if (fetchError || !user) {
+      return NextResponse.json(
+        { error: 'User not found' },
+        { status: 404 }
+      )
+    }
+
+    const hasToken = !!user.moodleAccessToken
+    const isExpired = user.moodleTokenExpiresAt ? new Date(user.moodleTokenExpiresAt) < new Date() : false
+
+    return NextResponse.json({
+      success: true,
+      hasToken,
+      isExpired,
+      requiresReauth: !hasToken || isExpired
+    })
+
+  } catch (error) {
+    console.error('Moodle token status error:', error)
+    return NextResponse.json(
+      { error: 'Internal server error' },
+      { status: 500 }
+    )
   }
 } 
