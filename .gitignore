@@ -49,4 +49,4 @@ service-account-key.json.env
 # Service account keys
 service-account-key.json
 *.json.env
-Student_side_documentation
+lib/supabase.ts
